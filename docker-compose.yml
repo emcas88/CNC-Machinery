@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: cnc-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cnc_machinery
+      POSTGRES_USER: cnc_user
+      POSTGRES_PASSWORD: cnc_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cnc_user -d cnc_machinery"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Rust Backend (Actix-web)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cnc-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://cnc_user:cnc_password@db:5432/cnc_machinery
+      RUST_LOG: info,actix_web=debug
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/app/src
+      - ./migrations:/app/migrations
+      - backend_target:/app/target
+      - cargo_registry:/usr/local/cargo/registry
+
+  # React Frontend (Vite Dev Server)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cnc-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+      - frontend_node_modules:/app/node_modules
+
+  # Redis (for caching, job queues, session management)
+  redis:
+    image: redis:7-alpine
+    container_name: cnc-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # MinIO (S3-compatible object storage for textures, renders, exports)
+  minio:
+    image: minio/minio:latest
+    container_name: cnc-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: cnc_minio
+      MINIO_ROOT_PASSWORD: cnc_minio_secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+volumes:
+  postgres_data:
+  backend_target:
+  cargo_registry:
+  frontend_node_modules:
+  redis_data:
+  minio_data:
+

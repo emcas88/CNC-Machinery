@@ -1,0 +1,32 @@
+version: '3.8'
+
+# Development overrides - use with: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    environment:
+      RUST_LOG: debug,actix_web=debug,sqlx=info
+      RUST_BACKTRACE: 1
+    volumes:
+      - ./backend:/app
+      - backend_target:/app/target
+      - cargo_registry:/usr/local/cargo/registry
+
+  frontend:
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+
+  db:
+    ports:
+      - "5432:5432"
+
+volumes:
+  backend_target:
+  cargo_registry:
+  frontend_node_modules:
+
