@@ -21,10 +21,10 @@ use serde_json::{json, Value};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+use crate::models::nested_sheet::CreateNestedSheet;
 use crate::models::optimization_run::{
     CreateOptimizationRun, OptimizationQuality, OptimizationStatus, UpdateOptimizationRun,
 };
-use crate::models::nested_sheet::CreateNestedSheet;
 
 // ─── POST /jobs/{job_id}/optimize ────────────────────────────────────────────
 
@@ -51,7 +51,7 @@ pub async fn create_optimization_run(
              yield_percentage, created_at, updated_at)
         VALUES
             ($1, $2, $3,
-             'queued'::optimization_status,
+             'pending'::optimization_status,
              $4::optimization_quality,
              $5, '[]'::jsonb,
              NULL,
@@ -60,7 +60,7 @@ pub async fn create_optimization_run(
         run_id,
         job_id,
         dto.name,
-        dto.quality as OptimizationQuality,
+        dto.quality as Option<OptimizationQuality>,
         settings,
     )
     .execute(pool.get_ref())
@@ -91,10 +91,7 @@ pub async fn create_optimization_run(
 
 /// Retrieve a single optimization run together with all of its nested sheets.
 #[get("/optimization-runs/{id}")]
-pub async fn get_optimization_run(
-    pool: web::Data<PgPool>,
-    id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn get_optimization_run(pool: web::Data<PgPool>, id: web::Path<Uuid>) -> impl Responder {
     let run_id = *id;
 
     // Fetch the run record.
@@ -290,8 +287,8 @@ pub async fn update_optimization_run(
         "#,
         run_id,
         dto.name,
-        dto.status   as Option<OptimizationStatus>,
-        dto.quality  as Option<OptimizationQuality>,
+        dto.status as Option<OptimizationStatus>,
+        dto.quality as Option<OptimizationQuality>,
         dto.settings,
         dto.sheets,
         dto.yield_percentage,
@@ -308,12 +305,10 @@ pub async fn update_optimization_run(
                 "detail": e.to_string()
             }))
         }
-        Ok(r) if r.rows_affected() == 0 => {
-            HttpResponse::NotFound().json(json!({
-                "status": "error",
-                "message": format!("Optimization run {} not found", run_id)
-            }))
-        }
+        Ok(r) if r.rows_affected() == 0 => HttpResponse::NotFound().json(json!({
+            "status": "error",
+            "message": format!("Optimization run {} not found", run_id)
+        })),
         Ok(_) => HttpResponse::Ok().json(json!({
             "status":  "ok",
             "message": format!("Optimization run {} updated", run_id),
@@ -364,12 +359,9 @@ pub async fn delete_optimization_run(
         }));
     }
 
-    let result = sqlx::query!(
-        "DELETE FROM optimization_runs WHERE id = $1",
-        run_id
-    )
-    .execute(&mut *tx)
-    .await;
+    let result = sqlx::query!("DELETE FROM optimization_runs WHERE id = $1", run_id)
+        .execute(&mut *tx)
+        .await;
 
     match result {
         Err(e) => {
@@ -380,12 +372,10 @@ pub async fn delete_optimization_run(
                 "detail": e.to_string()
             }))
         }
-        Ok(r) if r.rows_affected() == 0 => {
-            HttpResponse::NotFound().json(json!({
-                "status": "error",
-                "message": format!("Optimization run {} not found", run_id)
-            }))
-        }
+        Ok(r) if r.rows_affected() == 0 => HttpResponse::NotFound().json(json!({
+            "status": "error",
+            "message": format!("Optimization run {} not found", run_id)
+        })),
         Ok(_) => {
             let _ = tx.commit().await;
             HttpResponse::Ok().json(json!({

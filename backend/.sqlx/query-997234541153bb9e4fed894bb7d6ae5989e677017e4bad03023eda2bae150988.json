@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            id,\n            name,\n            machine_type,\n            manufacturer,\n            model_number,\n            max_x_mm,\n            max_y_mm,\n            max_z_mm,\n            settings,\n            created_at,\n            updated_at\n        FROM machines\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "machine_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "manufacturer",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "model_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "max_x_mm",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "max_y_mm",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "max_z_mm",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "settings",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "997234541153bb9e4fed894bb7d6ae5989e677017e4bad03023eda2bae150988"
+}

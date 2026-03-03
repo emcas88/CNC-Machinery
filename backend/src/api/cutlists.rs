@@ -83,10 +83,7 @@ pub struct BomHardwareRow {
 /// }
 /// ```
 #[get("/jobs/{job_id}/cutlist")]
-pub async fn get_cutlist(
-    pool: web::Data<PgPool>,
-    job_id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn get_cutlist(pool: web::Data<PgPool>, job_id: web::Path<Uuid>) -> impl Responder {
     let job_id = *job_id;
 
     let rows = sqlx::query_as!(
@@ -148,7 +145,6 @@ pub async fn get_cutlist(
 
 /// Group a flat list of `CutlistRow`s by `(material_id, material_name, cutlist_name)`.
 fn group_by_material(rows: Vec<CutlistRow>) -> Vec<Value> {
-    use std::collections::IndexMap;
     // Use a Vec of (key, bucket) to preserve ORDER BY from SQL.
     let mut buckets: Vec<(Uuid, String, String, Vec<Value>)> = Vec::new();
 
@@ -217,10 +213,7 @@ fn group_by_material(rows: Vec<CutlistRow>) -> Vec<Value> {
 /// }
 /// ```
 #[get("/jobs/{job_id}/bom")]
-pub async fn get_bom(
-    pool: web::Data<PgPool>,
-    job_id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn get_bom(pool: web::Data<PgPool>, job_id: web::Path<Uuid>) -> impl Responder {
     let job_id = *job_id;
 
     // ── material aggregation ──────────────────────────────────────────────────
@@ -254,7 +247,7 @@ pub async fn get_bom(
         r#"
         SELECT
             hw_item->>'name'           AS hardware_name,
-            SUM((hw_item->>'qty')::BIGINT) AS total_quantity
+            SUM((hw_item->>'qty')::BIGINT)::BIGINT AS total_quantity
         FROM jobs j
         JOIN rooms    r  ON r.job_id   = j.id
         JOIN products pr ON pr.room_id = r.id,

@@ -59,10 +59,7 @@ pub async fn list_post_processors(pool: web::Data<PgPool>) -> impl Responder {
 // ---------------------------------------------------------------------------
 
 #[get("/{id}")]
-pub async fn get_post_processor(
-    pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn get_post_processor(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Responder {
     let id = path.into_inner();
 
     let result = sqlx::query_as!(
@@ -237,12 +234,9 @@ pub async fn delete_post_processor(
 ) -> impl Responder {
     let id = path.into_inner();
 
-    let result = sqlx::query!(
-        "DELETE FROM post_processors WHERE id = $1 RETURNING id",
-        id
-    )
-    .fetch_optional(pool.get_ref())
-    .await;
+    let result = sqlx::query!("DELETE FROM post_processors WHERE id = $1 RETURNING id", id)
+        .fetch_optional(pool.get_ref())
+        .await;
 
     match result {
         Ok(Some(_)) => HttpResponse::NoContent().finish(),

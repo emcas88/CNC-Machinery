@@ -9,8 +9,8 @@
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Mutex;
     use crate::config::AppConfig;
+    use std::sync::Mutex;
 
     // Global mutex to serialise env-var manipulation across parallel tests.
     static ENV_LOCK: Mutex<()> = Mutex::new(());
@@ -40,9 +40,16 @@ mod tests {
     #[test]
     fn test_from_env_reads_database_url() {
         let _guard = ENV_LOCK.lock().unwrap();
-        set_all_env("postgres://user:pass@localhost:5432/cnc_db", "127.0.0.1", "9000");
+        set_all_env(
+            "postgres://user:pass@localhost:5432/cnc_db",
+            "127.0.0.1",
+            "9000",
+        );
         let cfg = AppConfig::from_env();
-        assert_eq!(cfg.database_url, "postgres://user:pass@localhost:5432/cnc_db");
+        assert_eq!(
+            cfg.database_url,
+            "postgres://user:pass@localhost:5432/cnc_db"
+        );
         remove_all_env();
     }
 

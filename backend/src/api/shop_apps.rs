@@ -70,10 +70,7 @@ pub struct ShopScanEvent {
 /// }
 /// ```
 #[get("/shop/cutlist/{job_id}")]
-pub async fn get_shop_cutlist(
-    pool: web::Data<PgPool>,
-    job_id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn get_shop_cutlist(pool: web::Data<PgPool>, job_id: web::Path<Uuid>) -> impl Responder {
     let job_id = *job_id;
 
     // Fetch job name for display context.
@@ -206,10 +203,7 @@ pub async fn get_shop_cutlist(
 /// }
 /// ```
 #[get("/shop/assembly/{job_id}")]
-pub async fn get_shop_assembly(
-    pool: web::Data<PgPool>,
-    job_id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn get_shop_assembly(pool: web::Data<PgPool>, job_id: web::Path<Uuid>) -> impl Responder {
     let job_id = *job_id;
 
     let job = sqlx::query!("SELECT name FROM jobs WHERE id = $1", job_id)
@@ -290,12 +284,7 @@ pub async fn get_shop_assembly(
                 if let Some(i) = pos {
                     products[i].3.push(part_val);
                 } else {
-                    products.push((
-                        r.product_id,
-                        r.product_name,
-                        r.room_name,
-                        vec![part_val],
-                    ));
+                    products.push((r.product_id, r.product_name, r.room_name, vec![part_val]));
                 }
             }
 
@@ -328,10 +317,7 @@ pub async fn get_shop_assembly(
 /// `barcode_data` is the part's UUID as a plain string — scanners/printers
 /// encode this as a Code-128 barcode or QR code on the physical label.
 #[get("/shop/labels/{job_id}")]
-pub async fn get_shop_labels(
-    pool: web::Data<PgPool>,
-    job_id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn get_shop_labels(pool: web::Data<PgPool>, job_id: web::Path<Uuid>) -> impl Responder {
     let job_id = *job_id;
 
     let rows = sqlx::query!(
@@ -443,12 +429,9 @@ pub async fn record_shop_scan(
     }
 
     // Verify part exists.
-    let part_exists = sqlx::query!(
-        "SELECT 1 AS exists FROM parts WHERE id = $1",
-        dto.part_id
-    )
-    .fetch_optional(pool.get_ref())
-    .await;
+    let part_exists = sqlx::query!("SELECT 1 AS exists FROM parts WHERE id = $1", dto.part_id)
+        .fetch_optional(pool.get_ref())
+        .await;
 
     match part_exists {
         Err(e) => {

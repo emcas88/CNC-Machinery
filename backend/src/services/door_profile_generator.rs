@@ -225,9 +225,7 @@ impl DoorProfileGenerator {
             DoorStyle::Cathedral => {
                 self.generate_cathedral_door(width, height, thickness, material_id)
             }
-            DoorStyle::Arched => {
-                self.generate_arched_door(width, height, thickness, material_id)
-            }
+            DoorStyle::Arched => self.generate_arched_door(width, height, thickness, material_id),
         };
 
         let cut_list = Self::build_cut_list(&parts);
@@ -309,31 +307,60 @@ impl DoorProfileGenerator {
         let mut parts = Vec::new();
 
         // Left stile
-        let mut left_stile = Self::make_part("Left Stile", DoorPartType::Stile, stile_dims.clone(), material_id);
-        left_stile.operations.push(stick_profile_op(stile_w, height, thickness, true));
-        left_stile.operations.push(hinge_bore_op(stile_w, height, thickness, true));
+        let mut left_stile = Self::make_part(
+            "Left Stile",
+            DoorPartType::Stile,
+            stile_dims.clone(),
+            material_id,
+        );
+        left_stile
+            .operations
+            .push(stick_profile_op(stile_w, height, thickness, true));
+        left_stile
+            .operations
+            .push(hinge_bore_op(stile_w, height, thickness, true));
         parts.push(left_stile);
 
         // Right stile
-        let mut right_stile = Self::make_part("Right Stile", DoorPartType::Stile, stile_dims, material_id);
-        right_stile.operations.push(stick_profile_op(stile_w, height, thickness, true));
+        let mut right_stile =
+            Self::make_part("Right Stile", DoorPartType::Stile, stile_dims, material_id);
+        right_stile
+            .operations
+            .push(stick_profile_op(stile_w, height, thickness, true));
         parts.push(right_stile);
 
         // Top rail
-        let mut top_rail = Self::make_part("Top Rail", DoorPartType::Rail, rail_dims.clone(), material_id);
-        top_rail.operations.push(stick_profile_op(rail_length, rail_w, thickness, false));
-        top_rail.operations.push(cope_op(rail_length, rail_w, thickness));
+        let mut top_rail = Self::make_part(
+            "Top Rail",
+            DoorPartType::Rail,
+            rail_dims.clone(),
+            material_id,
+        );
+        top_rail
+            .operations
+            .push(stick_profile_op(rail_length, rail_w, thickness, false));
+        top_rail
+            .operations
+            .push(cope_op(rail_length, rail_w, thickness));
         parts.push(top_rail);
 
         // Bottom rail
-        let mut bottom_rail = Self::make_part("Bottom Rail", DoorPartType::Rail, rail_dims, material_id);
-        bottom_rail.operations.push(stick_profile_op(rail_length, rail_w, thickness, false));
-        bottom_rail.operations.push(cope_op(rail_length, rail_w, thickness));
+        let mut bottom_rail =
+            Self::make_part("Bottom Rail", DoorPartType::Rail, rail_dims, material_id);
+        bottom_rail
+            .operations
+            .push(stick_profile_op(rail_length, rail_w, thickness, false));
+        bottom_rail
+            .operations
+            .push(cope_op(rail_length, rail_w, thickness));
         parts.push(bottom_rail);
 
         // Panel
-        let mut panel = Self::make_part("Centre Panel", DoorPartType::Panel, panel_dims, material_id);
-        panel.operations.push(perimeter_profile_op(panel_w, panel_h, panel_thickness, 2.0));
+        let mut panel =
+            Self::make_part("Centre Panel", DoorPartType::Panel, panel_dims, material_id);
+        panel
+            .operations
+            .push(perimeter_profile_op(panel_w, panel_h, panel_thickness, 2.0));
         parts.push(panel);
 
         parts
@@ -351,37 +378,78 @@ impl DoorProfileGenerator {
         let stile_w = Self::stile_width(width, height);
         let rail_length = width - 2.0 * stile_w;
 
-        let stile_dims = Dimensions { width: stile_w, height, thickness };
-        let rail_dims = Dimensions { width: rail_length, height: rail_w, thickness };
+        let stile_dims = Dimensions {
+            width: stile_w,
+            height,
+            thickness,
+        };
+        let rail_dims = Dimensions {
+            width: rail_length,
+            height: rail_w,
+            thickness,
+        };
         let panel_w = width - 2.0 * stile_w + 2.0 * GROOVE_DEPTH - 3.0;
         let panel_h = height - 2.0 * rail_w + 2.0 * GROOVE_DEPTH - 3.0;
         let panel_thickness = thickness; // full thickness; raise is cut on face
-        let panel_dims = Dimensions { width: panel_w, height: panel_h, thickness: panel_thickness };
+        let panel_dims = Dimensions {
+            width: panel_w,
+            height: panel_h,
+            thickness: panel_thickness,
+        };
 
         let mut parts = Vec::new();
 
-        let mut left_stile = Self::make_part("Left Stile", DoorPartType::Stile, stile_dims.clone(), material_id);
-        left_stile.operations.push(stick_profile_op(stile_w, height, thickness, true));
-        left_stile.operations.push(hinge_bore_op(stile_w, height, thickness, true));
+        let mut left_stile = Self::make_part(
+            "Left Stile",
+            DoorPartType::Stile,
+            stile_dims.clone(),
+            material_id,
+        );
+        left_stile
+            .operations
+            .push(stick_profile_op(stile_w, height, thickness, true));
+        left_stile
+            .operations
+            .push(hinge_bore_op(stile_w, height, thickness, true));
         parts.push(left_stile);
 
-        let mut right_stile = Self::make_part("Right Stile", DoorPartType::Stile, stile_dims, material_id);
-        right_stile.operations.push(stick_profile_op(stile_w, height, thickness, true));
+        let mut right_stile =
+            Self::make_part("Right Stile", DoorPartType::Stile, stile_dims, material_id);
+        right_stile
+            .operations
+            .push(stick_profile_op(stile_w, height, thickness, true));
         parts.push(right_stile);
 
-        let mut top_rail = Self::make_part("Top Rail", DoorPartType::Rail, rail_dims.clone(), material_id);
-        top_rail.operations.push(stick_profile_op(rail_length, rail_w, thickness, false));
-        top_rail.operations.push(cope_op(rail_length, rail_w, thickness));
+        let mut top_rail = Self::make_part(
+            "Top Rail",
+            DoorPartType::Rail,
+            rail_dims.clone(),
+            material_id,
+        );
+        top_rail
+            .operations
+            .push(stick_profile_op(rail_length, rail_w, thickness, false));
+        top_rail
+            .operations
+            .push(cope_op(rail_length, rail_w, thickness));
         parts.push(top_rail);
 
-        let mut bottom_rail = Self::make_part("Bottom Rail", DoorPartType::Rail, rail_dims, material_id);
-        bottom_rail.operations.push(stick_profile_op(rail_length, rail_w, thickness, false));
-        bottom_rail.operations.push(cope_op(rail_length, rail_w, thickness));
+        let mut bottom_rail =
+            Self::make_part("Bottom Rail", DoorPartType::Rail, rail_dims, material_id);
+        bottom_rail
+            .operations
+            .push(stick_profile_op(rail_length, rail_w, thickness, false));
+        bottom_rail
+            .operations
+            .push(cope_op(rail_length, rail_w, thickness));
         parts.push(bottom_rail);
 
-        let mut panel = Self::make_part("Raised Panel", DoorPartType::Panel, panel_dims, material_id);
+        let mut panel =
+            Self::make_part("Raised Panel", DoorPartType::Panel, panel_dims, material_id);
         // Panel raising is the key difference from Shaker
-        panel.operations.push(panel_raise_op(panel_w, panel_h, panel_thickness));
+        panel
+            .operations
+            .push(panel_raise_op(panel_w, panel_h, panel_thickness));
         parts.push(panel);
 
         parts
@@ -395,13 +463,19 @@ impl DoorProfileGenerator {
         thickness: f64,
         material_id: Uuid,
     ) -> Vec<DoorPart> {
-        let dims = Dimensions { width, height, thickness };
+        let dims = Dimensions {
+            width,
+            height,
+            thickness,
+        };
         let mut slab = Self::make_part("Slab Door", DoorPartType::Panel, dims, material_id);
         // All four edges get edge banding
         slab.edge_band = [true, true, true, true];
         slab.operations.push(edge_band_op(width, height, thickness));
-        slab.operations.push(hinge_bore_op(width, height, thickness, false));
-        slab.operations.push(perimeter_profile_op(width, height, thickness, 3.0));
+        slab.operations
+            .push(hinge_bore_op(width, height, thickness, false));
+        slab.operations
+            .push(perimeter_profile_op(width, height, thickness, 3.0));
         vec![slab]
     }
 
@@ -417,44 +491,112 @@ impl DoorProfileGenerator {
         let stile_w = Self::stile_width(width, height);
         let rail_length = width - 2.0 * stile_w;
 
-        let stile_dims = Dimensions { width: stile_w, height, thickness };
+        let stile_dims = Dimensions {
+            width: stile_w,
+            height,
+            thickness,
+        };
         // Cathedral top rail is taller to accommodate the arch
         let arch_height = (rail_length / 2.0).min(rail_w * 1.5);
         let top_rail_h = rail_w + arch_height;
-        let top_rail_dims = Dimensions { width: rail_length, height: top_rail_h, thickness };
-        let bottom_rail_dims = Dimensions { width: rail_length, height: rail_w, thickness };
+        let top_rail_dims = Dimensions {
+            width: rail_length,
+            height: top_rail_h,
+            thickness,
+        };
+        let bottom_rail_dims = Dimensions {
+            width: rail_length,
+            height: rail_w,
+            thickness,
+        };
 
         let panel_w = width - 2.0 * stile_w + 2.0 * GROOVE_DEPTH - 3.0;
         let panel_h = height - rail_w - top_rail_h + 2.0 * GROOVE_DEPTH - 3.0;
         let panel_thickness = thickness - 6.0;
-        let panel_dims = Dimensions { width: panel_w, height: panel_h, thickness: panel_thickness };
+        let panel_dims = Dimensions {
+            width: panel_w,
+            height: panel_h,
+            thickness: panel_thickness,
+        };
 
         let mut parts = Vec::new();
 
-        let mut left_stile = Self::make_part("Left Stile", DoorPartType::Stile, stile_dims.clone(), material_id);
-        left_stile.operations.push(stick_profile_op(stile_w, height, thickness, true));
-        left_stile.operations.push(hinge_bore_op(stile_w, height, thickness, true));
+        let mut left_stile = Self::make_part(
+            "Left Stile",
+            DoorPartType::Stile,
+            stile_dims.clone(),
+            material_id,
+        );
+        left_stile
+            .operations
+            .push(stick_profile_op(stile_w, height, thickness, true));
+        left_stile
+            .operations
+            .push(hinge_bore_op(stile_w, height, thickness, true));
         parts.push(left_stile);
 
-        let mut right_stile = Self::make_part("Right Stile", DoorPartType::Stile, stile_dims, material_id);
-        right_stile.operations.push(stick_profile_op(stile_w, height, thickness, true));
+        let mut right_stile =
+            Self::make_part("Right Stile", DoorPartType::Stile, stile_dims, material_id);
+        right_stile
+            .operations
+            .push(stick_profile_op(stile_w, height, thickness, true));
         parts.push(right_stile);
 
         // Top rail has an arc cut
-        let mut top_rail = Self::make_part("Top Rail (Cathedral)", DoorPartType::Rail, top_rail_dims, material_id);
-        top_rail.operations.push(stick_profile_op(rail_length, top_rail_h, thickness, false));
-        top_rail.operations.push(cope_op(rail_length, top_rail_h, thickness));
-        top_rail.operations.push(arc_cut_op(rail_length, top_rail_h, thickness, arch_height, false));
+        let mut top_rail = Self::make_part(
+            "Top Rail (Cathedral)",
+            DoorPartType::Rail,
+            top_rail_dims,
+            material_id,
+        );
+        top_rail
+            .operations
+            .push(stick_profile_op(rail_length, top_rail_h, thickness, false));
+        top_rail
+            .operations
+            .push(cope_op(rail_length, top_rail_h, thickness));
+        top_rail.operations.push(arc_cut_op(
+            rail_length,
+            top_rail_h,
+            thickness,
+            arch_height,
+            false,
+        ));
         parts.push(top_rail);
 
-        let mut bottom_rail = Self::make_part("Bottom Rail", DoorPartType::Rail, bottom_rail_dims, material_id);
-        bottom_rail.operations.push(stick_profile_op(rail_length, rail_w, thickness, false));
-        bottom_rail.operations.push(cope_op(rail_length, rail_w, thickness));
+        let mut bottom_rail = Self::make_part(
+            "Bottom Rail",
+            DoorPartType::Rail,
+            bottom_rail_dims,
+            material_id,
+        );
+        bottom_rail
+            .operations
+            .push(stick_profile_op(rail_length, rail_w, thickness, false));
+        bottom_rail
+            .operations
+            .push(cope_op(rail_length, rail_w, thickness));
         parts.push(bottom_rail);
 
-        let mut panel = Self::make_part("Cathedral Panel", DoorPartType::Panel, panel_dims.clone(), material_id);
-        panel.operations.push(arc_cut_op(panel_dims.width, panel_dims.height, panel_thickness, arch_height, true));
-        panel.operations.push(perimeter_profile_op(panel_dims.width, panel_dims.height, panel_thickness, 2.0));
+        let mut panel = Self::make_part(
+            "Cathedral Panel",
+            DoorPartType::Panel,
+            panel_dims.clone(),
+            material_id,
+        );
+        panel.operations.push(arc_cut_op(
+            panel_dims.width,
+            panel_dims.height,
+            panel_thickness,
+            arch_height,
+            true,
+        ));
+        panel.operations.push(perimeter_profile_op(
+            panel_dims.width,
+            panel_dims.height,
+            panel_thickness,
+            2.0,
+        ));
         parts.push(panel);
 
         parts
@@ -475,40 +617,108 @@ impl DoorProfileGenerator {
         // Full semicircle arch: radius = rail_length / 2
         let arch_height = rail_length / 2.0;
         let top_rail_h = rail_w + arch_height;
-        let stile_dims = Dimensions { width: stile_w, height, thickness };
-        let top_rail_dims = Dimensions { width: rail_length, height: top_rail_h, thickness };
-        let bottom_rail_dims = Dimensions { width: rail_length, height: rail_w, thickness };
+        let stile_dims = Dimensions {
+            width: stile_w,
+            height,
+            thickness,
+        };
+        let top_rail_dims = Dimensions {
+            width: rail_length,
+            height: top_rail_h,
+            thickness,
+        };
+        let bottom_rail_dims = Dimensions {
+            width: rail_length,
+            height: rail_w,
+            thickness,
+        };
 
         let panel_w = width - 2.0 * stile_w + 2.0 * GROOVE_DEPTH - 3.0;
         let panel_h = height - rail_w - top_rail_h + 2.0 * GROOVE_DEPTH - 3.0;
         let panel_thickness = thickness - 6.0;
-        let panel_dims = Dimensions { width: panel_w, height: panel_h, thickness: panel_thickness };
+        let panel_dims = Dimensions {
+            width: panel_w,
+            height: panel_h,
+            thickness: panel_thickness,
+        };
 
         let mut parts = Vec::new();
 
-        let mut left_stile = Self::make_part("Left Stile", DoorPartType::Stile, stile_dims.clone(), material_id);
-        left_stile.operations.push(stick_profile_op(stile_w, height, thickness, true));
-        left_stile.operations.push(hinge_bore_op(stile_w, height, thickness, true));
+        let mut left_stile = Self::make_part(
+            "Left Stile",
+            DoorPartType::Stile,
+            stile_dims.clone(),
+            material_id,
+        );
+        left_stile
+            .operations
+            .push(stick_profile_op(stile_w, height, thickness, true));
+        left_stile
+            .operations
+            .push(hinge_bore_op(stile_w, height, thickness, true));
         parts.push(left_stile);
 
-        let mut right_stile = Self::make_part("Right Stile", DoorPartType::Stile, stile_dims, material_id);
-        right_stile.operations.push(stick_profile_op(stile_w, height, thickness, true));
+        let mut right_stile =
+            Self::make_part("Right Stile", DoorPartType::Stile, stile_dims, material_id);
+        right_stile
+            .operations
+            .push(stick_profile_op(stile_w, height, thickness, true));
         parts.push(right_stile);
 
-        let mut top_rail = Self::make_part("Top Rail (Arch)", DoorPartType::Rail, top_rail_dims, material_id);
-        top_rail.operations.push(stick_profile_op(rail_length, top_rail_h, thickness, false));
-        top_rail.operations.push(cope_op(rail_length, top_rail_h, thickness));
-        top_rail.operations.push(arc_cut_op(rail_length, top_rail_h, thickness, arch_height, true));
+        let mut top_rail = Self::make_part(
+            "Top Rail (Arch)",
+            DoorPartType::Rail,
+            top_rail_dims,
+            material_id,
+        );
+        top_rail
+            .operations
+            .push(stick_profile_op(rail_length, top_rail_h, thickness, false));
+        top_rail
+            .operations
+            .push(cope_op(rail_length, top_rail_h, thickness));
+        top_rail.operations.push(arc_cut_op(
+            rail_length,
+            top_rail_h,
+            thickness,
+            arch_height,
+            true,
+        ));
         parts.push(top_rail);
 
-        let mut bottom_rail = Self::make_part("Bottom Rail", DoorPartType::Rail, bottom_rail_dims, material_id);
-        bottom_rail.operations.push(stick_profile_op(rail_length, rail_w, thickness, false));
-        bottom_rail.operations.push(cope_op(rail_length, rail_w, thickness));
+        let mut bottom_rail = Self::make_part(
+            "Bottom Rail",
+            DoorPartType::Rail,
+            bottom_rail_dims,
+            material_id,
+        );
+        bottom_rail
+            .operations
+            .push(stick_profile_op(rail_length, rail_w, thickness, false));
+        bottom_rail
+            .operations
+            .push(cope_op(rail_length, rail_w, thickness));
         parts.push(bottom_rail);
 
-        let mut panel = Self::make_part("Arched Panel", DoorPartType::Panel, panel_dims.clone(), material_id);
-        panel.operations.push(arc_cut_op(panel_dims.width, panel_dims.height, panel_thickness, arch_height, true));
-        panel.operations.push(perimeter_profile_op(panel_dims.width, panel_dims.height, panel_thickness, 2.0));
+        let mut panel = Self::make_part(
+            "Arched Panel",
+            DoorPartType::Panel,
+            panel_dims.clone(),
+            material_id,
+        );
+        panel.operations.push(arc_cut_op(
+            panel_dims.width,
+            panel_dims.height,
+            panel_thickness,
+            arch_height,
+            true,
+        ));
+        panel.operations.push(perimeter_profile_op(
+            panel_dims.width,
+            panel_dims.height,
+            panel_thickness,
+            2.0,
+        ));
         parts.push(panel);
 
         parts
@@ -523,25 +733,37 @@ impl DoorProfileGenerator {
         if width <= 0.0 {
             errors.push("Width must be greater than zero".into());
         } else if width < MIN_DOOR_WIDTH {
-            errors.push(format!("Width {width:.1}mm is below minimum {MIN_DOOR_WIDTH}mm"));
+            errors.push(format!(
+                "Width {width:.1}mm is below minimum {MIN_DOOR_WIDTH}mm"
+            ));
         } else if width > MAX_DOOR_WIDTH {
-            errors.push(format!("Width {width:.1}mm exceeds maximum {MAX_DOOR_WIDTH}mm"));
+            errors.push(format!(
+                "Width {width:.1}mm exceeds maximum {MAX_DOOR_WIDTH}mm"
+            ));
         }
 
         if height <= 0.0 {
             errors.push("Height must be greater than zero".into());
         } else if height < MIN_DOOR_HEIGHT {
-            errors.push(format!("Height {height:.1}mm is below minimum {MIN_DOOR_HEIGHT}mm"));
+            errors.push(format!(
+                "Height {height:.1}mm is below minimum {MIN_DOOR_HEIGHT}mm"
+            ));
         } else if height > MAX_DOOR_HEIGHT {
-            errors.push(format!("Height {height:.1}mm exceeds maximum {MAX_DOOR_HEIGHT}mm"));
+            errors.push(format!(
+                "Height {height:.1}mm exceeds maximum {MAX_DOOR_HEIGHT}mm"
+            ));
         }
 
         if thickness <= 0.0 {
             errors.push("Thickness must be greater than zero".into());
         } else if thickness < MIN_THICKNESS {
-            errors.push(format!("Thickness {thickness:.1}mm is below minimum {MIN_THICKNESS}mm"));
+            errors.push(format!(
+                "Thickness {thickness:.1}mm is below minimum {MIN_THICKNESS}mm"
+            ));
         } else if thickness > MAX_THICKNESS {
-            errors.push(format!("Thickness {thickness:.1}mm exceeds maximum {MAX_THICKNESS}mm"));
+            errors.push(format!(
+                "Thickness {thickness:.1}mm exceeds maximum {MAX_THICKNESS}mm"
+            ));
         }
 
         // Rail/stile proportion check (only meaningful when all dimensions > 0)
@@ -565,7 +787,12 @@ impl DoorProfileGenerator {
 
     // ── Private helpers ──────────────────────────────────────────────────────
 
-    fn make_part(name: &str, part_type: DoorPartType, dimensions: Dimensions, material_id: Uuid) -> DoorPart {
+    fn make_part(
+        name: &str,
+        part_type: DoorPartType,
+        dimensions: Dimensions,
+        material_id: Uuid,
+    ) -> DoorPart {
         DoorPart {
             id: Uuid::new_v4(),
             part_type,
@@ -726,10 +953,10 @@ fn edge_band_op(width: f64, height: f64, _thickness: f64) -> DoorOperation {
         tool_id: None,
         coordinates: vec![
             (0.0, 0.0, 0.0),
-            (width, 0.0, 0.0),      // bottom edge
-            (width, height, 0.0),   // right edge
-            (0.0, height, 0.0),     // top edge
-            (0.0, 0.0, 0.0),        // left edge / close loop
+            (width, 0.0, 0.0),    // bottom edge
+            (width, height, 0.0), // right edge
+            (0.0, height, 0.0),   // top edge
+            (0.0, 0.0, 0.0),      // left edge / close loop
         ],
         depth: EDGE_BAND_THICKNESS,
         feed_rate: 5000.0,
@@ -792,7 +1019,13 @@ fn perimeter_profile_op(width: f64, height: f64, _thickness: f64, radius: f64) -
 
 /// Arc cut for cathedral/arched rail or panel.
 /// `full_arch`: true = full semicircle (arched), false = single-apex arc (cathedral).
-fn arc_cut_op(width: f64, _height: f64, thickness: f64, arch_height: f64, full_arch: bool) -> DoorOperation {
+fn arc_cut_op(
+    width: f64,
+    _height: f64,
+    thickness: f64,
+    arch_height: f64,
+    full_arch: bool,
+) -> DoorOperation {
     let cx = width / 2.0;
     // Generate arc points (20-segment approximation)
     let segments = 20usize;
@@ -807,7 +1040,11 @@ fn arc_cut_op(width: f64, _height: f64, thickness: f64, arch_height: f64, full_a
         // Cathedral radius: chord = width, rise = arch_height
         (width * width) / (8.0 * arch_height) + arch_height / 2.0
     };
-    let cy = if full_arch { 0.0 } else { -radius + arch_height };
+    let cy = if full_arch {
+        0.0
+    } else {
+        -radius + arch_height
+    };
 
     let mut coords: Vec<(f64, f64, f64)> = (0..=segments)
         .map(|i| {
@@ -819,8 +1056,12 @@ fn arc_cut_op(width: f64, _height: f64, thickness: f64, arch_height: f64, full_a
         })
         .collect();
     // Ensure start/end are clamped to part edges
-    if let Some(first) = coords.first_mut() { first.0 = 0.0; }
-    if let Some(last) = coords.last_mut()  { last.0 = width; }
+    if let Some(first) = coords.first_mut() {
+        first.0 = 0.0;
+    }
+    if let Some(last) = coords.last_mut() {
+        last.0 = width;
+    }
 
     DoorOperation {
         id: Uuid::new_v4(),
@@ -995,7 +1236,9 @@ mod tests {
     #[test]
     fn test_generate_mdf_door_preserves_dimensions() {
         let (w, h, t) = std_dims();
-        let profile = gen().generate_mdf_door(w, h, t, DoorStyle::Slab, mat()).unwrap();
+        let profile = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::Slab, mat())
+            .unwrap();
         assert_eq!(profile.overall_dimensions.width, w);
         assert_eq!(profile.overall_dimensions.height, h);
         assert_eq!(profile.overall_dimensions.thickness, t);
@@ -1005,15 +1248,21 @@ mod tests {
     fn test_generate_mdf_door_preserves_material_id() {
         let m = mat();
         let (w, h, t) = std_dims();
-        let profile = gen().generate_mdf_door(w, h, t, DoorStyle::Shaker, m).unwrap();
+        let profile = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::Shaker, m)
+            .unwrap();
         assert_eq!(profile.material_id, m);
     }
 
     #[test]
     fn test_generate_mdf_door_has_unique_id() {
         let (w, h, t) = std_dims();
-        let p1 = gen().generate_mdf_door(w, h, t, DoorStyle::Slab, mat()).unwrap();
-        let p2 = gen().generate_mdf_door(w, h, t, DoorStyle::Slab, mat()).unwrap();
+        let p1 = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::Slab, mat())
+            .unwrap();
+        let p2 = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::Slab, mat())
+            .unwrap();
         assert_ne!(p1.id, p2.id);
     }
 
@@ -1030,7 +1279,10 @@ mod tests {
     fn test_shaker_has_two_stiles() {
         let (w, h, t) = std_dims();
         let parts = gen().generate_shaker_door(w, h, t, mat());
-        let stile_count = parts.iter().filter(|p| p.part_type == DoorPartType::Stile).count();
+        let stile_count = parts
+            .iter()
+            .filter(|p| p.part_type == DoorPartType::Stile)
+            .count();
         assert_eq!(stile_count, 2);
     }
 
@@ -1038,7 +1290,10 @@ mod tests {
     fn test_shaker_has_two_rails() {
         let (w, h, t) = std_dims();
         let parts = gen().generate_shaker_door(w, h, t, mat());
-        let rail_count = parts.iter().filter(|p| p.part_type == DoorPartType::Rail).count();
+        let rail_count = parts
+            .iter()
+            .filter(|p| p.part_type == DoorPartType::Rail)
+            .count();
         assert_eq!(rail_count, 2);
     }
 
@@ -1046,7 +1301,10 @@ mod tests {
     fn test_shaker_has_one_panel() {
         let (w, h, t) = std_dims();
         let parts = gen().generate_shaker_door(w, h, t, mat());
-        let panel_count = parts.iter().filter(|p| p.part_type == DoorPartType::Panel).count();
+        let panel_count = parts
+            .iter()
+            .filter(|p| p.part_type == DoorPartType::Panel)
+            .count();
         assert_eq!(panel_count, 1);
     }
 
@@ -1064,7 +1322,9 @@ mod tests {
         let (w, h, t) = std_dims();
         let parts = gen().generate_shaker_door(w, h, t, mat());
         let all_ops: Vec<_> = parts.iter().flat_map(|p| &p.operations).collect();
-        assert!(all_ops.iter().any(|op| op.op_type == DoorOpType::StickProfile));
+        assert!(all_ops
+            .iter()
+            .any(|op| op.op_type == DoorOpType::StickProfile));
     }
 
     #[test]
@@ -1072,7 +1332,9 @@ mod tests {
         let (w, h, t) = std_dims();
         let parts = gen().generate_shaker_door(w, h, t, mat());
         let all_ops: Vec<_> = parts.iter().flat_map(|p| &p.operations).collect();
-        assert!(all_ops.iter().any(|op| op.op_type == DoorOpType::CopeProfile));
+        assert!(all_ops
+            .iter()
+            .any(|op| op.op_type == DoorOpType::CopeProfile));
     }
 
     #[test]
@@ -1088,7 +1350,9 @@ mod tests {
         let (w, h, t) = std_dims();
         let parts = gen().generate_shaker_door(w, h, t, mat());
         let all_ops: Vec<_> = parts.iter().flat_map(|p| &p.operations).collect();
-        assert!(!all_ops.iter().any(|op| op.op_type == DoorOpType::PanelRaise));
+        assert!(!all_ops
+            .iter()
+            .any(|op| op.op_type == DoorOpType::PanelRaise));
     }
 
     // ── Raised Panel door ─────────────────────────────────────────────────────
@@ -1105,14 +1369,19 @@ mod tests {
         let (w, h, t) = std_dims();
         let parts = gen().generate_raised_panel_door(w, h, t, mat());
         let all_ops: Vec<_> = parts.iter().flat_map(|p| &p.operations).collect();
-        assert!(all_ops.iter().any(|op| op.op_type == DoorOpType::PanelRaise));
+        assert!(all_ops
+            .iter()
+            .any(|op| op.op_type == DoorOpType::PanelRaise));
     }
 
     #[test]
     fn test_raised_panel_panel_depth_equals_thickness() {
         let (w, h, t) = std_dims();
         let parts = gen().generate_raised_panel_door(w, h, t, mat());
-        let panel = parts.iter().find(|p| p.part_type == DoorPartType::Panel).unwrap();
+        let panel = parts
+            .iter()
+            .find(|p| p.part_type == DoorPartType::Panel)
+            .unwrap();
         assert_eq!(panel.dimensions.thickness, t);
     }
 
@@ -1120,8 +1389,14 @@ mod tests {
     fn test_raised_panel_has_two_stiles_two_rails() {
         let (w, h, t) = std_dims();
         let parts = gen().generate_raised_panel_door(w, h, t, mat());
-        let stiles = parts.iter().filter(|p| p.part_type == DoorPartType::Stile).count();
-        let rails = parts.iter().filter(|p| p.part_type == DoorPartType::Rail).count();
+        let stiles = parts
+            .iter()
+            .filter(|p| p.part_type == DoorPartType::Stile)
+            .count();
+        let rails = parts
+            .iter()
+            .filter(|p| p.part_type == DoorPartType::Rail)
+            .count();
         assert_eq!(stiles, 2);
         assert_eq!(rails, 2);
     }
@@ -1163,14 +1438,20 @@ mod tests {
     fn test_slab_has_edge_band_op() {
         let (w, h, t) = std_dims();
         let parts = gen().generate_slab_door(w, h, t, mat());
-        assert!(parts[0].operations.iter().any(|op| op.op_type == DoorOpType::EdgeBand));
+        assert!(parts[0]
+            .operations
+            .iter()
+            .any(|op| op.op_type == DoorOpType::EdgeBand));
     }
 
     #[test]
     fn test_slab_has_hinge_bore() {
         let (w, h, t) = std_dims();
         let parts = gen().generate_slab_door(w, h, t, mat());
-        assert!(parts[0].operations.iter().any(|op| op.op_type == DoorOpType::HingeBore));
+        assert!(parts[0]
+            .operations
+            .iter()
+            .any(|op| op.op_type == DoorOpType::HingeBore));
     }
 
     // ── Cathedral door ────────────────────────────────────────────────────────
@@ -1187,7 +1468,10 @@ mod tests {
         let (w, h, t) = std_dims();
         let parts = gen().generate_cathedral_door(w, h, t, mat());
         let top_rail = parts.iter().find(|p| p.name.contains("Cathedral")).unwrap();
-        assert!(top_rail.operations.iter().any(|op| op.op_type == DoorOpType::ArcCut));
+        assert!(top_rail
+            .operations
+            .iter()
+            .any(|op| op.op_type == DoorOpType::ArcCut));
     }
 
     #[test]
@@ -1195,15 +1479,24 @@ mod tests {
         let (w, h, t) = std_dims();
         let parts = gen().generate_cathedral_door(w, h, t, mat());
         let bottom_rail = parts.iter().find(|p| p.name == "Bottom Rail").unwrap();
-        assert!(!bottom_rail.operations.iter().any(|op| op.op_type == DoorOpType::ArcCut));
+        assert!(!bottom_rail
+            .operations
+            .iter()
+            .any(|op| op.op_type == DoorOpType::ArcCut));
     }
 
     #[test]
     fn test_cathedral_panel_has_arc_cut() {
         let (w, h, t) = std_dims();
         let parts = gen().generate_cathedral_door(w, h, t, mat());
-        let panel = parts.iter().find(|p| p.part_type == DoorPartType::Panel).unwrap();
-        assert!(panel.operations.iter().any(|op| op.op_type == DoorOpType::ArcCut));
+        let panel = parts
+            .iter()
+            .find(|p| p.part_type == DoorPartType::Panel)
+            .unwrap();
+        assert!(panel
+            .operations
+            .iter()
+            .any(|op| op.op_type == DoorOpType::ArcCut));
     }
 
     // ── Arched door ───────────────────────────────────────────────────────────
@@ -1220,16 +1513,37 @@ mod tests {
         let (w, h, t) = std_dims();
         let parts = gen().generate_arched_door(w, h, t, mat());
         let top_rail = parts.iter().find(|p| p.name.contains("Arch")).unwrap();
-        assert!(top_rail.operations.iter().any(|op| op.op_type == DoorOpType::ArcCut));
+        assert!(top_rail
+            .operations
+            .iter()
+            .any(|op| op.op_type == DoorOpType::ArcCut));
     }
 
     #[test]
     fn test_arched_has_stiles_rails_panel() {
         let (w, h, t) = std_dims();
         let parts = gen().generate_arched_door(w, h, t, mat());
-        assert_eq!(parts.iter().filter(|p| p.part_type == DoorPartType::Stile).count(), 2);
-        assert_eq!(parts.iter().filter(|p| p.part_type == DoorPartType::Rail).count(), 2);
-        assert_eq!(parts.iter().filter(|p| p.part_type == DoorPartType::Panel).count(), 1);
+        assert_eq!(
+            parts
+                .iter()
+                .filter(|p| p.part_type == DoorPartType::Stile)
+                .count(),
+            2
+        );
+        assert_eq!(
+            parts
+                .iter()
+                .filter(|p| p.part_type == DoorPartType::Rail)
+                .count(),
+            2
+        );
+        assert_eq!(
+            parts
+                .iter()
+                .filter(|p| p.part_type == DoorPartType::Panel)
+                .count(),
+            1
+        );
     }
 
     // ── Cut list ──────────────────────────────────────────────────────────────
@@ -1237,25 +1551,43 @@ mod tests {
     #[test]
     fn test_cut_list_shaker_has_5_entries() {
         let (w, h, t) = std_dims();
-        let profile = gen().generate_mdf_door(w, h, t, DoorStyle::Shaker, mat()).unwrap();
+        let profile = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::Shaker, mat())
+            .unwrap();
         assert_eq!(profile.cut_list.len(), 5);
     }
 
     #[test]
     fn test_cut_list_slab_has_1_entry() {
         let (w, h, t) = std_dims();
-        let profile = gen().generate_mdf_door(w, h, t, DoorStyle::Slab, mat()).unwrap();
+        let profile = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::Slab, mat())
+            .unwrap();
         assert_eq!(profile.cut_list.len(), 1);
     }
 
     #[test]
     fn test_cut_list_entries_have_positive_dimensions() {
         let (w, h, t) = std_dims();
-        let profile = gen().generate_mdf_door(w, h, t, DoorStyle::Shaker, mat()).unwrap();
+        let profile = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::Shaker, mat())
+            .unwrap();
         for entry in &profile.cut_list {
-            assert!(entry.length > 0.0, "{} has non-positive length", entry.part_name);
-            assert!(entry.width > 0.0, "{} has non-positive width", entry.part_name);
-            assert!(entry.thickness > 0.0, "{} has non-positive thickness", entry.part_name);
+            assert!(
+                entry.length > 0.0,
+                "{} has non-positive length",
+                entry.part_name
+            );
+            assert!(
+                entry.width > 0.0,
+                "{} has non-positive width",
+                entry.part_name
+            );
+            assert!(
+                entry.thickness > 0.0,
+                "{} has non-positive thickness",
+                entry.part_name
+            );
         }
     }
 
@@ -1263,7 +1595,9 @@ mod tests {
     fn test_cut_list_material_id_propagated() {
         let m = mat();
         let (w, h, t) = std_dims();
-        let profile = gen().generate_mdf_door(w, h, t, DoorStyle::Shaker, m).unwrap();
+        let profile = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::Shaker, m)
+            .unwrap();
         for entry in &profile.cut_list {
             assert_eq!(entry.material_id, m);
         }
@@ -1274,7 +1608,9 @@ mod tests {
     #[test]
     fn test_calculate_toolpath_returns_operations() {
         let (w, h, t) = std_dims();
-        let profile = gen().generate_mdf_door(w, h, t, DoorStyle::Shaker, mat()).unwrap();
+        let profile = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::Shaker, mat())
+            .unwrap();
         let toolpath = gen().calculate_toolpath(&profile);
         assert!(!toolpath.is_empty());
     }
@@ -1282,7 +1618,9 @@ mod tests {
     #[test]
     fn test_calculate_toolpath_count_matches_total_ops() {
         let (w, h, t) = std_dims();
-        let profile = gen().generate_mdf_door(w, h, t, DoorStyle::Shaker, mat()).unwrap();
+        let profile = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::Shaker, mat())
+            .unwrap();
         let toolpath = gen().calculate_toolpath(&profile);
         assert_eq!(toolpath.len(), profile.operations.len());
     }
@@ -1290,7 +1628,9 @@ mod tests {
     #[test]
     fn test_calculate_toolpath_hinge_bore_comes_first() {
         let (w, h, t) = std_dims();
-        let profile = gen().generate_mdf_door(w, h, t, DoorStyle::Shaker, mat()).unwrap();
+        let profile = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::Shaker, mat())
+            .unwrap();
         let toolpath = gen().calculate_toolpath(&profile);
         if let Some(first) = toolpath.first() {
             assert_eq!(first.op_type, DoorOpType::HingeBore);
@@ -1300,11 +1640,16 @@ mod tests {
     #[test]
     fn test_calculate_toolpath_slab_ordered() {
         let (w, h, t) = std_dims();
-        let profile = gen().generate_mdf_door(w, h, t, DoorStyle::Slab, mat()).unwrap();
+        let profile = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::Slab, mat())
+            .unwrap();
         let toolpath = gen().calculate_toolpath(&profile);
         // All operations should be present and ordered
         assert!(!toolpath.is_empty());
-        let orders: Vec<u8> = toolpath.iter().map(|op| toolpath_order(&op.op_type)).collect();
+        let orders: Vec<u8> = toolpath
+            .iter()
+            .map(|op| toolpath_order(&op.op_type))
+            .collect();
         let is_sorted = orders.windows(2).all(|w| w[0] <= w[1]);
         assert!(is_sorted, "Toolpath should be sorted by operation order");
     }
@@ -1312,7 +1657,9 @@ mod tests {
     #[test]
     fn test_calculate_toolpath_all_coords_finite() {
         let (w, h, t) = std_dims();
-        let profile = gen().generate_mdf_door(w, h, t, DoorStyle::Arched, mat()).unwrap();
+        let profile = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::Arched, mat())
+            .unwrap();
         let toolpath = gen().calculate_toolpath(&profile);
         for op in &toolpath {
             for &(x, y, z) in &op.coordinates {
@@ -1326,11 +1673,17 @@ mod tests {
     #[test]
     fn test_calculate_toolpath_positive_feed_rates() {
         let (w, h, t) = std_dims();
-        let profile = gen().generate_mdf_door(w, h, t, DoorStyle::RaisedPanel, mat()).unwrap();
+        let profile = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::RaisedPanel, mat())
+            .unwrap();
         let toolpath = gen().calculate_toolpath(&profile);
         for op in &toolpath {
             // Edge band spindle_rpm can be 0 (applied by machine), but feed should be positive
-            assert!(op.feed_rate > 0.0, "feed_rate should be > 0 for op {:?}", op.op_type);
+            assert!(
+                op.feed_rate > 0.0,
+                "feed_rate should be > 0 for op {:?}",
+                op.op_type
+            );
         }
     }
 
@@ -1338,13 +1691,25 @@ mod tests {
 
     #[test]
     fn test_minimum_valid_slab() {
-        let result = gen().generate_mdf_door(MIN_DOOR_WIDTH, MIN_DOOR_HEIGHT, MIN_THICKNESS, DoorStyle::Slab, mat());
+        let result = gen().generate_mdf_door(
+            MIN_DOOR_WIDTH,
+            MIN_DOOR_HEIGHT,
+            MIN_THICKNESS,
+            DoorStyle::Slab,
+            mat(),
+        );
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_maximum_valid_slab() {
-        let result = gen().generate_mdf_door(MAX_DOOR_WIDTH, MAX_DOOR_HEIGHT, MAX_THICKNESS, DoorStyle::Slab, mat());
+        let result = gen().generate_mdf_door(
+            MAX_DOOR_WIDTH,
+            MAX_DOOR_HEIGHT,
+            MAX_THICKNESS,
+            DoorStyle::Slab,
+            mat(),
+        );
         assert!(result.is_ok());
     }
 
@@ -1360,16 +1725,28 @@ mod tests {
     fn test_arched_door_all_styles_produce_non_empty_operations() {
         let (w, h, t) = std_dims();
         let m = mat();
-        for style in [DoorStyle::Shaker, DoorStyle::RaisedPanel, DoorStyle::Slab, DoorStyle::Cathedral, DoorStyle::Arched] {
+        for style in [
+            DoorStyle::Shaker,
+            DoorStyle::RaisedPanel,
+            DoorStyle::Slab,
+            DoorStyle::Cathedral,
+            DoorStyle::Arched,
+        ] {
             let profile = gen().generate_mdf_door(w, h, t, style.clone(), m).unwrap();
-            assert!(!profile.operations.is_empty(), "No operations for style {:?}", style);
+            assert!(
+                !profile.operations.is_empty(),
+                "No operations for style {:?}",
+                style
+            );
         }
     }
 
     #[test]
     fn test_all_parts_have_unique_ids() {
         let (w, h, t) = std_dims();
-        let profile = gen().generate_mdf_door(w, h, t, DoorStyle::Shaker, mat()).unwrap();
+        let profile = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::Shaker, mat())
+            .unwrap();
         let ids: Vec<_> = profile.parts.iter().map(|p| p.id).collect();
         let unique: std::collections::HashSet<_> = ids.iter().collect();
         assert_eq!(ids.len(), unique.len(), "All part IDs should be unique");
@@ -1378,10 +1755,16 @@ mod tests {
     #[test]
     fn test_all_operations_have_unique_ids() {
         let (w, h, t) = std_dims();
-        let profile = gen().generate_mdf_door(w, h, t, DoorStyle::Shaker, mat()).unwrap();
+        let profile = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::Shaker, mat())
+            .unwrap();
         let ids: Vec<_> = profile.operations.iter().map(|op| op.id).collect();
         let unique: std::collections::HashSet<_> = ids.iter().collect();
-        assert_eq!(ids.len(), unique.len(), "All operation IDs should be unique");
+        assert_eq!(
+            ids.len(),
+            unique.len(),
+            "All operation IDs should be unique"
+        );
     }
 
     #[test]
@@ -1400,7 +1783,9 @@ mod tests {
     #[test]
     fn test_door_profile_serialize() {
         let (w, h, t) = std_dims();
-        let profile = gen().generate_mdf_door(w, h, t, DoorStyle::Shaker, mat()).unwrap();
+        let profile = gen()
+            .generate_mdf_door(w, h, t, DoorStyle::Shaker, mat())
+            .unwrap();
         let json = serde_json::to_string(&profile);
         assert!(json.is_ok(), "DoorProfile must serialize to JSON");
     }
@@ -1411,8 +1796,14 @@ mod tests {
         let m = mat();
         let cath_parts = gen().generate_cathedral_door(w, h, t, m);
         let arch_parts = gen().generate_arched_door(w, h, t, m);
-        let cath_top = cath_parts.iter().find(|p| p.part_type == DoorPartType::Rail && p.name.contains("Top")).unwrap();
-        let arch_top = arch_parts.iter().find(|p| p.part_type == DoorPartType::Rail && p.name.contains("Top")).unwrap();
+        let cath_top = cath_parts
+            .iter()
+            .find(|p| p.part_type == DoorPartType::Rail && p.name.contains("Top"))
+            .unwrap();
+        let arch_top = arch_parts
+            .iter()
+            .find(|p| p.part_type == DoorPartType::Rail && p.name.contains("Top"))
+            .unwrap();
         // Arched door top rail should be taller (full semicircle vs. shallower cathedral arc)
         assert!(arch_top.dimensions.height >= cath_top.dimensions.height);
     }
@@ -1423,8 +1814,14 @@ mod tests {
         let m = mat();
         let shaker = gen().generate_shaker_door(w, h, t, m);
         let raised = gen().generate_raised_panel_door(w, h, t, m);
-        let sp = shaker.iter().find(|p| p.part_type == DoorPartType::Panel).unwrap();
-        let rp = raised.iter().find(|p| p.part_type == DoorPartType::Panel).unwrap();
+        let sp = shaker
+            .iter()
+            .find(|p| p.part_type == DoorPartType::Panel)
+            .unwrap();
+        let rp = raised
+            .iter()
+            .find(|p| p.part_type == DoorPartType::Panel)
+            .unwrap();
         // Shaker panel is recessed (thinner); raised panel is full thickness
         assert!(sp.dimensions.thickness < rp.dimensions.thickness);
     }
@@ -1433,7 +1830,9 @@ mod tests {
     fn test_hinge_bore_depth_correct() {
         let (w, h, t) = std_dims();
         let parts = gen().generate_shaker_door(w, h, t, mat());
-        let hinge_ops: Vec<_> = parts.iter().flat_map(|p| &p.operations)
+        let hinge_ops: Vec<_> = parts
+            .iter()
+            .flat_map(|p| &p.operations)
             .filter(|op| op.op_type == DoorOpType::HingeBore)
             .collect();
         assert!(!hinge_ops.is_empty());
@@ -1446,8 +1845,11 @@ mod tests {
     fn test_panel_raise_angle_op_has_8_coordinates() {
         let (w, h, t) = std_dims();
         let parts = gen().generate_raised_panel_door(w, h, t, mat());
-        let raise_op = parts.iter().flat_map(|p| &p.operations)
-            .find(|op| op.op_type == DoorOpType::PanelRaise).unwrap();
+        let raise_op = parts
+            .iter()
+            .flat_map(|p| &p.operations)
+            .find(|op| op.op_type == DoorOpType::PanelRaise)
+            .unwrap();
         assert_eq!(raise_op.coordinates.len(), 8);
     }
 
@@ -1455,12 +1857,17 @@ mod tests {
     fn test_arc_cut_coordinates_are_populated() {
         let (w, h, t) = std_dims();
         let parts = gen().generate_arched_door(w, h, t, mat());
-        let arc_ops: Vec<_> = parts.iter().flat_map(|p| &p.operations)
+        let arc_ops: Vec<_> = parts
+            .iter()
+            .flat_map(|p| &p.operations)
             .filter(|op| op.op_type == DoorOpType::ArcCut)
             .collect();
         assert!(!arc_ops.is_empty());
         for op in arc_ops {
-            assert!(op.coordinates.len() > 2, "Arc cut should have multiple coordinates");
+            assert!(
+                op.coordinates.len() > 2,
+                "Arc cut should have multiple coordinates"
+            );
         }
     }
 
@@ -1468,8 +1875,11 @@ mod tests {
     fn test_cope_op_has_four_coordinates() {
         let (w, h, t) = std_dims();
         let parts = gen().generate_shaker_door(w, h, t, mat());
-        let cope_op = parts.iter().flat_map(|p| &p.operations)
-            .find(|op| op.op_type == DoorOpType::CopeProfile).unwrap();
+        let cope_op = parts
+            .iter()
+            .flat_map(|p| &p.operations)
+            .find(|op| op.op_type == DoorOpType::CopeProfile)
+            .unwrap();
         assert_eq!(cope_op.coordinates.len(), 4);
     }
 
@@ -1477,7 +1887,13 @@ mod tests {
     fn test_generate_mdf_door_all_five_styles() {
         let (w, h, t) = std_dims();
         let m = mat();
-        for style in [DoorStyle::Shaker, DoorStyle::RaisedPanel, DoorStyle::Slab, DoorStyle::Cathedral, DoorStyle::Arched] {
+        for style in [
+            DoorStyle::Shaker,
+            DoorStyle::RaisedPanel,
+            DoorStyle::Slab,
+            DoorStyle::Cathedral,
+            DoorStyle::Arched,
+        ] {
             let result = gen().generate_mdf_door(w, h, t, style.clone(), m);
             assert!(result.is_ok(), "Failed for style {:?}", style);
         }

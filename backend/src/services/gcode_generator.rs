@@ -368,15 +368,7 @@ impl GCodeEmitter {
     }
 
     /// Emit `G2` (CW) or `G3` (CCW) arc using I/J offsets.
-    fn arc(
-        &mut self,
-        clockwise: bool,
-        end_x: f64,
-        end_y: f64,
-        i: f64,
-        j: f64,
-        feed: f64,
-    ) {
+    fn arc(&mut self, clockwise: bool, end_x: f64, end_y: f64, i: f64, j: f64, feed: f64) {
         let g = if clockwise { "G2" } else { "G3" };
         self.emit(&format!(
             "{} X{} Y{} I{} J{} F{}",
@@ -476,7 +468,9 @@ impl ToolpathPlanner {
     }
 
     /// Greedy nearest-neighbour reordering to minimise rapid travel distance.
-    fn nearest_neighbour_sort<'a>(mut ops: Vec<ResolvedOperation<'a>>) -> Vec<ResolvedOperation<'a>> {
+    fn nearest_neighbour_sort<'a>(
+        mut ops: Vec<ResolvedOperation<'a>>,
+    ) -> Vec<ResolvedOperation<'a>> {
         if ops.len() <= 1 {
             return ops;
         }
@@ -719,11 +713,7 @@ struct PostProcessorEngine;
 impl PostProcessorEngine {
     /// Build a variable map from the input and built-in values, then substitute
     /// all `{VARIABLE}` occurrences in the template.
-    fn apply(
-        template: &str,
-        input: &SheetGCodeInput,
-        tool_count: usize,
-    ) -> GCodeResult<String> {
+    fn apply(template: &str, input: &SheetGCodeInput, tool_count: usize) -> GCodeResult<String> {
         let mut vars: HashMap<String, String> = HashMap::new();
 
         // Built-in variables.
@@ -752,14 +742,8 @@ impl PostProcessorEngine {
             "THICKNESS".into(),
             format!("{:.1}", input.material_thickness),
         );
-        vars.insert(
-            "SHEET_WIDTH".into(),
-            format!("{:.1}", input.sheet_width),
-        );
-        vars.insert(
-            "SHEET_LENGTH".into(),
-            format!("{:.1}", input.sheet_length),
-        );
+        vars.insert("SHEET_WIDTH".into(), format!("{:.1}", input.sheet_width));
+        vars.insert("SHEET_LENGTH".into(), format!("{:.1}", input.sheet_length));
         vars.insert("PART_COUNT".into(), input.parts.len().to_string());
 
         // Override / extend with post-processor static variables if present.
@@ -773,9 +757,8 @@ impl PostProcessorEngine {
             }
         }
 
-        let re = Regex::new(r"\{([A-Z0-9_]+)\}").map_err(|e| {
-            GCodeError::TemplateError(format!("Regex compile error: {}", e))
-        })?;
+        let re = Regex::new(r"\{([A-Z0-9_]+)\}")
+            .map_err(|e| GCodeError::TemplateError(format!("Regex compile error: {}", e)))?;
 
         let result = re.replace_all(template, |caps: &regex::Captures| {
             let key = &caps[1];
@@ -932,7 +915,10 @@ fn generate_route(
     if use_compensation {
         // G41 = left (climb mill on outside), G42 = right (conventional).
         let comp_cmd = if climb { "G41" } else { "G42" };
-        e.comment(&format!("Tool compensation {} (D={}mm)", comp_cmd, tool.diameter));
+        e.comment(&format!(
+            "Tool compensation {} (D={}mm)",
+            comp_cmd, tool.diameter
+        ));
         e.emit(&format!(
             "{} D{}",
             comp_cmd,
@@ -944,7 +930,12 @@ fn generate_route(
 
     for pass in 0..num_passes {
         let pass_z = -(((pass as f64 + 1.0) * tool.max_depth_per_pass).min(op.depth));
-        e.comment(&format!("Route pass {}/{} at Z{:.3}", pass + 1, num_passes, pass_z));
+        e.comment(&format!(
+            "Route pass {}/{} at Z{:.3}",
+            pass + 1,
+            num_passes,
+            pass_z
+        ));
         e.plunge(pass_z, tool.plunge_rate);
         e.cut_xy(end_x, end_y, tool.feed_rate);
     }
@@ -1054,7 +1045,12 @@ fn generate_tenon(
 
     for pass in 0..num_passes {
         let pass_z = -(((pass as f64 + 1.0) * tool.max_depth_per_pass).min(op.depth));
-        e.comment(&format!("  Tenon pass {}/{} Z{:.3}", pass + 1, num_passes, pass_z));
+        e.comment(&format!(
+            "  Tenon pass {}/{} Z{:.3}",
+            pass + 1,
+            num_passes,
+            pass_z
+        ));
 
         // Profile the tenon shoulder perimeter (tool centre path = tenon perimeter + r).
         let x0 = abs_x - r;
@@ -1140,7 +1136,12 @@ fn generate_pocket(
 
     for depth_pass in 0..num_depth_passes {
         let pass_z = -(((depth_pass as f64 + 1.0) * tool.max_depth_per_pass).min(op.depth));
-        e.comment(&format!("  Depth pass {}/{} Z{:.3}", depth_pass + 1, num_depth_passes, pass_z));
+        e.comment(&format!(
+            "  Depth pass {}/{} Z{:.3}",
+            depth_pass + 1,
+            num_depth_passes,
+            pass_z
+        ));
 
         // Plunge at start corner.
         e.rapid_xyz(inner_x0, inner_y0, config.clearance_z);
@@ -1215,7 +1216,10 @@ fn generate_profile(
     };
 
     let r = tool.diameter / 2.0;
-    let lead_r = config.lead_in_radius.min(profile_width / 4.0).min(profile_height / 4.0);
+    let lead_r = config
+        .lead_in_radius
+        .min(profile_width / 4.0)
+        .min(profile_height / 4.0);
     let num_passes = depth_passes(op.depth, tool.max_depth_per_pass);
 
     // Tool centre path (outside of part perimeter for outside profile).
@@ -1239,7 +1243,12 @@ fn generate_profile(
         let arc_center_x = tc_x0;
         let arc_center_y = tc_y0;
 
-        e.comment(&format!("  Profile pass {}/{} Z{:.3}", pass + 1, num_passes, pass_z));
+        e.comment(&format!(
+            "  Profile pass {}/{} Z{:.3}",
+            pass + 1,
+            num_passes,
+            pass_z
+        ));
         e.rapid_xyz(entry_x, entry_y, config.clearance_z);
         e.plunge(pass_z, tool.plunge_rate);
 
@@ -1248,7 +1257,7 @@ fn generate_profile(
             false, // CCW = G3
             tc_x0,
             tc_y0 + lead_r,
-            lead_r,  // I offset from entry_x to arc centre
+            lead_r, // I offset from entry_x to arc centre
             0.0,
             tool.feed_rate,
         );
@@ -1293,7 +1302,10 @@ fn generate_cutout(
     let cut_height = op.height.unwrap_or(part.width);
 
     let r = tool.diameter / 2.0;
-    let lead_r = config.lead_in_radius.min(cut_width / 6.0).min(cut_height / 6.0);
+    let lead_r = config
+        .lead_in_radius
+        .min(cut_width / 6.0)
+        .min(cut_height / 6.0);
     let num_passes = depth_passes(op.depth, tool.max_depth_per_pass);
 
     // Tool centre path (just outside part perimeter).
@@ -1347,8 +1359,17 @@ fn generate_cutout(
         // On the final pass we leave tabs; all earlier passes cut through fully.
         let is_final_pass = pass == num_passes - 1;
 
-        e.comment(&format!("  Cutout pass {}/{} Z{:.3}{}", pass + 1, num_passes, pass_z,
-            if is_final_pass { " [final – tabs active]" } else { "" }));
+        e.comment(&format!(
+            "  Cutout pass {}/{} Z{:.3}{}",
+            pass + 1,
+            num_passes,
+            pass_z,
+            if is_final_pass {
+                " [final – tabs active]"
+            } else {
+                ""
+            }
+        ));
 
         // Lead-in approach.
         e.rapid_xyz(tc_x0 - lead_r, tc_y0, config.clearance_z);
@@ -1371,7 +1392,10 @@ fn generate_cutout(
         } else {
             // Full-depth perimeter without tabs.
             for (x0, y0, x1, y1) in &perimeter_segs {
-                e.comment(&format!("  Seg ({:.1},{:.1})→({:.1},{:.1})", x0, y0, x1, y1));
+                e.comment(&format!(
+                    "  Seg ({:.1},{:.1})→({:.1},{:.1})",
+                    x0, y0, x1, y1
+                ));
                 let _ = (y0, x0); // already at start via previous segment
                 e.cut_xy(*x1, *y1, tool.feed_rate);
             }
@@ -1393,8 +1417,8 @@ fn emit_perimeter_with_tabs(
     segs: &[(f64, f64, f64, f64)],
     tab_interval: f64,
     tab_width: f64,
-    tab_z: f64,  // Z height of tab top (shallow)
-    cut_z: f64,  // Full cutting depth (negative)
+    tab_z: f64, // Z height of tab top (shallow)
+    cut_z: f64, // Full cutting depth (negative)
     tool: &ToolInput,
     _config: &GCodeConfig,
 ) {
@@ -1451,7 +1475,7 @@ fn emit_perimeter_with_tabs(
                 e.cut_xy(ex, ey, tool.feed_rate);
                 cur_local = event_dist;
             }
-            match *event_type {
+            match event_type {
                 "start_tab" => {
                     e.comment("  Tab start – raise Z");
                     e.cut_xyz(
@@ -1574,13 +1598,21 @@ impl GCodeGenerator {
         {
             let mut e = GCodeEmitter::new(0, self.config.include_comments); // no line nums in header
             e.blank();
-            e.emit(if self.config.metric_units { "G21" } else { "G20" });
+            e.emit(if self.config.metric_units {
+                "G21"
+            } else {
+                "G20"
+            });
             e.comment(if self.config.metric_units {
                 "Units: millimetres"
             } else {
                 "Units: inches"
             });
-            e.emit(if self.config.absolute_mode { "G90" } else { "G91" });
+            e.emit(if self.config.absolute_mode {
+                "G90"
+            } else {
+                "G91"
+            });
             e.comment(if self.config.absolute_mode {
                 "Absolute coordinate mode"
             } else {
@@ -1615,8 +1647,10 @@ impl GCodeGenerator {
                 operation_id: None,
             };
             {
-                let mut e =
-                    GCodeEmitter::new(self.config.line_number_increment, self.config.include_comments);
+                let mut e = GCodeEmitter::new(
+                    self.config.line_number_increment,
+                    self.config.include_comments,
+                );
                 e.blank();
                 e.comment(&format!(
                     "══ Tool {} ══  {} Ø{:.1}mm  RPM: {}  Feed: {:.0}mm/min",
@@ -1676,26 +1710,39 @@ impl GCodeGenerator {
                 e.comment(&op_label);
 
                 match op.operation_type.to_lowercase().as_str() {
-                    "drill" => generate_drill(
-                        &mut e, abs_x, abs_y, op, tool, &self.config, &mut warnings,
-                    ),
-                    "route" => generate_route(
-                        &mut e, abs_x, abs_y, op, tool, &self.config, &mut warnings,
-                    ),
-                    "dado" => generate_dado(
-                        &mut e, abs_x, abs_y, op, tool, &self.config, &mut warnings,
-                    ),
-                    "tenon" => generate_tenon(
-                        &mut e, abs_x, abs_y, op, tool, &self.config, &mut warnings,
-                    ),
-                    "pocket" => generate_pocket(
-                        &mut e, abs_x, abs_y, op, tool, &self.config, &mut warnings,
-                    ),
+                    "drill" => {
+                        generate_drill(&mut e, abs_x, abs_y, op, tool, &self.config, &mut warnings)
+                    }
+                    "route" => {
+                        generate_route(&mut e, abs_x, abs_y, op, tool, &self.config, &mut warnings)
+                    }
+                    "dado" => {
+                        generate_dado(&mut e, abs_x, abs_y, op, tool, &self.config, &mut warnings)
+                    }
+                    "tenon" => {
+                        generate_tenon(&mut e, abs_x, abs_y, op, tool, &self.config, &mut warnings)
+                    }
+                    "pocket" => {
+                        generate_pocket(&mut e, abs_x, abs_y, op, tool, &self.config, &mut warnings)
+                    }
                     "profile" => generate_profile(
-                        &mut e, abs_x, abs_y, op, tool, &self.config, &mut warnings,
+                        &mut e,
+                        abs_x,
+                        abs_y,
+                        op,
+                        tool,
+                        &self.config,
+                        &mut warnings,
                     ),
                     "cutout" => generate_cutout(
-                        &mut e, abs_x, abs_y, op, tool, &self.config, part, &mut warnings,
+                        &mut e,
+                        abs_x,
+                        abs_y,
+                        op,
+                        tool,
+                        &self.config,
+                        part,
+                        &mut warnings,
                     ),
                     other => {
                         warnings.push(format!(
@@ -1720,8 +1767,10 @@ impl GCodeGenerator {
                 part_id: None,
                 operation_id: None,
             };
-            let mut e =
-                GCodeEmitter::new(self.config.line_number_increment, self.config.include_comments);
+            let mut e = GCodeEmitter::new(
+                self.config.line_number_increment,
+                self.config.include_comments,
+            );
             e.blank();
             e.comment("════ End of program ════");
             e.spindle_off();
@@ -1909,7 +1958,12 @@ mod tests {
         }
     }
 
-    fn minimal_sheet(op_type: &str, depth: f64, width: Option<f64>, height: Option<f64>) -> SheetGCodeInput {
+    fn minimal_sheet(
+        op_type: &str,
+        depth: f64,
+        width: Option<f64>,
+        height: Option<f64>,
+    ) -> SheetGCodeInput {
         SheetGCodeInput {
             sheet_id: Uuid::new_v4(),
             sheet_width: 1220.0,
@@ -2031,14 +2085,15 @@ mod tests {
         input.post_processor = Some(PostProcessorInput {
             name: "Generic NC".into(),
             output_format: "nc".into(),
-            template_content: "% Program: {PROGRAM_NAME} Date: {DATE} Material: {MATERIAL}"
-                .into(),
+            template_content: "% Program: {PROGRAM_NAME} Date: {DATE} Material: {MATERIAL}".into(),
             variables: serde_json::Value::Object(serde_json::Map::new()),
         });
         input.program_name = Some("MY_PROG".into());
         input.material = Some("PLYWOOD".into());
         let gen = GCodeGenerator::default();
-        let output = gen.generate(&input).expect("should generate with post-processor");
+        let output = gen
+            .generate(&input)
+            .expect("should generate with post-processor");
         assert!(output.raw.contains("MY_PROG"));
         assert!(output.raw.contains("PLYWOOD"));
     }

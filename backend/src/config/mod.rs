@@ -28,7 +28,9 @@ pub enum ConfigError {
 impl fmt::Display for ConfigError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ConfigError::MissingVar(var) => write!(f, "Missing required environment variable: {}", var),
+            ConfigError::MissingVar(var) => {
+                write!(f, "Missing required environment variable: {}", var)
+            }
             ConfigError::InvalidValue { var, message } => {
                 write!(f, "Invalid value for {}: {}", var, message)
             }
@@ -138,7 +140,7 @@ impl AppConfig {
 
             // JWT
             jwt_secret: require_var("JWT_SECRET")?,
-            jwt_access_expires_secs: parse_u64_var("JWT_ACCESS_EXPIRES_SECS", 900)?,   // 15 min
+            jwt_access_expires_secs: parse_u64_var("JWT_ACCESS_EXPIRES_SECS", 900)?, // 15 min
             jwt_refresh_expires_secs: parse_u64_var("JWT_REFRESH_EXPIRES_SECS", 604800)?, // 7 days
 
             // CORS

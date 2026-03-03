@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            pr.id                   AS product_id,\n            pr.name                 AS product_name,\n            r.name                  AS room_name,\n            p.id                    AS part_id,\n            p.name                  AS part_name,\n            p.part_type::TEXT       AS part_type,\n            p.length,\n            p.width,\n            p.thickness,\n            m.name                  AS material_name\n        FROM jobs j\n        JOIN rooms      r  ON r.job_id     = j.id\n        JOIN products   pr ON pr.room_id   = r.id\n        JOIN parts      p  ON p.product_id = pr.id\n        JOIN materials  m  ON m.id         = p.material_id\n        WHERE j.id = $1\n        ORDER BY r.name, pr.name, p.part_type::TEXT, p.name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "product_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "product_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "room_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "part_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "part_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "part_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "length",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "width",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "thickness",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 9,
+        "name": "material_name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "87982d0bf7948ef78b3b9995a78c60e03e3ffea65b5d5398070bf2eeb4a22d6a"
+}

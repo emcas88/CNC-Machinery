@@ -294,10 +294,7 @@ impl DependencyGraph {
         let part_id = op.part_id;
         let op_id = op.id;
         self.operations.insert(op_id, op);
-        self.part_operations
-            .entry(part_id)
-            .or_default()
-            .push(op_id);
+        self.part_operations.entry(part_id).or_default().push(op_id);
     }
 
     /// Build a graph from collections of parts and operations.
@@ -444,11 +441,10 @@ pub fn compute_part_dimensions(
         // Fixed shelves: length = product width − 2×side_thickness − clearance (both sides)
         //                width  = product depth − back_setback (shelf stops at back dado)
         PartType::Shelf => {
-            let new_length = (snap.new_width
-                - 2.0 * t
-                - 2.0 * constants::SHELF_CLEARANCE)
+            let new_length = (snap.new_width - 2.0 * t - 2.0 * constants::SHELF_CLEARANCE)
                 .max(constants::MIN_DIMENSION);
-            let new_width = (snap.new_depth - constants::BACK_SETBACK).max(constants::MIN_DIMENSION);
+            let new_width =
+                (snap.new_depth - constants::BACK_SETBACK).max(constants::MIN_DIMENSION);
             (new_length, new_width, new_thickness)
         }
 
@@ -596,16 +592,18 @@ impl PropagationEngine {
 
         // Emit dimension-changed event.
         if dimension_changed {
-            result.events.push(PropagationEvent::ProductDimensionChanged {
-                product_id,
-                old_width: old_w,
-                old_height: old_h,
-                old_depth: old_d,
-                new_width: new_w,
-                new_height: new_h,
-                new_depth: new_d,
-                timestamp: Utc::now(),
-            });
+            result
+                .events
+                .push(PropagationEvent::ProductDimensionChanged {
+                    product_id,
+                    old_width: old_w,
+                    old_height: old_h,
+                    old_depth: old_d,
+                    new_width: new_w,
+                    new_height: new_h,
+                    new_depth: new_d,
+                    timestamp: Utc::now(),
+                });
         }
 
         // Emit material-changed event.
@@ -618,12 +616,14 @@ impl PropagationEngine {
                 .copied()
                 .unwrap_or_else(Uuid::nil);
 
-            result.events.push(PropagationEvent::ProductMaterialChanged {
-                product_id,
-                old_material_id: old_mat_id,
-                new_material_id: new_mat_id,
-                timestamp: Utc::now(),
-            });
+            result
+                .events
+                .push(PropagationEvent::ProductMaterialChanged {
+                    product_id,
+                    old_material_id: old_mat_id,
+                    new_material_id: new_mat_id,
+                    timestamp: Utc::now(),
+                });
         }
 
         let snap = DimensionSnapshot {
@@ -717,8 +717,7 @@ impl PropagationEngine {
 
             let new_thickness = change.new_thickness.unwrap_or(part.thickness);
 
-            let thickness_actually_changed =
-                (new_thickness - part.thickness).abs() > f64::EPSILON;
+            let thickness_actually_changed = (new_thickness - part.thickness).abs() > f64::EPSILON;
 
             if !thickness_actually_changed {
                 // Cost-only change — part shape unchanged but we still emit event.
@@ -811,12 +810,8 @@ impl PropagationEngine {
                 None => continue,
             };
 
-            let (new_length, new_width, new_thickness) = compute_part_dimensions(
-                &part,
-                snap,
-                new_material_id,
-                new_material_thickness,
-            );
+            let (new_length, new_width, new_thickness) =
+                compute_part_dimensions(&part, snap, new_material_id, new_material_thickness);
 
             let dimensions_changed = (new_length - part.length).abs() > f64::EPSILON
                 || (new_width - part.width).abs() > f64::EPSILON
@@ -985,24 +980,72 @@ mod tests {
         let shelf_id = Uuid::new_v4();
 
         let mut parts = vec![
-            Part { id: side_l, product_id, name: "Left Side".into(), part_type: PartType::Side,
-                   length: 684.0, width: 560.0, thickness: 18.0, material_id: mat_id,
-                   grain_direction: GrainDirection::Vertical },
-            Part { id: side_r, product_id, name: "Right Side".into(), part_type: PartType::Side,
-                   length: 684.0, width: 560.0, thickness: 18.0, material_id: mat_id,
-                   grain_direction: GrainDirection::Vertical },
-            Part { id: top_id, product_id, name: "Top".into(), part_type: PartType::Top,
-                   length: 564.0, width: 560.0, thickness: 18.0, material_id: mat_id,
-                   grain_direction: GrainDirection::Horizontal },
-            Part { id: bot_id, product_id, name: "Bottom".into(), part_type: PartType::Bottom,
-                   length: 564.0, width: 560.0, thickness: 18.0, material_id: mat_id,
-                   grain_direction: GrainDirection::Horizontal },
-            Part { id: back_id, product_id, name: "Back".into(), part_type: PartType::Back,
-                   length: 710.0, width: 590.0, thickness: 6.0, material_id: mat_id,
-                   grain_direction: GrainDirection::None },
-            Part { id: shelf_id, product_id, name: "Shelf".into(), part_type: PartType::Shelf,
-                   length: 561.0, width: 555.0, thickness: 18.0, material_id: mat_id,
-                   grain_direction: GrainDirection::Horizontal },
+            Part {
+                id: side_l,
+                product_id,
+                name: "Left Side".into(),
+                part_type: PartType::Side,
+                length: 684.0,
+                width: 560.0,
+                thickness: 18.0,
+                material_id: mat_id,
+                grain_direction: GrainDirection::Vertical,
+            },
+            Part {
+                id: side_r,
+                product_id,
+                name: "Right Side".into(),
+                part_type: PartType::Side,
+                length: 684.0,
+                width: 560.0,
+                thickness: 18.0,
+                material_id: mat_id,
+                grain_direction: GrainDirection::Vertical,
+            },
+            Part {
+                id: top_id,
+                product_id,
+                name: "Top".into(),
+                part_type: PartType::Top,
+                length: 564.0,
+                width: 560.0,
+                thickness: 18.0,
+                material_id: mat_id,
+                grain_direction: GrainDirection::Horizontal,
+            },
+            Part {
+                id: bot_id,
+                product_id,
+                name: "Bottom".into(),
+                part_type: PartType::Bottom,
+                length: 564.0,
+                width: 560.0,
+                thickness: 18.0,
+                material_id: mat_id,
+                grain_direction: GrainDirection::Horizontal,
+            },
+            Part {
+                id: back_id,
+                product_id,
+                name: "Back".into(),
+                part_type: PartType::Back,
+                length: 710.0,
+                width: 590.0,
+                thickness: 6.0,
+                material_id: mat_id,
+                grain_direction: GrainDirection::None,
+            },
+            Part {
+                id: shelf_id,
+                product_id,
+                name: "Shelf".into(),
+                part_type: PartType::Shelf,
+                length: 561.0,
+                width: 555.0,
+                thickness: 18.0,
+                material_id: mat_id,
+                grain_direction: GrainDirection::Horizontal,
+            },
         ];
 
         let mut operations = Vec::new();
@@ -1105,38 +1148,70 @@ mod tests {
     fn test_product_width_change_scales_top_bottom() {
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
-        let change = ProductChange { new_width: Some(800.0), ..Default::default() };
+        let change = ProductChange {
+            new_width: Some(800.0),
+            ..Default::default()
+        };
         let snap = standard_snap(800.0, 720.0, 560.0);
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("propagation ok");
 
-        let top = result.affected_parts.iter().find(|p| p.part_type == PartType::Top).unwrap();
+        let top = result
+            .affected_parts
+            .iter()
+            .find(|p| p.part_type == PartType::Top)
+            .unwrap();
         // new_length = 800 - 2*18 = 764
-        assert!((top.length - 764.0).abs() < 1e-6, "top length = {}", top.length);
+        assert!(
+            (top.length - 764.0).abs() < 1e-6,
+            "top length = {}",
+            top.length
+        );
     }
 
     #[test]
     fn test_product_height_change_scales_sides() {
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
-        let change = ProductChange { new_height: Some(900.0), ..Default::default() };
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let change = ProductChange {
+            new_height: Some(900.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("propagation ok");
 
-        let side = result.affected_parts.iter().find(|p| p.part_type == PartType::Side).unwrap();
+        let side = result
+            .affected_parts
+            .iter()
+            .find(|p| p.part_type == PartType::Side)
+            .unwrap();
         // side_length = 900 - 2*18 = 864
-        assert!((side.length - 864.0).abs() < 1e-6, "side length = {}", side.length);
+        assert!(
+            (side.length - 864.0).abs() < 1e-6,
+            "side length = {}",
+            side.length
+        );
     }
 
     #[test]
     fn test_product_depth_change_scales_side_width() {
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
-        let change = ProductChange { new_depth: Some(600.0), ..Default::default() };
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let change = ProductChange {
+            new_depth: Some(600.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("propagation ok");
 
-        let side = result.affected_parts.iter().find(|p| p.part_type == PartType::Side).unwrap();
+        let side = result
+            .affected_parts
+            .iter()
+            .find(|p| p.part_type == PartType::Side)
+            .unwrap();
         assert!((side.width - 600.0).abs() < 1e-6);
     }
 
@@ -1144,30 +1219,64 @@ mod tests {
     fn test_back_panel_recalculated_with_setback() {
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
-        let change = ProductChange { new_width: Some(800.0), new_height: Some(900.0), ..Default::default() };
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let change = ProductChange {
+            new_width: Some(800.0),
+            new_height: Some(900.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("ok");
 
-        let back = result.affected_parts.iter().find(|p| p.part_type == PartType::Back).unwrap();
+        let back = result
+            .affected_parts
+            .iter()
+            .find(|p| p.part_type == PartType::Back)
+            .unwrap();
         // back_length = 900 - 2*5 = 890
         // back_width  = 800 - 2*5 = 790
-        assert!((back.length - 890.0).abs() < 1e-6, "back length = {}", back.length);
-        assert!((back.width  - 790.0).abs() < 1e-6, "back width  = {}", back.width);
+        assert!(
+            (back.length - 890.0).abs() < 1e-6,
+            "back length = {}",
+            back.length
+        );
+        assert!(
+            (back.width - 790.0).abs() < 1e-6,
+            "back width  = {}",
+            back.width
+        );
     }
 
     #[test]
     fn test_shelf_recalculated_with_clearance() {
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
-        let change = ProductChange { new_width: Some(900.0), new_depth: Some(600.0), ..Default::default() };
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let change = ProductChange {
+            new_width: Some(900.0),
+            new_depth: Some(600.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("ok");
 
-        let shelf = result.affected_parts.iter().find(|p| p.part_type == PartType::Shelf).unwrap();
+        let shelf = result
+            .affected_parts
+            .iter()
+            .find(|p| p.part_type == PartType::Shelf)
+            .unwrap();
         // shelf_length = 900 - 2*18 - 2*1 = 862
         // shelf_width  = 600 - 5 = 595
-        assert!((shelf.length - 862.0).abs() < 1e-6, "shelf length = {}", shelf.length);
-        assert!((shelf.width  - 595.0).abs() < 1e-6, "shelf width  = {}", shelf.width);
+        assert!(
+            (shelf.length - 862.0).abs() < 1e-6,
+            "shelf length = {}",
+            shelf.length
+        );
+        assert!(
+            (shelf.width - 595.0).abs() < 1e-6,
+            "shelf width  = {}",
+            shelf.width
+        );
     }
 
     #[test]
@@ -1175,25 +1284,34 @@ mod tests {
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
         let change = ProductChange::default(); // nothing changed
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("ok");
 
         assert!(!result.has_changes());
         assert_eq!(result.events.len(), 1);
-        assert!(matches!(result.events[0], PropagationEvent::NoChange { .. }));
+        assert!(matches!(
+            result.events[0],
+            PropagationEvent::NoChange { .. }
+        ));
     }
 
     #[test]
     fn test_product_change_emits_dimension_event() {
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
-        let change = ProductChange { new_width: Some(700.0), ..Default::default() };
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let change = ProductChange {
+            new_width: Some(700.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("ok");
 
-        let has_dim_event = result.events.iter().any(|e| {
-            matches!(e, PropagationEvent::ProductDimensionChanged { .. })
-        });
+        let has_dim_event = result
+            .events
+            .iter()
+            .any(|e| matches!(e, PropagationEvent::ProductDimensionChanged { .. }));
         assert!(has_dim_event);
     }
 
@@ -1202,13 +1320,19 @@ mod tests {
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
         let new_mat = Uuid::new_v4();
-        let change = ProductChange { new_material_id: Some(new_mat), new_material_thickness: Some(15.0), ..Default::default() };
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let change = ProductChange {
+            new_material_id: Some(new_mat),
+            new_material_thickness: Some(15.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("ok");
 
-        let has_mat_event = result.events.iter().any(|e| {
-            matches!(e, PropagationEvent::ProductMaterialChanged { .. })
-        });
+        let has_mat_event = result
+            .events
+            .iter()
+            .any(|e| matches!(e, PropagationEvent::ProductMaterialChanged { .. }));
         assert!(has_mat_event);
     }
 
@@ -1216,8 +1340,12 @@ mod tests {
     fn test_negative_dimension_returns_error() {
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
-        let change = ProductChange { new_width: Some(-100.0), ..Default::default() };
-        let res = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph);
+        let change = ProductChange {
+            new_width: Some(-100.0),
+            ..Default::default()
+        };
+        let res =
+            engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph);
         assert!(matches!(res, Err(PropagationError::InvalidDimension(_))));
     }
 
@@ -1226,16 +1354,28 @@ mod tests {
         let product_id = Uuid::new_v4();
         let mat = Uuid::new_v4();
         let part_id = Uuid::new_v4();
-        let part = Part { id: part_id, product_id, name: "Side".into(), part_type: PartType::Side,
-                          length: 100.0, width: 100.0, thickness: 18.0, material_id: mat,
-                          grain_direction: GrainDirection::Vertical };
+        let part = Part {
+            id: part_id,
+            product_id,
+            name: "Side".into(),
+            part_type: PartType::Side,
+            length: 100.0,
+            width: 100.0,
+            thickness: 18.0,
+            material_id: mat,
+            grain_direction: GrainDirection::Vertical,
+        };
         let mut graph = DependencyGraph::new();
         graph.add_part(part);
 
         let engine = base_engine();
         // New height == 0 → part length should clamp to MIN_DIMENSION
-        let change = ProductChange { new_height: Some(0.0), ..Default::default() };
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let change = ProductChange {
+            new_height: Some(0.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("ok");
 
         let updated = result.affected_parts.first().unwrap();
@@ -1246,8 +1386,12 @@ mod tests {
     fn test_product_change_no_parts_is_ok() {
         let graph = DependencyGraph::new();
         let engine = base_engine();
-        let change = ProductChange { new_width: Some(700.0), ..Default::default() };
-        let result = engine.on_product_change(Uuid::new_v4(), &change, (600.0, 720.0, 560.0), 18.0, &graph);
+        let change = ProductChange {
+            new_width: Some(700.0),
+            ..Default::default()
+        };
+        let result =
+            engine.on_product_change(Uuid::new_v4(), &change, (600.0, 720.0, 560.0), 18.0, &graph);
         assert!(result.is_ok());
     }
 
@@ -1255,8 +1399,14 @@ mod tests {
     fn test_all_six_parts_affected_on_resize() {
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
-        let change = ProductChange { new_width: Some(800.0), new_height: Some(900.0), new_depth: Some(600.0), ..Default::default() };
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let change = ProductChange {
+            new_width: Some(800.0),
+            new_height: Some(900.0),
+            new_depth: Some(600.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("ok");
         assert_eq!(result.affected_parts.len(), 6);
     }
@@ -1265,8 +1415,12 @@ mod tests {
     fn test_operations_recalculated_on_dimension_change() {
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
-        let change = ProductChange { new_height: Some(900.0), ..Default::default() };
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let change = ProductChange {
+            new_height: Some(900.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("ok");
         // 6 parts × 1 operation each
         assert_eq!(result.affected_operations.len(), 6);
@@ -1278,8 +1432,13 @@ mod tests {
     fn test_material_thickness_change_updates_parts() {
         let (graph, _, mat_id) = standard_graph();
         let engine = base_engine();
-        let change = MaterialChange { new_thickness: Some(15.0), ..Default::default() };
-        let result = engine.on_material_change(mat_id, &change, &graph).expect("ok");
+        let change = MaterialChange {
+            new_thickness: Some(15.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_material_change(mat_id, &change, &graph)
+            .expect("ok");
         // All 6 parts use mat_id
         assert_eq!(result.affected_parts.len(), 6);
         for p in &result.affected_parts {
@@ -1291,8 +1450,13 @@ mod tests {
     fn test_material_thickness_change_recalculates_operations() {
         let (graph, _, mat_id) = standard_graph();
         let engine = base_engine();
-        let change = MaterialChange { new_thickness: Some(15.0), ..Default::default() };
-        let result = engine.on_material_change(mat_id, &change, &graph).expect("ok");
+        let change = MaterialChange {
+            new_thickness: Some(15.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_material_change(mat_id, &change, &graph)
+            .expect("ok");
         assert_eq!(result.affected_operations.len(), 6);
     }
 
@@ -1301,8 +1465,13 @@ mod tests {
         let (graph, _, mat_id) = standard_graph();
         let engine = base_engine();
         // Only cost changed; thickness unchanged → no part updates
-        let change = MaterialChange { new_cost_per_unit: Some(99.99), ..Default::default() };
-        let result = engine.on_material_change(mat_id, &change, &graph).expect("ok");
+        let change = MaterialChange {
+            new_cost_per_unit: Some(99.99),
+            ..Default::default()
+        };
+        let result = engine
+            .on_material_change(mat_id, &change, &graph)
+            .expect("ok");
         assert!(result.affected_parts.is_empty());
     }
 
@@ -1310,10 +1479,18 @@ mod tests {
     fn test_material_change_unknown_material_is_no_op() {
         let (graph, _, _) = standard_graph();
         let engine = base_engine();
-        let change = MaterialChange { new_thickness: Some(20.0), ..Default::default() };
-        let result = engine.on_material_change(Uuid::new_v4(), &change, &graph).expect("ok");
+        let change = MaterialChange {
+            new_thickness: Some(20.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_material_change(Uuid::new_v4(), &change, &graph)
+            .expect("ok");
         assert!(!result.has_changes());
-        assert!(matches!(result.events[0], PropagationEvent::NoChange { .. }));
+        assert!(matches!(
+            result.events[0],
+            PropagationEvent::NoChange { .. }
+        ));
     }
 
     #[test]
@@ -1321,7 +1498,9 @@ mod tests {
         let (graph, _, mat_id) = standard_graph();
         let engine = base_engine();
         let change = MaterialChange::default();
-        let result = engine.on_material_change(mat_id, &change, &graph).expect("ok");
+        let result = engine
+            .on_material_change(mat_id, &change, &graph)
+            .expect("ok");
         assert!(!result.has_changes());
     }
 
@@ -1330,8 +1509,13 @@ mod tests {
         let (graph, _, mat_id) = standard_graph();
         let engine = base_engine();
         // same thickness as current (18.0) → no actual change
-        let change = MaterialChange { new_thickness: Some(18.0), ..Default::default() };
-        let result = engine.on_material_change(mat_id, &change, &graph).expect("ok");
+        let change = MaterialChange {
+            new_thickness: Some(18.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_material_change(mat_id, &change, &graph)
+            .expect("ok");
         // cost-only / no-thickness-delta → no parts affected
         assert!(result.affected_parts.is_empty());
     }
@@ -1340,7 +1524,10 @@ mod tests {
     fn test_material_negative_thickness_returns_error() {
         let (graph, _, mat_id) = standard_graph();
         let engine = base_engine();
-        let change = MaterialChange { new_thickness: Some(-5.0), ..Default::default() };
+        let change = MaterialChange {
+            new_thickness: Some(-5.0),
+            ..Default::default()
+        };
         let res = engine.on_material_change(mat_id, &change, &graph);
         assert!(matches!(res, Err(PropagationError::InvalidDimension(_))));
     }
@@ -1349,11 +1536,18 @@ mod tests {
     fn test_material_change_emits_thickness_events() {
         let (graph, _, mat_id) = standard_graph();
         let engine = base_engine();
-        let change = MaterialChange { new_thickness: Some(12.0), ..Default::default() };
-        let result = engine.on_material_change(mat_id, &change, &graph).expect("ok");
-        let thickness_events = result.events.iter().filter(|e| {
-            matches!(e, PropagationEvent::PartThicknessChangedByMaterial { .. })
-        }).count();
+        let change = MaterialChange {
+            new_thickness: Some(12.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_material_change(mat_id, &change, &graph)
+            .expect("ok");
+        let thickness_events = result
+            .events
+            .iter()
+            .filter(|e| matches!(e, PropagationEvent::PartThicknessChangedByMaterial { .. }))
+            .count();
         assert_eq!(thickness_events, 6);
     }
 
@@ -1512,12 +1706,26 @@ mod tests {
     fn test_compute_side_length_formula() {
         let product_id = Uuid::new_v4();
         let mat = Uuid::new_v4();
-        let side = Part { id: Uuid::new_v4(), product_id, name: "Side".into(),
-                          part_type: PartType::Side, length: 684.0, width: 560.0,
-                          thickness: 18.0, material_id: mat, grain_direction: GrainDirection::Vertical };
-        let snap = DimensionSnapshot { old_width: 600.0, old_height: 720.0, old_depth: 560.0,
-                                       new_width: 600.0, new_height: 800.0, new_depth: 560.0,
-                                       panel_thickness: 18.0 };
+        let side = Part {
+            id: Uuid::new_v4(),
+            product_id,
+            name: "Side".into(),
+            part_type: PartType::Side,
+            length: 684.0,
+            width: 560.0,
+            thickness: 18.0,
+            material_id: mat,
+            grain_direction: GrainDirection::Vertical,
+        };
+        let snap = DimensionSnapshot {
+            old_width: 600.0,
+            old_height: 720.0,
+            old_depth: 560.0,
+            new_width: 600.0,
+            new_height: 800.0,
+            new_depth: 560.0,
+            panel_thickness: 18.0,
+        };
         let (l, w, _) = compute_part_dimensions(&side, &snap, None, None);
         // 800 - 2*18 = 764
         assert!((l - 764.0).abs() < 1e-6);
@@ -1528,12 +1736,26 @@ mod tests {
     fn test_compute_top_length_formula() {
         let product_id = Uuid::new_v4();
         let mat = Uuid::new_v4();
-        let top = Part { id: Uuid::new_v4(), product_id, name: "Top".into(),
-                         part_type: PartType::Top, length: 564.0, width: 560.0,
-                         thickness: 18.0, material_id: mat, grain_direction: GrainDirection::Horizontal };
-        let snap = DimensionSnapshot { old_width: 600.0, old_height: 720.0, old_depth: 560.0,
-                                       new_width: 900.0, new_height: 720.0, new_depth: 560.0,
-                                       panel_thickness: 18.0 };
+        let top = Part {
+            id: Uuid::new_v4(),
+            product_id,
+            name: "Top".into(),
+            part_type: PartType::Top,
+            length: 564.0,
+            width: 560.0,
+            thickness: 18.0,
+            material_id: mat,
+            grain_direction: GrainDirection::Horizontal,
+        };
+        let snap = DimensionSnapshot {
+            old_width: 600.0,
+            old_height: 720.0,
+            old_depth: 560.0,
+            new_width: 900.0,
+            new_height: 720.0,
+            new_depth: 560.0,
+            panel_thickness: 18.0,
+        };
         let (l, w, _) = compute_part_dimensions(&top, &snap, None, None);
         // 900 - 36 = 864
         assert!((l - 864.0).abs() < 1e-6);
@@ -1543,12 +1765,26 @@ mod tests {
     fn test_compute_drawer_side_length_scales_with_depth() {
         let product_id = Uuid::new_v4();
         let mat = Uuid::new_v4();
-        let ds = Part { id: Uuid::new_v4(), product_id, name: "DrawerSide".into(),
-                        part_type: PartType::DrawerSide, length: 500.0, width: 100.0,
-                        thickness: 15.0, material_id: mat, grain_direction: GrainDirection::None };
-        let snap = DimensionSnapshot { old_width: 600.0, old_height: 720.0, old_depth: 500.0,
-                                       new_width: 600.0, new_height: 720.0, new_depth: 600.0,
-                                       panel_thickness: 15.0 };
+        let ds = Part {
+            id: Uuid::new_v4(),
+            product_id,
+            name: "DrawerSide".into(),
+            part_type: PartType::DrawerSide,
+            length: 500.0,
+            width: 100.0,
+            thickness: 15.0,
+            material_id: mat,
+            grain_direction: GrainDirection::None,
+        };
+        let snap = DimensionSnapshot {
+            old_width: 600.0,
+            old_height: 720.0,
+            old_depth: 500.0,
+            new_width: 600.0,
+            new_height: 720.0,
+            new_depth: 600.0,
+            panel_thickness: 15.0,
+        };
         let (l, _, _) = compute_part_dimensions(&ds, &snap, None, None);
         // 500 * (600/500) = 600
         assert!((l - 600.0).abs() < 1e-6);
@@ -1575,12 +1811,18 @@ mod tests {
     fn test_event_log_contains_part_dimension_events() {
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
-        let change = ProductChange { new_width: Some(700.0), ..Default::default() };
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let change = ProductChange {
+            new_width: Some(700.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("ok");
-        let part_dim_events = result.events.iter().filter(|e| {
-            matches!(e, PropagationEvent::PartDimensionChanged { .. })
-        }).count();
+        let part_dim_events = result
+            .events
+            .iter()
+            .filter(|e| matches!(e, PropagationEvent::PartDimensionChanged { .. }))
+            .count();
         assert!(part_dim_events > 0);
     }
 
@@ -1588,12 +1830,18 @@ mod tests {
     fn test_event_log_contains_operation_events() {
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
-        let change = ProductChange { new_width: Some(700.0), ..Default::default() };
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let change = ProductChange {
+            new_width: Some(700.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("ok");
-        let op_events = result.events.iter().filter(|e| {
-            matches!(e, PropagationEvent::OperationRecalculated { .. })
-        }).count();
+        let op_events = result
+            .events
+            .iter()
+            .filter(|e| matches!(e, PropagationEvent::OperationRecalculated { .. }))
+            .count();
         // Dado depth changes because thickness of back/shelf part may differ—
         // at minimum the sides' dado changes (side thickness remains 18, dado was 6, new = 6)
         // but other parts may have events; just assert non-negative:
@@ -1605,12 +1853,19 @@ mod tests {
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
         let new_mat = Uuid::new_v4();
-        let change = ProductChange { new_material_id: Some(new_mat), new_material_thickness: Some(15.0), ..Default::default() };
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let change = ProductChange {
+            new_material_id: Some(new_mat),
+            new_material_thickness: Some(15.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("ok");
-        let mat_changed = result.events.iter().filter(|e| {
-            matches!(e, PropagationEvent::PartMaterialChanged { .. })
-        }).count();
+        let mat_changed = result
+            .events
+            .iter()
+            .filter(|e| matches!(e, PropagationEvent::PartMaterialChanged { .. }))
+            .count();
         assert_eq!(mat_changed, 6);
     }
 
@@ -1619,7 +1874,12 @@ mod tests {
     #[test]
     fn test_propagation_result_has_changes_true() {
         let mut r = PropagationResult::new();
-        let part = new_part(Uuid::new_v4(), Uuid::new_v4(), PartType::Side, Uuid::new_v4());
+        let part = new_part(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            PartType::Side,
+            Uuid::new_v4(),
+        );
         r.affected_parts.push(part);
         assert!(r.has_changes());
     }
@@ -1636,8 +1896,14 @@ mod tests {
     fn test_large_cabinet_does_not_overflow() {
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
-        let change = ProductChange { new_width: Some(10_000.0), new_height: Some(10_000.0), new_depth: Some(10_000.0), ..Default::default() };
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let change = ProductChange {
+            new_width: Some(10_000.0),
+            new_height: Some(10_000.0),
+            new_depth: Some(10_000.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("ok");
         assert!(!result.affected_parts.is_empty());
         for p in &result.affected_parts {
@@ -1651,12 +1917,26 @@ mod tests {
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
         // 10×10×10 cabinet — most computed dims will be ≤0; all should clamp
-        let change = ProductChange { new_width: Some(10.0), new_height: Some(10.0), new_depth: Some(10.0), ..Default::default() };
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let change = ProductChange {
+            new_width: Some(10.0),
+            new_height: Some(10.0),
+            new_depth: Some(10.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("ok");
         for p in &result.affected_parts {
-            assert!(p.length >= constants::MIN_DIMENSION, "part {} length too small", p.name);
-            assert!(p.width  >= constants::MIN_DIMENSION, "part {} width too small", p.name);
+            assert!(
+                p.length >= constants::MIN_DIMENSION,
+                "part {} length too small",
+                p.name
+            );
+            assert!(
+                p.width >= constants::MIN_DIMENSION,
+                "part {} width too small",
+                p.name
+            );
         }
     }
 
@@ -1677,10 +1957,18 @@ mod tests {
         // Back width depends on product WIDTH, not HEIGHT — only height changed here.
         let (graph, product_id, _) = standard_graph();
         let engine = base_engine();
-        let change = ProductChange { new_height: Some(900.0), ..Default::default() };
-        let result = engine.on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let change = ProductChange {
+            new_height: Some(900.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_product_change(product_id, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("ok");
-        let back = result.affected_parts.iter().find(|p| p.part_type == PartType::Back).unwrap();
+        let back = result
+            .affected_parts
+            .iter()
+            .find(|p| p.part_type == PartType::Back)
+            .unwrap();
         // back_width = 600 - 2*5 = 590 (unchanged from original width 600)
         assert!((back.width - 590.0).abs() < 1e-6);
     }
@@ -1699,8 +1987,12 @@ mod tests {
         graph.add_part(p2);
 
         let engine = base_engine();
-        let change = ProductChange { new_width: Some(800.0), ..Default::default() };
-        let result = engine.on_product_change(pid1, &change, (600.0, 720.0, 560.0), 18.0, &graph)
+        let change = ProductChange {
+            new_width: Some(800.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_product_change(pid1, &change, (600.0, 720.0, 560.0), 18.0, &graph)
             .expect("ok");
 
         // Only pid1's parts should appear
@@ -1739,18 +2031,39 @@ mod tests {
         let mat_a = Uuid::new_v4();
         let mat_b = Uuid::new_v4();
 
-        let part_a = Part { id: Uuid::new_v4(), product_id, name: "A".into(),
-                            part_type: PartType::Side, length: 700.0, width: 500.0,
-                            thickness: 18.0, material_id: mat_a, grain_direction: GrainDirection::None };
-        let part_b = Part { id: Uuid::new_v4(), product_id, name: "B".into(),
-                            part_type: PartType::Back, length: 700.0, width: 500.0,
-                            thickness: 6.0, material_id: mat_b, grain_direction: GrainDirection::None };
+        let part_a = Part {
+            id: Uuid::new_v4(),
+            product_id,
+            name: "A".into(),
+            part_type: PartType::Side,
+            length: 700.0,
+            width: 500.0,
+            thickness: 18.0,
+            material_id: mat_a,
+            grain_direction: GrainDirection::None,
+        };
+        let part_b = Part {
+            id: Uuid::new_v4(),
+            product_id,
+            name: "B".into(),
+            part_type: PartType::Back,
+            length: 700.0,
+            width: 500.0,
+            thickness: 6.0,
+            material_id: mat_b,
+            grain_direction: GrainDirection::None,
+        };
         graph.add_part(part_a);
         graph.add_part(part_b);
 
         let engine = base_engine();
-        let change = MaterialChange { new_thickness: Some(20.0), ..Default::default() };
-        let result = engine.on_material_change(mat_a, &change, &graph).expect("ok");
+        let change = MaterialChange {
+            new_thickness: Some(20.0),
+            ..Default::default()
+        };
+        let result = engine
+            .on_material_change(mat_a, &change, &graph)
+            .expect("ok");
 
         assert_eq!(result.affected_parts.len(), 1);
         assert!((result.affected_parts[0].thickness - 20.0).abs() < 1e-6);

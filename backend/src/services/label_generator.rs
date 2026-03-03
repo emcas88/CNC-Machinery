@@ -494,8 +494,7 @@ impl LabelGenerator {
         let (width_mm, height_mm) = request.label_size.dimensions_mm();
         let barcode_value = request.effective_barcode_value();
         let barcode_data = self.generate_barcode(&barcode_value, request.barcode_type);
-        let content =
-            self.create_label_layout(width_mm, height_mm, request, barcode_data);
+        let content = self.create_label_layout(width_mm, height_mm, request, barcode_data);
         LabelOutput {
             content,
             format: request.label_format,
@@ -542,7 +541,11 @@ impl LabelGenerator {
         // Determine column split.  For small labels use the full width for
         // text, then place the barcode below.  For medium/large split 60/40.
         let is_small = width_mm < 30.0;
-        let text_col_width = if is_small { width_mm - 2.0 * margin } else { width_mm * 0.55 };
+        let text_col_width = if is_small {
+            width_mm - 2.0 * margin
+        } else {
+            width_mm * 0.55
+        };
 
         // ── Title / part name ────────────────────────────────────────────────
         let title_font = if is_small { 5.0 } else { 7.0 };
@@ -560,7 +563,11 @@ impl LabelGenerator {
         elements.push(LabelElement::Line {
             x1: margin,
             y1: y_cursor,
-            x2: if is_small { width_mm - margin } else { text_col_width + margin },
+            x2: if is_small {
+                width_mm - margin
+            } else {
+                text_col_width + margin
+            },
             y2: y_cursor,
             stroke_width: 0.2,
         });
@@ -604,7 +611,9 @@ impl LabelGenerator {
                     ("Ops".into(), request.operation_count.to_string()),
                 ];
                 for (label, value) in &rows {
-                    if y_cursor + line_step > height_mm - margin { break; }
+                    if y_cursor + line_step > height_mm - margin {
+                        break;
+                    }
                     let max_w = text_col_width.max(10.0);
                     let truncated = truncate_to_width(value, max_w, body_font);
                     elements.push(LabelElement::Text {
@@ -645,7 +654,9 @@ impl LabelGenerator {
                 );
                 rows.push(("Edges".into(), eb_str));
                 for (label, value) in &rows {
-                    if y_cursor + line_step > height_mm - margin { break; }
+                    if y_cursor + line_step > height_mm - margin {
+                        break;
+                    }
                     elements.push(LabelElement::Text {
                         x: margin,
                         y: y_cursor,
@@ -666,7 +677,9 @@ impl LabelGenerator {
                     });
                     y_cursor += line_step;
                     for op in &request.operations {
-                        if y_cursor + line_step > height_mm - margin { break; }
+                        if y_cursor + line_step > height_mm - margin {
+                            break;
+                        }
                         elements.push(LabelElement::Text {
                             x: margin + 2.0,
                             y: y_cursor,
@@ -681,11 +694,19 @@ impl LabelGenerator {
         }
 
         // ── Barcode ──────────────────────────────────────────────────────────
-        let barcode_x = if is_small { margin } else { text_col_width + margin * 2.0 };
+        let barcode_x = if is_small {
+            margin
+        } else {
+            text_col_width + margin * 2.0
+        };
         let barcode_y = margin + 1.0;
-        let barcode_w = if is_small { width_mm - 2.0 * margin } else { width_mm - barcode_x - margin };
+        let barcode_w = if is_small {
+            width_mm - 2.0 * margin
+        } else {
+            width_mm - barcode_x - margin
+        };
         let barcode_h = if request.barcode_type == BarcodeType::Qr {
-            barcode_w  // QR is square
+            barcode_w // QR is square
         } else {
             (barcode_w * 0.4).max(8.0)
         };
@@ -710,24 +731,72 @@ impl LabelGenerator {
             let mid_y = eb_y + eb_size / 2.0;
 
             // Draw part outline
-            elements.push(LabelElement::Line { x1: eb_x, y1: eb_y, x2: eb_x + eb_size, y2: eb_y, stroke_width: 0.3 });
-            elements.push(LabelElement::Line { x1: eb_x + eb_size, y1: eb_y, x2: eb_x + eb_size, y2: eb_y + eb_size, stroke_width: 0.3 });
-            elements.push(LabelElement::Line { x1: eb_x + eb_size, y1: eb_y + eb_size, x2: eb_x, y2: eb_y + eb_size, stroke_width: 0.3 });
-            elements.push(LabelElement::Line { x1: eb_x, y1: eb_y + eb_size, x2: eb_x, y2: eb_y, stroke_width: 0.3 });
+            elements.push(LabelElement::Line {
+                x1: eb_x,
+                y1: eb_y,
+                x2: eb_x + eb_size,
+                y2: eb_y,
+                stroke_width: 0.3,
+            });
+            elements.push(LabelElement::Line {
+                x1: eb_x + eb_size,
+                y1: eb_y,
+                x2: eb_x + eb_size,
+                y2: eb_y + eb_size,
+                stroke_width: 0.3,
+            });
+            elements.push(LabelElement::Line {
+                x1: eb_x + eb_size,
+                y1: eb_y + eb_size,
+                x2: eb_x,
+                y2: eb_y + eb_size,
+                stroke_width: 0.3,
+            });
+            elements.push(LabelElement::Line {
+                x1: eb_x,
+                y1: eb_y + eb_size,
+                x2: eb_x,
+                y2: eb_y,
+                stroke_width: 0.3,
+            });
 
             // Highlight edges that have edge banding (thicker stroke)
             let eb_stroke = 0.8_f64;
             if request.edge_band_top.is_some() {
-                elements.push(LabelElement::Line { x1: eb_x, y1: eb_y, x2: eb_x + eb_size, y2: eb_y, stroke_width: eb_stroke });
+                elements.push(LabelElement::Line {
+                    x1: eb_x,
+                    y1: eb_y,
+                    x2: eb_x + eb_size,
+                    y2: eb_y,
+                    stroke_width: eb_stroke,
+                });
             }
             if request.edge_band_bottom.is_some() {
-                elements.push(LabelElement::Line { x1: eb_x, y1: eb_y + eb_size, x2: eb_x + eb_size, y2: eb_y + eb_size, stroke_width: eb_stroke });
+                elements.push(LabelElement::Line {
+                    x1: eb_x,
+                    y1: eb_y + eb_size,
+                    x2: eb_x + eb_size,
+                    y2: eb_y + eb_size,
+                    stroke_width: eb_stroke,
+                });
             }
             if request.edge_band_left.is_some() {
-                elements.push(LabelElement::Line { x1: eb_x, y1: eb_y, x2: eb_x, y2: eb_y + eb_size, stroke_width: eb_stroke });
+                elements.push(LabelElement::Line {
+                    x1: eb_x,
+                    y1: eb_y,
+                    x2: eb_x,
+                    y2: eb_y + eb_size,
+                    stroke_width: eb_stroke,
+                });
             }
             if request.edge_band_right.is_some() {
-                elements.push(LabelElement::Line { x1: eb_x + eb_size, y1: eb_y, x2: eb_x + eb_size, y2: eb_y + eb_size, stroke_width: eb_stroke });
+                elements.push(LabelElement::Line {
+                    x1: eb_x + eb_size,
+                    y1: eb_y,
+                    x2: eb_x + eb_size,
+                    y2: eb_y + eb_size,
+                    stroke_width: eb_stroke,
+                });
             }
 
             // ── Grain direction arrow ─────────────────────────────────────────
@@ -780,10 +849,7 @@ impl LabelGenerator {
     ) -> String {
         match unit {
             DimensionUnit::Millimeters => {
-                format!(
-                    "{:.1} × {:.1} × {:.1} mm",
-                    length, width, thickness
-                )
+                format!("{:.1} × {:.1} × {:.1} mm", length, width, thickness)
             }
             DimensionUnit::Inches => {
                 let l = length / 25.4;
@@ -1013,7 +1079,9 @@ impl LabelGenerator {
             for row in row_range {
                 // Skip reserved modules
                 for &c in &[right_col, left_col] {
-                    if is_reserved(row, c) { continue; }
+                    if is_reserved(row, c) {
+                        continue;
+                    }
                     if bit_idx < bit_stream.len() {
                         matrix[row][c] = bit_stream[bit_idx];
                         bit_idx += 1;
@@ -1024,7 +1092,9 @@ impl LabelGenerator {
             going_up = !going_up;
             col -= 2;
             // Skip the timing column at col=6
-            if col == 6 { col -= 1; }
+            if col == 6 {
+                col -= 1;
+            }
         }
     }
 }
@@ -1043,13 +1113,21 @@ impl Default for LabelGenerator {
 /// (finder patterns, separators, timing patterns, format info).
 fn is_reserved(row: usize, col: usize) -> bool {
     // Top-left finder (rows 0-8, cols 0-8)
-    if row <= 8 && col <= 8 { return true; }
+    if row <= 8 && col <= 8 {
+        return true;
+    }
     // Top-right finder (rows 0-8, cols 13-20)
-    if row <= 8 && col >= QR_V1_SIZE - 8 { return true; }
+    if row <= 8 && col >= QR_V1_SIZE - 8 {
+        return true;
+    }
     // Bottom-left finder (rows 13-20, cols 0-8)
-    if row >= QR_V1_SIZE - 8 && col <= 8 { return true; }
+    if row >= QR_V1_SIZE - 8 && col <= 8 {
+        return true;
+    }
     // Timing rows/cols
-    if row == 6 || col == 6 { return true; }
+    if row == 6 || col == 6 {
+        return true;
+    }
     false
 }
 
@@ -1063,7 +1141,13 @@ fn format_edge_bands(
     right: Option<i32>,
 ) -> String {
     let fmt = |v: Option<i32>| v.map(|n| n.to_string()).unwrap_or_else(|| "-".into());
-    format!("T:{} B:{} L:{} R:{}", fmt(top), fmt(bottom), fmt(left), fmt(right))
+    format!(
+        "T:{} B:{} L:{} R:{}",
+        fmt(top),
+        fmt(bottom),
+        fmt(left),
+        fmt(right)
+    )
 }
 
 /// Naively truncate `s` so that it fits within `max_width_mm` at `font_size`.
@@ -1076,7 +1160,14 @@ fn truncate_to_width(s: &str, max_width_mm: f64, font_size: f64) -> String {
     if s.chars().count() <= max_chars {
         s.to_string()
     } else if max_chars > 1 {
-        format!("{}…", &s[..s.char_indices().nth(max_chars - 1).map(|(i, _)| i).unwrap_or(s.len())])
+        format!(
+            "{}…",
+            &s[..s
+                .char_indices()
+                .nth(max_chars - 1)
+                .map(|(i, _)| i)
+                .unwrap_or(s.len())]
+        )
     } else {
         s.chars().next().map(|c| c.to_string()).unwrap_or_default()
     }
@@ -1400,10 +1491,26 @@ mod tests {
         let bd = g.generate_barcode("X", BarcodeType::Qr);
         // Outer ring of top-left finder should be all dark
         for i in 0..7 {
-            assert!(bd.qr_matrix[0][i], "top-left finder top row dark at col {}", i);
-            assert!(bd.qr_matrix[6][i], "top-left finder bottom row dark at col {}", i);
-            assert!(bd.qr_matrix[i][0], "top-left finder left col dark at row {}", i);
-            assert!(bd.qr_matrix[i][6], "top-left finder right col dark at row {}", i);
+            assert!(
+                bd.qr_matrix[0][i],
+                "top-left finder top row dark at col {}",
+                i
+            );
+            assert!(
+                bd.qr_matrix[6][i],
+                "top-left finder bottom row dark at col {}",
+                i
+            );
+            assert!(
+                bd.qr_matrix[i][0],
+                "top-left finder left col dark at row {}",
+                i
+            );
+            assert!(
+                bd.qr_matrix[i][6],
+                "top-left finder right col dark at row {}",
+                i
+            );
         }
     }
 
@@ -1415,7 +1522,11 @@ mod tests {
         for r in 1..6 {
             for c in 1..6 {
                 if !(2..5).contains(&r) || !(2..5).contains(&c) {
-                    assert!(!bd.qr_matrix[r][c], "inner ring should be light at ({},{})", r, c);
+                    assert!(
+                        !bd.qr_matrix[r][c],
+                        "inner ring should be light at ({},{})",
+                        r, c
+                    );
                 }
             }
         }
@@ -1428,7 +1539,11 @@ mod tests {
         // Timing row 6 between col 8 and 12 should alternate dark/light
         for i in 8..13 {
             let expected = i % 2 == 0;
-            assert_eq!(bd.qr_matrix[6][i], expected, "timing row mismatch at col {}", i);
+            assert_eq!(
+                bd.qr_matrix[6][i], expected,
+                "timing row mismatch at col {}",
+                i
+            );
         }
     }
 
@@ -1439,7 +1554,11 @@ mod tests {
         // Timing col 6 between row 8 and 12 should alternate dark/light
         for i in 8..13 {
             let expected = i % 2 == 0;
-            assert_eq!(bd.qr_matrix[i][6], expected, "timing col mismatch at row {}", i);
+            assert_eq!(
+                bd.qr_matrix[i][6], expected,
+                "timing col mismatch at row {}",
+                i
+            );
         }
     }
 
@@ -1448,7 +1567,11 @@ mod tests {
     #[test]
     fn test_generate_label_returns_label_output() {
         let g = make_generator();
-        let req = make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let out = g.generate_label(&req);
         assert_eq!(out.format, LabelFormat::Standard);
         assert_eq!(out.size, LabelSize::Medium2x4);
@@ -1457,7 +1580,11 @@ mod tests {
     #[test]
     fn test_generate_label_canvas_dimensions_match_size() {
         let g = make_generator();
-        let req = make_request(LabelSize::Large4x6, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Large4x6,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let out = g.generate_label(&req);
         let (w, h) = LabelSize::Large4x6.dimensions_mm();
         assert!((out.content.width_mm - w).abs() < 0.001);
@@ -1467,7 +1594,11 @@ mod tests {
     #[test]
     fn test_generate_label_has_elements() {
         let g = make_generator();
-        let req = make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let out = g.generate_label(&req);
         assert!(!out.content.elements.is_empty());
     }
@@ -1475,23 +1606,43 @@ mod tests {
     #[test]
     fn test_generate_label_title_contains_part_name() {
         let g = make_generator();
-        let req = make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let out = g.generate_label(&req);
-        assert!(out.content.title.contains("Left Side Panel"), "title: {}", out.content.title);
+        assert!(
+            out.content.title.contains("Left Side Panel"),
+            "title: {}",
+            out.content.title
+        );
     }
 
     #[test]
     fn test_generate_label_title_contains_job_name() {
         let g = make_generator();
-        let req = make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let out = g.generate_label(&req);
-        assert!(out.content.title.contains("Kitchen Remodel"), "title: {}", out.content.title);
+        assert!(
+            out.content.title.contains("Kitchen Remodel"),
+            "title: {}",
+            out.content.title
+        );
     }
 
     #[test]
     fn test_generate_label_part_id_preserved() {
         let g = make_generator();
-        let req = make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let expected_id = req.part_id;
         let out = g.generate_label(&req);
         assert_eq!(out.content.part_id, expected_id);
@@ -1500,7 +1651,11 @@ mod tests {
     #[test]
     fn test_generate_label_has_unique_label_ids() {
         let g = make_generator();
-        let req = make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let a = g.generate_label(&req);
         let b = g.generate_label(&req);
         assert_ne!(a.label_id, b.label_id);
@@ -1509,34 +1664,62 @@ mod tests {
     #[test]
     fn test_generate_label_contains_barcode_element() {
         let g = make_generator();
-        let req = make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let out = g.generate_label(&req);
-        let has_barcode = out.content.elements.iter().any(|e| matches!(e, LabelElement::Barcode { .. }));
+        let has_barcode = out
+            .content
+            .elements
+            .iter()
+            .any(|e| matches!(e, LabelElement::Barcode { .. }));
         assert!(has_barcode, "no barcode element found");
     }
 
     #[test]
     fn test_generate_label_contains_text_element() {
         let g = make_generator();
-        let req = make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let out = g.generate_label(&req);
-        let has_text = out.content.elements.iter().any(|e| matches!(e, LabelElement::Text { .. }));
+        let has_text = out
+            .content
+            .elements
+            .iter()
+            .any(|e| matches!(e, LabelElement::Text { .. }));
         assert!(has_text, "no text element found");
     }
 
     #[test]
     fn test_generate_label_contains_line_element() {
         let g = make_generator();
-        let req = make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let out = g.generate_label(&req);
-        let has_line = out.content.elements.iter().any(|e| matches!(e, LabelElement::Line { .. }));
+        let has_line = out
+            .content
+            .elements
+            .iter()
+            .any(|e| matches!(e, LabelElement::Line { .. }));
         assert!(has_line, "no line element found");
     }
 
     #[test]
     fn test_generate_label_small_has_elements() {
         let g = make_generator();
-        let req = make_request(LabelSize::Small1x2_5, LabelFormat::Compact, BarcodeType::Code39);
+        let req = make_request(
+            LabelSize::Small1x2_5,
+            LabelFormat::Compact,
+            BarcodeType::Code39,
+        );
         let out = g.generate_label(&req);
         assert!(!out.content.elements.is_empty());
     }
@@ -1544,11 +1727,19 @@ mod tests {
     #[test]
     fn test_generate_label_compact_format() {
         let g = make_generator();
-        let req = make_request(LabelSize::Medium2x4, LabelFormat::Compact, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Compact,
+            BarcodeType::Code128,
+        );
         let out = g.generate_label(&req);
         assert_eq!(out.format, LabelFormat::Compact);
         // Compact should have fewer elements than Detailed
-        let detailed_req = make_request(LabelSize::Medium2x4, LabelFormat::Detailed, BarcodeType::Code128);
+        let detailed_req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Detailed,
+            BarcodeType::Code128,
+        );
         let detailed_out = g.generate_label(&detailed_req);
         assert!(out.content.elements.len() <= detailed_out.content.elements.len());
     }
@@ -1556,23 +1747,39 @@ mod tests {
     #[test]
     fn test_generate_label_detailed_format_has_operations() {
         let g = make_generator();
-        let req = make_request(LabelSize::Large4x6, LabelFormat::Detailed, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Large4x6,
+            LabelFormat::Detailed,
+            BarcodeType::Code128,
+        );
         let out = g.generate_label(&req);
         // Detailed format should include operation text elements
-        let op_texts: Vec<_> = out.content.elements.iter().filter(|e| {
-            if let LabelElement::Text { content, .. } = e {
-                content.contains("Cut") || content.contains("Operations")
-            } else {
-                false
-            }
-        }).collect();
-        assert!(!op_texts.is_empty(), "expected operation text elements in Detailed format");
+        let op_texts: Vec<_> = out
+            .content
+            .elements
+            .iter()
+            .filter(|e| {
+                if let LabelElement::Text { content, .. } = e {
+                    content.contains("Cut") || content.contains("Operations")
+                } else {
+                    false
+                }
+            })
+            .collect();
+        assert!(
+            !op_texts.is_empty(),
+            "expected operation text elements in Detailed format"
+        );
     }
 
     #[test]
     fn test_generate_label_standard_contains_job_name_text() {
         let g = make_generator();
-        let req = make_request(LabelSize::Large4x6, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Large4x6,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let out = g.generate_label(&req);
         let has_job = out.content.elements.iter().any(|e| {
             matches!(e, LabelElement::Text { content, .. } if content.contains("Kitchen Remodel"))
@@ -1594,50 +1801,88 @@ mod tests {
     #[test]
     fn test_generate_label_custom_barcode_value() {
         let g = make_generator();
-        let mut req = make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128);
+        let mut req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         req.barcode_value = Some("CUSTOM-VALUE-999".into());
         let out = g.generate_label(&req);
-        let has_custom = out.content.elements.iter().any(|e| {
-            matches!(e, LabelElement::Barcode { data, .. } if data.value == "CUSTOM-VALUE-999")
-        });
+        let has_custom = out.content.elements.iter().any(
+            |e| matches!(e, LabelElement::Barcode { data, .. } if data.value == "CUSTOM-VALUE-999"),
+        );
         assert!(has_custom, "expected custom barcode value in label");
     }
 
     #[test]
     fn test_generate_label_no_barcode_value_uses_part_id() {
         let g = make_generator();
-        let req = make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let part_id_str = req.part_id.to_string();
         let out = g.generate_label(&req);
-        let has_id = out.content.elements.iter().any(|e| {
-            matches!(e, LabelElement::Barcode { data, .. } if data.value == part_id_str)
-        });
-        assert!(has_id, "expected part_id as barcode value when none provided");
+        let has_id =
+            out.content.elements.iter().any(
+                |e| matches!(e, LabelElement::Barcode { data, .. } if data.value == part_id_str),
+            );
+        assert!(
+            has_id,
+            "expected part_id as barcode value when none provided"
+        );
     }
 
     #[test]
     fn test_generate_label_grain_direction_arrow_present() {
         let g = make_generator();
-        let req = make_request(LabelSize::Large4x6, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Large4x6,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let out = g.generate_label(&req);
-        let has_arrow = out.content.elements.iter().any(|e| matches!(e, LabelElement::Arrow { .. }));
-        assert!(has_arrow, "expected grain direction arrow for non-'none' grain");
+        let has_arrow = out
+            .content
+            .elements
+            .iter()
+            .any(|e| matches!(e, LabelElement::Arrow { .. }));
+        assert!(
+            has_arrow,
+            "expected grain direction arrow for non-'none' grain"
+        );
     }
 
     #[test]
     fn test_generate_label_no_arrow_when_grain_none() {
         let g = make_generator();
-        let mut req = make_request(LabelSize::Large4x6, LabelFormat::Standard, BarcodeType::Code128);
+        let mut req = make_request(
+            LabelSize::Large4x6,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         req.grain_direction = "none".into();
         let out = g.generate_label(&req);
-        let has_arrow = out.content.elements.iter().any(|e| matches!(e, LabelElement::Arrow { .. }));
-        assert!(!has_arrow, "no arrow expected when grain_direction is 'none'");
+        let has_arrow = out
+            .content
+            .elements
+            .iter()
+            .any(|e| matches!(e, LabelElement::Arrow { .. }));
+        assert!(
+            !has_arrow,
+            "no arrow expected when grain_direction is 'none'"
+        );
     }
 
     #[test]
     fn test_generate_label_all_elements_within_canvas() {
         let g = make_generator();
-        let req = make_request(LabelSize::Large4x6, LabelFormat::Detailed, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Large4x6,
+            LabelFormat::Detailed,
+            BarcodeType::Code128,
+        );
         let out = g.generate_label(&req);
         let w = out.content.width_mm;
         let h = out.content.height_mm;
@@ -1677,7 +1922,15 @@ mod tests {
     #[test]
     fn test_batch_labels_count_matches_input() {
         let g = make_generator();
-        let reqs: Vec<LabelRequest> = (0..5).map(|_| make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128)).collect();
+        let reqs: Vec<LabelRequest> = (0..5)
+            .map(|_| {
+                make_request(
+                    LabelSize::Medium2x4,
+                    LabelFormat::Standard,
+                    BarcodeType::Code128,
+                )
+            })
+            .collect();
         let result = g.generate_batch_labels(&reqs);
         assert_eq!(result.len(), 5);
     }
@@ -1685,7 +1938,15 @@ mod tests {
     #[test]
     fn test_batch_labels_each_has_unique_label_id() {
         let g = make_generator();
-        let reqs: Vec<LabelRequest> = (0..10).map(|_| make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128)).collect();
+        let reqs: Vec<LabelRequest> = (0..10)
+            .map(|_| {
+                make_request(
+                    LabelSize::Medium2x4,
+                    LabelFormat::Standard,
+                    BarcodeType::Code128,
+                )
+            })
+            .collect();
         let result = g.generate_batch_labels(&reqs);
         let ids: std::collections::HashSet<Uuid> = result.iter().map(|o| o.label_id).collect();
         assert_eq!(ids.len(), 10, "each label should have a unique ID");
@@ -1694,11 +1955,23 @@ mod tests {
     #[test]
     fn test_batch_labels_part_ids_preserved() {
         let g = make_generator();
-        let reqs: Vec<LabelRequest> = (0..3).map(|_| make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128)).collect();
+        let reqs: Vec<LabelRequest> = (0..3)
+            .map(|_| {
+                make_request(
+                    LabelSize::Medium2x4,
+                    LabelFormat::Standard,
+                    BarcodeType::Code128,
+                )
+            })
+            .collect();
         let part_ids: Vec<Uuid> = reqs.iter().map(|r| r.part_id).collect();
         let result = g.generate_batch_labels(&reqs);
         for (i, out) in result.iter().enumerate() {
-            assert_eq!(out.content.part_id, part_ids[i], "part_id mismatch at index {}", i);
+            assert_eq!(
+                out.content.part_id, part_ids[i],
+                "part_id mismatch at index {}",
+                i
+            );
         }
     }
 
@@ -1706,8 +1979,16 @@ mod tests {
     fn test_batch_labels_mixed_sizes() {
         let g = make_generator();
         let reqs = vec![
-            make_request(LabelSize::Small1x2_5, LabelFormat::Compact, BarcodeType::Code39),
-            make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128),
+            make_request(
+                LabelSize::Small1x2_5,
+                LabelFormat::Compact,
+                BarcodeType::Code39,
+            ),
+            make_request(
+                LabelSize::Medium2x4,
+                LabelFormat::Standard,
+                BarcodeType::Code128,
+            ),
             make_request(LabelSize::Large4x6, LabelFormat::Detailed, BarcodeType::Qr),
         ];
         let result = g.generate_batch_labels(&reqs);
@@ -1719,7 +2000,11 @@ mod tests {
     #[test]
     fn test_batch_single_label() {
         let g = make_generator();
-        let reqs = vec![make_request(LabelSize::Large4x6, LabelFormat::Detailed, BarcodeType::Code128)];
+        let reqs = vec![make_request(
+            LabelSize::Large4x6,
+            LabelFormat::Detailed,
+            BarcodeType::Code128,
+        )];
         let result = g.generate_batch_labels(&reqs);
         assert_eq!(result.len(), 1);
     }
@@ -1756,27 +2041,42 @@ mod tests {
     #[test]
     fn test_edge_band_indicator_lines_on_standard_label() {
         let g = make_generator();
-        let req = make_request(LabelSize::Large4x6, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Large4x6,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let out = g.generate_label(&req);
         // Should have thick edge-band lines (stroke_width 0.8) for top, bottom, right
         let thick_lines: Vec<_> = out.content.elements.iter().filter(|e| {
             matches!(e, LabelElement::Line { stroke_width, .. } if (*stroke_width - 0.8).abs() < 0.01)
         }).collect();
-        assert!(!thick_lines.is_empty(), "expected thick edge-band indicator lines");
+        assert!(
+            !thick_lines.is_empty(),
+            "expected thick edge-band indicator lines"
+        );
     }
 
     // ── LabelRequest helper tests ────────────────────────────────────────────
 
     #[test]
     fn test_effective_barcode_value_uses_custom_when_set() {
-        let mut req = make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128);
+        let mut req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         req.barcode_value = Some("CUSTOM-123".into());
         assert_eq!(req.effective_barcode_value(), "CUSTOM-123");
     }
 
     #[test]
     fn test_effective_barcode_value_falls_back_to_part_id() {
-        let req = make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let id_str = req.part_id.to_string();
         assert_eq!(req.effective_barcode_value(), id_str);
     }
@@ -1802,10 +2102,18 @@ mod tests {
     #[test]
     fn test_all_three_formats_produce_output() {
         let g = make_generator();
-        for format in &[LabelFormat::Compact, LabelFormat::Standard, LabelFormat::Detailed] {
+        for format in &[
+            LabelFormat::Compact,
+            LabelFormat::Standard,
+            LabelFormat::Detailed,
+        ] {
             let req = make_request(LabelSize::Large4x6, *format, BarcodeType::Code128);
             let out = g.generate_label(&req);
-            assert!(!out.content.elements.is_empty(), "format {:?} produced no elements", format);
+            assert!(
+                !out.content.elements.is_empty(),
+                "format {:?} produced no elements",
+                format
+            );
         }
     }
 
@@ -1815,9 +2123,9 @@ mod tests {
         for btype in &[BarcodeType::Code128, BarcodeType::Code39, BarcodeType::Qr] {
             let req = make_request(LabelSize::Large4x6, LabelFormat::Standard, *btype);
             let out = g.generate_label(&req);
-            let has_barcode = out.content.elements.iter().any(|e| {
-                matches!(e, LabelElement::Barcode { data, .. } if data.barcode_type == *btype)
-            });
+            let has_barcode = out.content.elements.iter().any(
+                |e| matches!(e, LabelElement::Barcode { data, .. } if data.barcode_type == *btype),
+            );
             assert!(has_barcode, "missing barcode element for type {:?}", btype);
         }
     }
@@ -1837,7 +2145,11 @@ mod tests {
     #[test]
     fn test_label_output_serializes() {
         let g = make_generator();
-        let req = make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let out = g.generate_label(&req);
         let json = serde_json::to_string(&out).expect("serialize label output");
         assert!(!json.is_empty());
@@ -1849,7 +2161,11 @@ mod tests {
     #[test]
     fn test_default_creates_generator() {
         let g = LabelGenerator::default();
-        let req = make_request(LabelSize::Medium2x4, LabelFormat::Standard, BarcodeType::Code128);
+        let req = make_request(
+            LabelSize::Medium2x4,
+            LabelFormat::Standard,
+            BarcodeType::Code128,
+        );
         let out = g.generate_label(&req);
         assert!(!out.content.elements.is_empty());
     }
@@ -1866,8 +2182,8 @@ mod tests {
 
     #[test]
     fn test_is_reserved_timing() {
-        assert!(is_reserved(6, 10));  // timing row
-        assert!(is_reserved(10, 6));  // timing col
+        assert!(is_reserved(6, 10)); // timing row
+        assert!(is_reserved(10, 6)); // timing col
     }
 
     #[test]

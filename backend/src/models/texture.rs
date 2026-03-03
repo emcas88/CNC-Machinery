@@ -2,6 +2,8 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+pub use super::texture_group::{CreateTextureGroup, TextureGroup, UpdateTextureGroup};
+
 /// Surface sheen level of the texture/finish.
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type, PartialEq)]
 #[sqlx(type_name = "texture_sheen", rename_all = "snake_case")]
@@ -15,6 +17,19 @@ pub enum TextureSheen {
     Glass,
 }
 
+impl std::fmt::Display for TextureSheen {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::None => write!(f, "none"),
+            Self::Flat => write!(f, "flat"),
+            Self::Satin => write!(f, "satin"),
+            Self::SemiGloss => write!(f, "semi_gloss"),
+            Self::HighGloss => write!(f, "high_gloss"),
+            Self::Glass => write!(f, "glass"),
+        }
+    }
+}
+
 /// Grain orientation for visual rendering alignment.
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type, PartialEq)]
 #[sqlx(type_name = "texture_grain_orientation", rename_all = "snake_case")]
@@ -23,6 +38,16 @@ pub enum GrainOrientation {
     Horizontal,
     Vertical,
     None,
+}
+
+impl std::fmt::Display for GrainOrientation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Horizontal => write!(f, "horizontal"),
+            Self::Vertical => write!(f, "vertical"),
+            Self::None => write!(f, "none"),
+        }
+    }
 }
 
 /// A visual texture/finish definition used for rendering.
@@ -68,6 +93,8 @@ pub struct CreateTexture {
     pub rotation_angle: f64,
     pub texture_group_id: Option<Uuid>,
 }
+
+pub type Sheen = TextureSheen;
 
 /// DTO for updating an existing texture.
 #[derive(Debug, Deserialize)]

@@ -24,7 +24,7 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
 
     // Load configuration from environment.
-    let config = config::AppConfig::from_env();
+    let config = config::AppConfig::from_env_or_exit();
 
     log::info!(
         "Starting CNC Machinery backend on {}:{}",

@@ -394,8 +394,7 @@ impl CloudRenderer {
 
         let id = Uuid::new_v4();
         let now = Utc::now();
-        let estimated_seconds =
-            Self::estimate_render_time(request.resolution, request.quality);
+        let estimated_seconds = Self::estimate_render_time(request.resolution, request.quality);
 
         let job = RenderJob {
             id,
@@ -438,16 +437,15 @@ impl CloudRenderer {
                 .result
                 .clone()
                 .ok_or_else(|| format!("job {} is complete but result data is missing", job_id)),
-            RenderStatus::Queued => {
-                Err(format!("job {} is still queued; result not available", job_id))
-            }
+            RenderStatus::Queued => Err(format!(
+                "job {} is still queued; result not available",
+                job_id
+            )),
             RenderStatus::Processing => Err(format!(
                 "job {} is still processing; result not available",
                 job_id
             )),
-            RenderStatus::Failed(reason) => {
-                Err(format!("job {} failed: {}", job_id, reason))
-            }
+            RenderStatus::Failed(reason) => Err(format!("job {} failed: {}", job_id, reason)),
             RenderStatus::Cancelled => {
                 Err(format!("job {} was cancelled; no result available", job_id))
             }
@@ -480,7 +478,10 @@ impl CloudRenderer {
     /// List all jobs, optionally filtered to those with a specific status.
     ///
     /// Returns a snapshot (cloned) vector of [`RenderJob`] records.
-    pub fn list_jobs(&self, status_filter: Option<&RenderStatus>) -> Result<Vec<RenderJob>, String> {
+    pub fn list_jobs(
+        &self,
+        status_filter: Option<&RenderStatus>,
+    ) -> Result<Vec<RenderJob>, String> {
         let jobs = self.jobs.lock().map_err(|e| e.to_string())?;
         let result: Vec<RenderJob> = jobs
             .values()
@@ -579,7 +580,11 @@ mod helpers {
                 object_id: Uuid::new_v4(),
                 name: "Base Cabinet".to_string(),
                 mesh_ref: "cabinet_base_v1".to_string(),
-                position: Vec3 { x: 0.0, y: 0.0, z: 0.0 },
+                position: Vec3 {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
                 material_id: None,
             }],
             lights: vec![LightSource {
@@ -596,9 +601,21 @@ mod helpers {
     /// Build a minimal valid [`CameraPosition`].
     pub fn default_camera() -> CameraPosition {
         CameraPosition {
-            position: Vec3 { x: 5000.0, y: -3000.0, z: 2000.0 },
-            target: Vec3 { x: 0.0, y: 0.0, z: 900.0 },
-            up: Vec3 { x: 0.0, y: 0.0, z: 1.0 },
+            position: Vec3 {
+                x: 5000.0,
+                y: -3000.0,
+                z: 2000.0,
+            },
+            target: Vec3 {
+                x: 0.0,
+                y: 0.0,
+                z: 900.0,
+            },
+            up: Vec3 {
+                x: 0.0,
+                y: 0.0,
+                z: 1.0,
+            },
             fov_degrees: 55.0,
         }
     }
@@ -608,7 +625,10 @@ mod helpers {
         RenderRequest {
             scene: minimal_scene(),
             camera: default_camera(),
-            resolution: RenderResolution { width: 1920, height: 1080 },
+            resolution: RenderResolution {
+                width: 1920,
+                height: 1080,
+            },
             quality: RenderQuality::Standard,
             output_format: OutputFormat::Png,
             label: Some("Test Render".to_string()),
@@ -839,7 +859,11 @@ mod tests {
             object_id: shared_id,
             name: "Wall Panel".to_string(),
             mesh_ref: "wall_v2".to_string(),
-            position: Vec3 { x: 1.0, y: 0.0, z: 0.0 },
+            position: Vec3 {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0,
+            },
             material_id: None,
         });
         // Give first object the same ID
@@ -877,7 +901,8 @@ mod tests {
     fn test_check_status_after_processing_transition() {
         let r = make_renderer();
         let id = r.submit_render(minimal_request()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
         assert_eq!(r.check_status(id).unwrap(), RenderStatus::Processing);
     }
 
@@ -886,9 +911,11 @@ mod tests {
         let r = make_renderer();
         let req = minimal_request();
         let id = r.submit_render(req.clone()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
         let result = fake_result(id, &req);
-        r.update_job_status(id, RenderStatus::Complete, Some(result)).unwrap();
+        r.update_job_status(id, RenderStatus::Complete, Some(result))
+            .unwrap();
         assert_eq!(r.check_status(id).unwrap(), RenderStatus::Complete);
     }
 
@@ -896,9 +923,14 @@ mod tests {
     fn test_check_status_after_failed_transition() {
         let r = make_renderer();
         let id = r.submit_render(minimal_request()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
-        r.update_job_status(id, RenderStatus::Failed("OOM".to_string()), None).unwrap();
-        assert!(matches!(r.check_status(id).unwrap(), RenderStatus::Failed(_)));
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
+        r.update_job_status(id, RenderStatus::Failed("OOM".to_string()), None)
+            .unwrap();
+        assert!(matches!(
+            r.check_status(id).unwrap(),
+            RenderStatus::Failed(_)
+        ));
     }
 
     // -----------------------------------------------------------------------
@@ -923,7 +955,8 @@ mod tests {
     fn test_get_result_processing_returns_err() {
         let r = make_renderer();
         let id = r.submit_render(minimal_request()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
         let err = r.get_result(id).unwrap_err();
         assert!(err.contains("processing"));
     }
@@ -932,8 +965,10 @@ mod tests {
     fn test_get_result_failed_returns_err() {
         let r = make_renderer();
         let id = r.submit_render(minimal_request()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
-        r.update_job_status(id, RenderStatus::Failed("timeout".to_string()), None).unwrap();
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
+        r.update_job_status(id, RenderStatus::Failed("timeout".to_string()), None)
+            .unwrap();
         let err = r.get_result(id).unwrap_err();
         assert!(err.contains("failed"));
     }
@@ -952,9 +987,11 @@ mod tests {
         let r = make_renderer();
         let req = minimal_request();
         let id = r.submit_render(req.clone()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
         let result = fake_result(id, &req);
-        r.update_job_status(id, RenderStatus::Complete, Some(result.clone())).unwrap();
+        r.update_job_status(id, RenderStatus::Complete, Some(result.clone()))
+            .unwrap();
         let got = r.get_result(id).unwrap();
         assert_eq!(got.job_id, id);
         assert_eq!(got.image_url, result.image_url);
@@ -965,9 +1002,11 @@ mod tests {
         let r = make_renderer();
         let req = minimal_request();
         let id = r.submit_render(req.clone()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
         let result = fake_result(id, &req);
-        r.update_job_status(id, RenderStatus::Complete, Some(result)).unwrap();
+        r.update_job_status(id, RenderStatus::Complete, Some(result))
+            .unwrap();
         let got = r.get_result(id).unwrap();
         assert_eq!(got.width, 1920);
         assert_eq!(got.height, 1080);
@@ -989,7 +1028,8 @@ mod tests {
     fn test_cancel_processing_job_succeeds() {
         let r = make_renderer();
         let id = r.submit_render(minimal_request()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
         assert!(r.cancel_render(id).is_ok());
         assert_eq!(r.check_status(id).unwrap(), RenderStatus::Cancelled);
     }
@@ -999,8 +1039,10 @@ mod tests {
         let r = make_renderer();
         let req = minimal_request();
         let id = r.submit_render(req.clone()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
-        r.update_job_status(id, RenderStatus::Complete, Some(fake_result(id, &req))).unwrap();
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
+        r.update_job_status(id, RenderStatus::Complete, Some(fake_result(id, &req)))
+            .unwrap();
         assert!(r.cancel_render(id).is_err());
     }
 
@@ -1008,8 +1050,10 @@ mod tests {
     fn test_cancel_failed_job_returns_err() {
         let r = make_renderer();
         let id = r.submit_render(minimal_request()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
-        r.update_job_status(id, RenderStatus::Failed("error".to_string()), None).unwrap();
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
+        r.update_job_status(id, RenderStatus::Failed("error".to_string()), None)
+            .unwrap();
         assert!(r.cancel_render(id).is_err());
     }
 
@@ -1051,7 +1095,8 @@ mod tests {
         let r = make_renderer();
         let id1 = r.submit_render(minimal_request()).unwrap();
         let id2 = r.submit_render(minimal_request()).unwrap();
-        r.update_job_status(id1, RenderStatus::Processing, None).unwrap();
+        r.update_job_status(id1, RenderStatus::Processing, None)
+            .unwrap();
 
         let queued = r.list_jobs(Some(&RenderStatus::Queued)).unwrap();
         assert_eq!(queued.len(), 1);
@@ -1063,7 +1108,8 @@ mod tests {
         let r = make_renderer();
         let id1 = r.submit_render(minimal_request()).unwrap();
         r.submit_render(minimal_request()).unwrap();
-        r.update_job_status(id1, RenderStatus::Processing, None).unwrap();
+        r.update_job_status(id1, RenderStatus::Processing, None)
+            .unwrap();
 
         let processing = r.list_jobs(Some(&RenderStatus::Processing)).unwrap();
         assert_eq!(processing.len(), 1);
@@ -1076,8 +1122,10 @@ mod tests {
         let req = minimal_request();
         let id = r.submit_render(req.clone()).unwrap();
         r.submit_render(minimal_request()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
-        r.update_job_status(id, RenderStatus::Complete, Some(fake_result(id, &req))).unwrap();
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
+        r.update_job_status(id, RenderStatus::Complete, Some(fake_result(id, &req)))
+            .unwrap();
 
         let complete = r.list_jobs(Some(&RenderStatus::Complete)).unwrap();
         assert_eq!(complete.len(), 1);
@@ -1098,11 +1146,15 @@ mod tests {
     fn test_list_jobs_filter_failed() {
         let r = make_renderer();
         let id = r.submit_render(minimal_request()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
-        r.update_job_status(id, RenderStatus::Failed("disk full".to_string()), None).unwrap();
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
+        r.update_job_status(id, RenderStatus::Failed("disk full".to_string()), None)
+            .unwrap();
         r.submit_render(minimal_request()).unwrap();
 
-        let failed = r.list_jobs(Some(&RenderStatus::Failed(String::new()))).unwrap();
+        let failed = r
+            .list_jobs(Some(&RenderStatus::Failed(String::new())))
+            .unwrap();
         assert_eq!(failed.len(), 1);
     }
 
@@ -1122,7 +1174,9 @@ mod tests {
     fn test_update_queued_to_processing_ok() {
         let r = make_renderer();
         let id = r.submit_render(minimal_request()).unwrap();
-        assert!(r.update_job_status(id, RenderStatus::Processing, None).is_ok());
+        assert!(r
+            .update_job_status(id, RenderStatus::Processing, None)
+            .is_ok());
     }
 
     #[test]
@@ -1130,16 +1184,20 @@ mod tests {
         let r = make_renderer();
         let req = minimal_request();
         let id = r.submit_render(req.clone()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
         let result = fake_result(id, &req);
-        assert!(r.update_job_status(id, RenderStatus::Complete, Some(result)).is_ok());
+        assert!(r
+            .update_job_status(id, RenderStatus::Complete, Some(result))
+            .is_ok());
     }
 
     #[test]
     fn test_update_processing_to_failed_ok() {
         let r = make_renderer();
         let id = r.submit_render(minimal_request()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
         assert!(r
             .update_job_status(id, RenderStatus::Failed("crash".to_string()), None)
             .is_ok());
@@ -1151,7 +1209,9 @@ mod tests {
         let req = minimal_request();
         let id = r.submit_render(req.clone()).unwrap();
         let result = fake_result(id, &req);
-        assert!(r.update_job_status(id, RenderStatus::Complete, Some(result)).is_err());
+        assert!(r
+            .update_job_status(id, RenderStatus::Complete, Some(result))
+            .is_err());
     }
 
     #[test]
@@ -1168,8 +1228,10 @@ mod tests {
         let r = make_renderer();
         let req = minimal_request();
         let id = r.submit_render(req.clone()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
-        r.update_job_status(id, RenderStatus::Complete, Some(fake_result(id, &req))).unwrap();
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
+        r.update_job_status(id, RenderStatus::Complete, Some(fake_result(id, &req)))
+            .unwrap();
         assert!(r.update_job_status(id, RenderStatus::Queued, None).is_err());
     }
 
@@ -1178,26 +1240,37 @@ mod tests {
         let r = make_renderer();
         let req = minimal_request();
         let id = r.submit_render(req.clone()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
-        r.update_job_status(id, RenderStatus::Complete, Some(fake_result(id, &req))).unwrap();
-        assert!(r.update_job_status(id, RenderStatus::Processing, None).is_err());
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
+        r.update_job_status(id, RenderStatus::Complete, Some(fake_result(id, &req)))
+            .unwrap();
+        assert!(r
+            .update_job_status(id, RenderStatus::Processing, None)
+            .is_err());
     }
 
     #[test]
     fn test_update_failed_to_processing_invalid() {
         let r = make_renderer();
         let id = r.submit_render(minimal_request()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
-        r.update_job_status(id, RenderStatus::Failed("err".to_string()), None).unwrap();
-        assert!(r.update_job_status(id, RenderStatus::Processing, None).is_err());
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
+        r.update_job_status(id, RenderStatus::Failed("err".to_string()), None)
+            .unwrap();
+        assert!(r
+            .update_job_status(id, RenderStatus::Processing, None)
+            .is_err());
     }
 
     #[test]
     fn test_update_complete_without_result_returns_err() {
         let r = make_renderer();
         let id = r.submit_render(minimal_request()).unwrap();
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
-        assert!(r.update_job_status(id, RenderStatus::Complete, None).is_err());
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
+        assert!(r
+            .update_job_status(id, RenderStatus::Complete, None)
+            .is_err());
     }
 
     #[test]
@@ -1214,7 +1287,10 @@ mod tests {
 
     #[test]
     fn test_estimate_draft_less_than_standard() {
-        let res = RenderResolution { width: 1920, height: 1080 };
+        let res = RenderResolution {
+            width: 1920,
+            height: 1080,
+        };
         let draft = CloudRenderer::estimate_render_time(res, RenderQuality::Draft);
         let standard = CloudRenderer::estimate_render_time(res, RenderQuality::Standard);
         assert!(draft < standard);
@@ -1222,7 +1298,10 @@ mod tests {
 
     #[test]
     fn test_estimate_standard_less_than_high() {
-        let res = RenderResolution { width: 1920, height: 1080 };
+        let res = RenderResolution {
+            width: 1920,
+            height: 1080,
+        };
         let standard = CloudRenderer::estimate_render_time(res, RenderQuality::Standard);
         let high = CloudRenderer::estimate_render_time(res, RenderQuality::High);
         assert!(standard < high);
@@ -1230,7 +1309,10 @@ mod tests {
 
     #[test]
     fn test_estimate_high_less_than_production() {
-        let res = RenderResolution { width: 1920, height: 1080 };
+        let res = RenderResolution {
+            width: 1920,
+            height: 1080,
+        };
         let high = CloudRenderer::estimate_render_time(res, RenderQuality::High);
         let prod = CloudRenderer::estimate_render_time(res, RenderQuality::Production);
         assert!(high < prod);
@@ -1238,8 +1320,14 @@ mod tests {
 
     #[test]
     fn test_estimate_higher_resolution_takes_longer() {
-        let small = RenderResolution { width: 640, height: 480 };
-        let large = RenderResolution { width: 3840, height: 2160 };
+        let small = RenderResolution {
+            width: 640,
+            height: 480,
+        };
+        let large = RenderResolution {
+            width: 3840,
+            height: 2160,
+        };
         let t_small = CloudRenderer::estimate_render_time(small, RenderQuality::Standard);
         let t_large = CloudRenderer::estimate_render_time(large, RenderQuality::Standard);
         assert!(t_large > t_small);
@@ -1247,7 +1335,10 @@ mod tests {
 
     #[test]
     fn test_estimate_always_positive() {
-        let res = RenderResolution { width: 1, height: 1 };
+        let res = RenderResolution {
+            width: 1,
+            height: 1,
+        };
         let t = CloudRenderer::estimate_render_time(res, RenderQuality::Draft);
         assert!(t > 0.0);
     }
@@ -1255,12 +1346,22 @@ mod tests {
     #[test]
     fn test_estimate_scales_linearly_with_megapixels() {
         // 4x the pixels should give approximately 4x the time at the same quality
-        let res1 = RenderResolution { width: 1000, height: 1000 };
-        let res2 = RenderResolution { width: 2000, height: 2000 };
+        let res1 = RenderResolution {
+            width: 1000,
+            height: 1000,
+        };
+        let res2 = RenderResolution {
+            width: 2000,
+            height: 2000,
+        };
         let t1 = CloudRenderer::estimate_render_time(res1, RenderQuality::Draft);
         let t2 = CloudRenderer::estimate_render_time(res2, RenderQuality::Draft);
         let ratio = t2 / t1;
-        assert!((ratio - 4.0).abs() < 0.001, "expected ratio ~4.0, got {}", ratio);
+        assert!(
+            (ratio - 4.0).abs() < 0.001,
+            "expected ratio ~4.0, got {}",
+            ratio
+        );
     }
 
     // -----------------------------------------------------------------------
@@ -1307,7 +1408,11 @@ mod tests {
             object_id: id,
             name: "Duplicate".to_string(),
             mesh_ref: "mesh_dup".to_string(),
-            position: Vec3 { x: 1.0, y: 0.0, z: 0.0 },
+            position: Vec3 {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0,
+            },
             material_id: None,
         });
         let errs = CloudRenderer::validate_scene(&scene).unwrap_err();
@@ -1367,13 +1472,19 @@ mod tests {
 
     #[test]
     fn test_resolution_pixel_count() {
-        let res = RenderResolution { width: 1920, height: 1080 };
+        let res = RenderResolution {
+            width: 1920,
+            height: 1080,
+        };
         assert_eq!(res.pixel_count(), 2_073_600);
     }
 
     #[test]
     fn test_resolution_megapixels() {
-        let res = RenderResolution { width: 1000, height: 1000 };
+        let res = RenderResolution {
+            width: 1000,
+            height: 1000,
+        };
         assert!((res.megapixels() - 1.0).abs() < 1e-9);
     }
 
@@ -1391,12 +1502,14 @@ mod tests {
         assert_eq!(r.check_status(id).unwrap(), RenderStatus::Queued);
 
         // Advance to processing
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
         assert_eq!(r.check_status(id).unwrap(), RenderStatus::Processing);
 
         // Complete
         let result = fake_result(id, &req);
-        r.update_job_status(id, RenderStatus::Complete, Some(result.clone())).unwrap();
+        r.update_job_status(id, RenderStatus::Complete, Some(result.clone()))
+            .unwrap();
         assert_eq!(r.check_status(id).unwrap(), RenderStatus::Complete);
 
         // Retrieve
@@ -1410,10 +1523,15 @@ mod tests {
         let r = make_renderer();
         let id = r.submit_render(minimal_request()).unwrap();
 
-        r.update_job_status(id, RenderStatus::Processing, None).unwrap();
-        r.update_job_status(id, RenderStatus::Failed("worker died".to_string()), None).unwrap();
+        r.update_job_status(id, RenderStatus::Processing, None)
+            .unwrap();
+        r.update_job_status(id, RenderStatus::Failed("worker died".to_string()), None)
+            .unwrap();
 
-        assert!(matches!(r.check_status(id).unwrap(), RenderStatus::Failed(_)));
+        assert!(matches!(
+            r.check_status(id).unwrap(),
+            RenderStatus::Failed(_)
+        ));
         assert!(r.get_result(id).is_err());
     }
 
@@ -1440,7 +1558,8 @@ mod tests {
         let id3 = r.submit_render(req.clone()).unwrap();
 
         // Advance id1 to processing
-        r.update_job_status(id1, RenderStatus::Processing, None).unwrap();
+        r.update_job_status(id1, RenderStatus::Processing, None)
+            .unwrap();
         // Cancel id2
         r.cancel_render(id2).unwrap();
         // Leave id3 as queued
@@ -1459,11 +1578,15 @@ mod tests {
         let id1 = r.submit_render(req1.clone()).unwrap();
         let id2 = r.submit_render(req2.clone()).unwrap();
 
-        r.update_job_status(id1, RenderStatus::Processing, None).unwrap();
-        r.update_job_status(id1, RenderStatus::Complete, Some(fake_result(id1, &req1))).unwrap();
+        r.update_job_status(id1, RenderStatus::Processing, None)
+            .unwrap();
+        r.update_job_status(id1, RenderStatus::Complete, Some(fake_result(id1, &req1)))
+            .unwrap();
 
-        r.update_job_status(id2, RenderStatus::Processing, None).unwrap();
-        r.update_job_status(id2, RenderStatus::Complete, Some(fake_result(id2, &req2))).unwrap();
+        r.update_job_status(id2, RenderStatus::Processing, None)
+            .unwrap();
+        r.update_job_status(id2, RenderStatus::Complete, Some(fake_result(id2, &req2)))
+            .unwrap();
 
         assert_eq!(r.get_result(id1).unwrap().job_id, id1);
         assert_eq!(r.get_result(id2).unwrap().job_id, id2);
@@ -1493,7 +1616,10 @@ mod tests {
     fn test_submit_high_resolution_production_quality() {
         let r = make_renderer();
         let mut req = minimal_request();
-        req.resolution = RenderResolution { width: 7680, height: 4320 }; // 8K
+        req.resolution = RenderResolution {
+            width: 7680,
+            height: 4320,
+        }; // 8K
         req.quality = RenderQuality::Production;
         let id = r.submit_render(req).unwrap();
         let job = r.get_job(id).unwrap();
@@ -1526,13 +1652,21 @@ mod tests {
                 object_id: Uuid::new_v4(),
                 name: format!("Cabinet {}", i),
                 mesh_ref: format!("cabinet_{}", i),
-                position: Vec3 { x: i as f64 * 600.0, y: 0.0, z: 0.0 },
+                position: Vec3 {
+                    x: i as f64 * 600.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
                 material_id: Some(Uuid::new_v4()),
             });
             req.scene.lights.push(LightSource {
                 light_type: "point".to_string(),
                 intensity: 500.0,
-                position: Some(Vec3 { x: i as f64 * 300.0, y: 200.0, z: 2400.0 }),
+                position: Some(Vec3 {
+                    x: i as f64 * 300.0,
+                    y: 200.0,
+                    z: 2400.0,
+                }),
                 color: None,
             });
         }
@@ -1551,7 +1685,11 @@ mod tests {
         ] {
             let mut req = minimal_request();
             req.output_format = *fmt;
-            assert!(r.submit_render(req).is_ok(), "format {:?} should be accepted", fmt);
+            assert!(
+                r.submit_render(req).is_ok(),
+                "format {:?} should be accepted",
+                fmt
+            );
         }
     }
 
@@ -1566,7 +1704,11 @@ mod tests {
         ] {
             let mut req = minimal_request();
             req.quality = *q;
-            assert!(r.submit_render(req).is_ok(), "quality {:?} should be accepted", q);
+            assert!(
+                r.submit_render(req).is_ok(),
+                "quality {:?} should be accepted",
+                q
+            );
         }
     }
 

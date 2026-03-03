@@ -1,0 +1,75 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO hardware (\n            id, name, sku, hardware_type,\n            supplier, unit_cost, description,\n            created_at, updated_at\n        )\n        VALUES (\n            gen_random_uuid(), $1, $2, $3,\n            $4, $5, $6,\n            NOW(), NOW()\n        )\n        RETURNING\n            id, name, sku, hardware_type,\n            supplier, unit_cost, description,\n            created_at, updated_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "sku",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "hardware_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "supplier",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "unit_cost",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Float8",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "f413aa53666a93020eea816a7ff95cb59fc463035b5c4272c04557f4b5de66d4"
+}

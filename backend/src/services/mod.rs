@@ -6,6 +6,8 @@
 #[cfg(test)]
 mod tests;
 
+pub mod audit;
+pub mod cache;
 pub mod cloud_renderer;
 pub mod construction_methods_engine; // NEW — was missing, caused compilation failure
 pub mod cost_calculator;
@@ -17,7 +19,10 @@ pub mod gcode_generator;
 pub mod label_generator;
 pub mod nesting_engine;
 pub mod propagation_engine;
+pub mod storage;
 
+pub use audit::AuditService;
+pub use cache::CacheService;
 pub use cloud_renderer::CloudRenderer;
 pub use construction_methods_engine::ConstructionMethodsEngine;
 pub use cost_calculator::CostCalculator;
@@ -29,3 +34,4 @@ pub use gcode_generator::GCodeGenerator;
 pub use label_generator::LabelGenerator;
 pub use nesting_engine::NestingEngine;
 pub use propagation_engine::PropagationEngine;
+pub use storage::StorageService;

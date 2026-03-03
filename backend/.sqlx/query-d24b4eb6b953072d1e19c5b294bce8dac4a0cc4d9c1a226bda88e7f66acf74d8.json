@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT name, spoilboard_width, spoilboard_length, spoilboard_thickness\n          FROM machines\n         WHERE id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "spoilboard_width",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 2,
+        "name": "spoilboard_length",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 3,
+        "name": "spoilboard_thickness",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d24b4eb6b953072d1e19c5b294bce8dac4a0cc4d9c1a226bda88e7f66acf74d8"
+}

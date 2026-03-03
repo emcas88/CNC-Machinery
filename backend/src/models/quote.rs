@@ -37,6 +37,7 @@ pub struct CreateQuote {
 /// DTO for updating a quote.
 #[derive(Debug, Deserialize)]
 pub struct UpdateQuote {
+    pub job_id: Option<uuid::Uuid>,
     pub quote_number: Option<String>,
     pub material_cost: Option<f64>,
     pub hardware_cost: Option<f64>,

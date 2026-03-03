@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            m.id                          AS material_id,\n            m.name                        AS material_name,\n            m.cutlist_name,\n            m.thickness,\n            COUNT(p.id)                   AS total_parts,\n            COALESCE(SUM(p.length * p.width), 0.0) AS total_area_mm2\n        FROM jobs j\n        JOIN rooms      r  ON r.job_id     = j.id\n        JOIN products   pr ON pr.room_id   = r.id\n        JOIN parts      p  ON p.product_id = pr.id\n        JOIN materials  m  ON m.id         = p.material_id\n        WHERE j.id = $1\n        GROUP BY m.id, m.name, m.cutlist_name, m.thickness\n        ORDER BY m.cutlist_name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "material_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "material_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "cutlist_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "thickness",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "total_parts",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "total_area_mm2",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "1d9737c677e3515d1fff042e02721a910679362e66254df236b1efcf8e097c17"
+}

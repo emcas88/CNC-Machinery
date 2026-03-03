@@ -133,7 +133,7 @@ pub async fn create_construction_method(
         "#,
         id,
         body.name,
-        &body.joinery_type,          // &[String] → text[]
+        &body.joinery_type, // &[String] → text[]
         body.fastener_specs,
         body.placement_rules,
         now,
@@ -212,7 +212,7 @@ pub async fn update_construction_method(
         "#,
         id,
         body.name,
-        body.joinery_type.as_deref(),   // Option<&[String]>
+        body.joinery_type.as_deref(), // Option<&[String]>
         body.fastener_specs,
         body.placement_rules,
         now

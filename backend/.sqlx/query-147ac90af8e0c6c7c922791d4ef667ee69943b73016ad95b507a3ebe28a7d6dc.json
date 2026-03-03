@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT name, output_format, template_content, variables, machine_type\n              FROM post_processors\n             WHERE id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "output_format",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "template_content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "variables",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "machine_type",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "147ac90af8e0c6c7c922791d4ef667ee69943b73016ad95b507a3ebe28a7d6dc"
+}

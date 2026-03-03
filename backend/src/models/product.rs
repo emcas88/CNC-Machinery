@@ -17,6 +17,20 @@ pub enum ProductType {
     Furniture,
 }
 
+impl std::fmt::Display for ProductType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::BaseCabinet => write!(f, "base_cabinet"),
+            Self::WallCabinet => write!(f, "wall_cabinet"),
+            Self::TallCabinet => write!(f, "tall_cabinet"),
+            Self::Vanity => write!(f, "vanity"),
+            Self::Closet => write!(f, "closet"),
+            Self::Wardrobe => write!(f, "wardrobe"),
+            Self::Furniture => write!(f, "furniture"),
+        }
+    }
+}
+
 /// Cabinet construction style.
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type, PartialEq)]
 #[sqlx(type_name = "cabinet_style", rename_all = "snake_case")]
@@ -24,6 +38,15 @@ pub enum ProductType {
 pub enum CabinetStyle {
     Frameless,
     FaceFrame,
+}
+
+impl std::fmt::Display for CabinetStyle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Frameless => write!(f, "frameless"),
+            Self::FaceFrame => write!(f, "face_frame"),
+        }
+    }
 }
 
 /// A single cabinet/product placed within a room.

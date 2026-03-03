@@ -1,0 +1,63 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE post_processors SET\n            name            = COALESCE($2, name),\n            controller_type = COALESCE($3, controller_type),\n            file_extension  = COALESCE($4, file_extension),\n            template_config = COALESCE($5, template_config),\n            updated_at      = $6\n        WHERE id = $1\n        RETURNING\n            id,\n            name,\n            controller_type,\n            file_extension,\n            template_config,\n            created_at,\n            updated_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "controller_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "file_extension",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "template_config",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6af0a13ad3b63ae33c8f2bdf9bb13471f30d1a42df91477bc94a356d5fd7b82d"
+}

@@ -1,0 +1,138 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO textures (\n            id, name, abbreviation, image_url,\n            sheen, grain_orientation,\n            transparency, metallicness,\n            visual_width, visual_height, rotation_angle,\n            texture_group_id,\n            created_at, updated_at\n        )\n        VALUES (\n            $1, $2, $3, $4,\n            $5::text::texture_sheen, $6::text::texture_grain_orientation,\n            $7, $8,\n            $9, $10, $11,\n            $12,\n            $13, $14\n        )\n        RETURNING\n            id,\n            name,\n            abbreviation,\n            image_url,\n            sheen         AS \"sheen: Sheen\",\n            grain_orientation AS \"grain_orientation: GrainOrientation\",\n            transparency,\n            metallicness,\n            visual_width,\n            visual_height,\n            rotation_angle,\n            texture_group_id,\n            created_at,\n            updated_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "abbreviation",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "image_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "sheen: Sheen",
+        "type_info": {
+          "Custom": {
+            "name": "texture_sheen",
+            "kind": {
+              "Enum": [
+                "none",
+                "flat",
+                "satin",
+                "semi_gloss",
+                "high_gloss",
+                "glass"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "grain_orientation: GrainOrientation",
+        "type_info": {
+          "Custom": {
+            "name": "texture_grain_orientation",
+            "kind": {
+              "Enum": [
+                "horizontal",
+                "vertical",
+                "none"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "transparency",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "metallicness",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "visual_width",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 9,
+        "name": "visual_height",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 10,
+        "name": "rotation_angle",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 11,
+        "name": "texture_group_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 12,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 13,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "90eb4b0a716baee4a02530fd7b41827ec344b2edeb69837ec6b15970b98b01ae"
+}

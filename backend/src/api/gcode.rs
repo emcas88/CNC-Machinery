@@ -20,6 +20,7 @@ use actix_web::{
 };
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
+use uuid::Uuid;
 
 // Re-export the generator types from the services module.
 // When integrated into the project the path will be:
@@ -85,16 +86,36 @@ impl GCodeConfigDto {
     /// Merge caller overrides into a default `GCodeConfig`.
     pub fn into_config(self) -> GCodeConfig {
         let mut cfg = GCodeConfig::default();
-        if let Some(v) = self.safe_z { cfg.safe_z = v; }
-        if let Some(v) = self.clearance_z { cfg.clearance_z = v; }
-        if let Some(v) = self.spoilboard_tolerance { cfg.spoilboard_tolerance = v; }
-        if let Some(v) = self.pocket_stepover_ratio { cfg.pocket_stepover_ratio = v; }
-        if let Some(v) = self.lead_in_radius { cfg.lead_in_radius = v; }
-        if let Some(v) = self.tab_width { cfg.tab_width = v; }
-        if let Some(v) = self.tab_height { cfg.tab_height = v; }
-        if let Some(v) = self.default_tab_count { cfg.default_tab_count = v; }
-        if let Some(v) = self.include_comments { cfg.include_comments = v; }
-        if let Some(v) = self.line_number_increment { cfg.line_number_increment = v; }
+        if let Some(v) = self.safe_z {
+            cfg.safe_z = v;
+        }
+        if let Some(v) = self.clearance_z {
+            cfg.clearance_z = v;
+        }
+        if let Some(v) = self.spoilboard_tolerance {
+            cfg.spoilboard_tolerance = v;
+        }
+        if let Some(v) = self.pocket_stepover_ratio {
+            cfg.pocket_stepover_ratio = v;
+        }
+        if let Some(v) = self.lead_in_radius {
+            cfg.lead_in_radius = v;
+        }
+        if let Some(v) = self.tab_width {
+            cfg.tab_width = v;
+        }
+        if let Some(v) = self.tab_height {
+            cfg.tab_height = v;
+        }
+        if let Some(v) = self.default_tab_count {
+            cfg.default_tab_count = v;
+        }
+        if let Some(v) = self.include_comments {
+            cfg.include_comments = v;
+        }
+        if let Some(v) = self.line_number_increment {
+            cfg.line_number_increment = v;
+        }
         cfg
     }
 }
@@ -191,10 +212,7 @@ pub struct SpoilboardResurfaceResponse {
 ///
 /// Pulls: sheet metadata, all placed parts, all operations per part, tools,
 /// machine config, and optional post-processor.
-async fn load_sheet_input(
-    pool: &PgPool,
-    sheet_id: Uuid,
-) -> Result<SheetGCodeInput, ApiError> {
+async fn load_sheet_input(pool: &PgPool, sheet_id: Uuid) -> Result<SheetGCodeInput, ApiError> {
     // ── Sheet ──────────────────────────────────────────────────────────────────────
     let sheet_row = sqlx::query!(
         r#"
@@ -247,7 +265,7 @@ async fn load_sheet_input(
             name: row.name,
             output_format: row.output_format,
             template_content: row.template_content,
-            variables: row.variables.unwrap_or(serde_json::Value::Object(Default::default())),
+            variables: row.variables,
         })
     } else {
         None
@@ -270,10 +288,7 @@ async fn load_sheet_input(
     .fetch_all(pool)
     .await?;
 
-    let tool_ids: Vec<Uuid> = tool_id_rows
-        .into_iter()
-        .filter_map(|r| r.tool_id)
-        .collect();
+    let tool_ids: Vec<Uuid> = tool_id_rows.into_iter().filter_map(|r| r.tool_id).collect();
 
     // Map tool UUID → index into the tools vec.
     let tool_index_map: std::collections::HashMap<Uuid, usize> = tool_ids
@@ -374,20 +389,18 @@ async fn load_sheet_input(
                 height: op.height,
                 tool_index,
                 side: op.side.unwrap_or_else(|| "top".to_string()).to_lowercase(),
-                parameters: op
-                    .parameters
-                    .unwrap_or(serde_json::Value::Object(Default::default())),
+                parameters: op.parameters,
             });
         }
 
         parts.push(PlacedPartInput {
-            part_id: row.part_id,
+            part_id: row.part_id.expect("part_placement must reference a part"),
             name: row.name,
             x: row.x,
             y: row.y,
             length: row.length,
             width: row.width,
-            rotated: row.rotated.unwrap_or(false),
+            rotated: row.rotated,
             operations,
         });
     }

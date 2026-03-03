@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO part_scan_events (id, part_id, action, operator, scanned_at)\n        VALUES ($1, $2, $3, $4, NOW())\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ee1fd4bd7405c767cb5e09ac7ec9a12f13750aa575539d3a559061676a11818c"
+}

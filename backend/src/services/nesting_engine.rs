@@ -447,7 +447,11 @@ impl NestingEngine {
 
         for (material_id, mut group_parts) in groups {
             // Sort by area descending (largest-first heuristic)
-            group_parts.sort_by(|a, b| b.area().partial_cmp(&a.area()).unwrap_or(std::cmp::Ordering::Equal));
+            group_parts.sort_by(|a, b| {
+                b.area()
+                    .partial_cmp(&a.area())
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
 
             let mut sheets: Vec<Sheet> = Vec::new();
 
@@ -730,7 +734,10 @@ mod tests {
 
     #[test]
     fn grain_direction_from_str_horizontal() {
-        assert_eq!(GrainDirection::from("horizontal"), GrainDirection::Horizontal);
+        assert_eq!(
+            GrainDirection::from("horizontal"),
+            GrainDirection::Horizontal
+        );
         assert_eq!(GrainDirection::from("H"), GrainDirection::Horizontal);
     }
 
@@ -881,7 +888,13 @@ mod tests {
 
     #[test]
     fn expand_parts_by_quantity() {
-        let parts = vec![make_part_with_material(100.0, 50.0, Uuid::new_v4(), "none", 3)];
+        let parts = vec![make_part_with_material(
+            100.0,
+            50.0,
+            Uuid::new_v4(),
+            "none",
+            3,
+        )];
         let expanded = NestingEngine::expand_parts(&parts);
         assert_eq!(expanded.len(), 3);
         for ep in &expanded {
@@ -891,7 +904,13 @@ mod tests {
 
     #[test]
     fn expand_parts_zero_quantity_defaults_to_one() {
-        let parts = vec![make_part_with_material(100.0, 50.0, Uuid::new_v4(), "none", 0)];
+        let parts = vec![make_part_with_material(
+            100.0,
+            50.0,
+            Uuid::new_v4(),
+            "none",
+            0,
+        )];
         let expanded = NestingEngine::expand_parts(&parts);
         assert_eq!(expanded.len(), 1);
     }
@@ -1234,9 +1253,7 @@ mod tests {
     async fn optimize_with_kerf_and_margin() {
         let mat = Uuid::new_v4();
         let eng = NestingEngine::new(3.175, 6.35, false);
-        let parts = vec![
-            make_part_with_material(600.0, 300.0, mat, "none", 4),
-        ];
+        let parts = vec![make_part_with_material(600.0, 300.0, mat, "none", 4)];
         let result = eng.optimize(parts, 2440.0, 1220.0).await;
         assert_eq!(result.placements.len(), 4);
         assert!(result.sheet_count >= 1);

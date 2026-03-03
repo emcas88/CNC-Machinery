@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO optimization_runs\n            (id, job_id, name, status, quality, settings, sheets,\n             yield_percentage, created_at, updated_at)\n        VALUES\n            ($1, $2, $3,\n             'pending'::optimization_status,\n             $4::optimization_quality,\n             $5, '[]'::jsonb,\n             NULL,\n             NOW(), NOW())\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        {
+          "Custom": {
+            "name": "optimization_quality",
+            "kind": {
+              "Enum": [
+                "fast_estimate",
+                "good",
+                "better",
+                "best"
+              ]
+            }
+          }
+        },
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e2af12eebf500c5b66dba92b5d8e86d8abfbb8d06e22d2651d2cbd9295070a4c"
+}

@@ -15,6 +15,19 @@ pub enum ToolType {
     DrillBit,
 }
 
+impl std::fmt::Display for ToolType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::CompressionCutter => write!(f, "compression_cutter"),
+            Self::DownShear => write!(f, "down_shear"),
+            Self::UpCut => write!(f, "up_cut"),
+            Self::Dovetail => write!(f, "dovetail"),
+            Self::ProfileBit => write!(f, "profile_bit"),
+            Self::DrillBit => write!(f, "drill_bit"),
+        }
+    }
+}
+
 /// A CNC cutting or drilling tool with feed/speed parameters.
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Tool {

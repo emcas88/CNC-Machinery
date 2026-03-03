@@ -1,0 +1,99 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO tools (\n            id, name, diameter, tool_type,\n            rpm, feed_rate, plunge_rate, max_depth_per_pass,\n            created_at, updated_at\n        )\n        VALUES (\n            $1, $2, $3,\n            $4::text::tool_type,\n            $5, $6, $7, $8,\n            $9, $10\n        )\n        RETURNING\n            id,\n            name,\n            diameter,\n            tool_type AS \"tool_type: ToolType\",\n            rpm,\n            feed_rate,\n            plunge_rate,\n            max_depth_per_pass,\n            created_at,\n            updated_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "diameter",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 3,
+        "name": "tool_type: ToolType",
+        "type_info": {
+          "Custom": {
+            "name": "tool_type",
+            "kind": {
+              "Enum": [
+                "compression_cutter",
+                "down_shear",
+                "up_cut",
+                "dovetail",
+                "profile_bit",
+                "drill_bit"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "rpm",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "feed_rate",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "plunge_rate",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "max_depth_per_pass",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Float8",
+        "Text",
+        "Int4",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "e5b6675529a84388f33bcde6ea7d06ac7839c26e5a36bb5fb5fb30073e0eafad"
+}

@@ -30,7 +30,7 @@ pub async fn list_jobs(
             sqlx::query_as!(
                 Job,
                 r#"
-                SELECT id, name, client_name, status, due_date, notes,
+                SELECT id, name, client_name, status as "status: String", due_date, notes,
                        created_at, updated_at
                 FROM jobs
                 WHERE status = $1
@@ -45,7 +45,7 @@ pub async fn list_jobs(
             sqlx::query_as!(
                 Job,
                 r#"
-                SELECT id, name, client_name, status, due_date, notes,
+                SELECT id, name, client_name, status as "status: String", due_date, notes,
                        created_at, updated_at
                 FROM jobs
                 ORDER BY created_at DESC
@@ -75,7 +75,7 @@ pub async fn get_job(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Res
     let result = sqlx::query_as!(
         Job,
         r#"
-        SELECT id, name, client_name, status, due_date, notes,
+        SELECT id, name, client_name, status as "status: String", due_date, notes,
                created_at, updated_at
         FROM jobs
         WHERE id = $1
@@ -101,16 +101,13 @@ pub async fn get_job(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Res
 
 /// POST /jobs
 #[post("")]
-pub async fn create_job(
-    pool: web::Data<PgPool>,
-    body: web::Json<CreateJob>,
-) -> impl Responder {
+pub async fn create_job(pool: web::Data<PgPool>, body: web::Json<CreateJob>) -> impl Responder {
     let result = sqlx::query_as!(
         Job,
         r#"
         INSERT INTO jobs (id, name, client_name, status, due_date, notes, created_at, updated_at)
         VALUES (gen_random_uuid(), $1, $2, COALESCE($3, 'draft'), $4, $5, NOW(), NOW())
-        RETURNING id, name, client_name, status, due_date, notes, created_at, updated_at
+        RETURNING id, name, client_name, status as "status: String", due_date, notes, created_at, updated_at
         "#,
         body.name,
         body.client_name,
@@ -143,12 +140,9 @@ pub async fn update_job(
     let id = path.into_inner();
 
     // Verify the job exists first so we can return a proper 404.
-    let exists = sqlx::query_scalar!(
-        "SELECT EXISTS(SELECT 1 FROM jobs WHERE id = $1)",
-        id
-    )
-    .fetch_one(pool.get_ref())
-    .await;
+    let exists = sqlx::query_scalar!("SELECT EXISTS(SELECT 1 FROM jobs WHERE id = $1)", id)
+        .fetch_one(pool.get_ref())
+        .await;
 
     match exists {
         Ok(Some(false)) | Ok(None) => {
@@ -166,7 +160,8 @@ pub async fn update_job(
     }
 
     // Build a dynamic UPDATE using QueryBuilder so we only touch supplied fields.
-    let mut builder = sqlx::QueryBuilder::<sqlx::Postgres>::new("UPDATE jobs SET updated_at = NOW()");
+    let mut builder =
+        sqlx::QueryBuilder::<sqlx::Postgres>::new("UPDATE jobs SET updated_at = NOW()");
 
     if let Some(name) = &body.name {
         builder.push(", name = ");
@@ -191,9 +186,8 @@ pub async fn update_job(
 
     builder.push(" WHERE id = ");
     builder.push_bind(id);
-    builder.push(
-        " RETURNING id, name, client_name, status, due_date, notes, created_at, updated_at",
-    );
+    builder
+        .push(" RETURNING id, name, client_name, status, due_date, notes, created_at, updated_at");
 
     let query = builder.build_query_as::<Job>();
     match query.fetch_one(pool.get_ref()).await {
@@ -212,12 +206,9 @@ pub async fn update_job(
 pub async fn delete_job(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Responder {
     let id = path.into_inner();
 
-    let result = sqlx::query!(
-        "DELETE FROM jobs WHERE id = $1 RETURNING id",
-        id
-    )
-    .fetch_optional(pool.get_ref())
-    .await;
+    let result = sqlx::query!("DELETE FROM jobs WHERE id = $1 RETURNING id", id)
+        .fetch_optional(pool.get_ref())
+        .await;
 
     match result {
         Ok(Some(_)) => HttpResponse::NoContent().finish(),

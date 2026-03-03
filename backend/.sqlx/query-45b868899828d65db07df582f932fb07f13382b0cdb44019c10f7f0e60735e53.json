@@ -1,0 +1,89 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO rooms (\n            id, job_id, name, width, height, depth, notes,\n            material_overrides, construction_overrides,\n            created_at, updated_at\n        )\n        VALUES (\n            gen_random_uuid(), $1, $2, $3, $4, $5, $6,\n            $7, $8,\n            NOW(), NOW()\n        )\n        RETURNING id, job_id, name, width, height, depth, notes,\n                  material_overrides, construction_overrides,\n                  created_at, updated_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "job_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "width",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "height",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "depth",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "material_overrides",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 8,
+        "name": "construction_overrides",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Text",
+        "Jsonb",
+        "Jsonb"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "45b868899828d65db07df582f932fb07f13382b0cdb44019c10f7f0e60735e53"
+}

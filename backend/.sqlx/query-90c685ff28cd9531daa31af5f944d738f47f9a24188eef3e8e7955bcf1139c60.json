@@ -1,0 +1,202 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO products (\n            id, room_id, name,\n            product_type, cabinet_style,\n            width, height, depth,\n            position_x, position_y, position_z,\n            rotation, wall_id,\n            face_definition, interior_definition,\n            material_overrides, construction_overrides,\n            library_entry_id,\n            created_at, updated_at\n        )\n        VALUES (\n            gen_random_uuid(), $1, $2,\n            $3::product_type, $4::cabinet_style,\n            $5, $6, $7,\n            $8, $9, $10,\n            $11, $12,\n            $13, $14,\n            $15, $16,\n            $17,\n            NOW(), NOW()\n        )\n        RETURNING\n            id, room_id, name,\n            product_type   AS \"product_type: _\",\n            cabinet_style  AS \"cabinet_style: _\",\n            width, height, depth,\n            position_x, position_y, position_z,\n            rotation, wall_id,\n            face_definition, interior_definition,\n            material_overrides, construction_overrides,\n            library_entry_id,\n            created_at, updated_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "room_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "product_type: _",
+        "type_info": {
+          "Custom": {
+            "name": "product_type",
+            "kind": {
+              "Enum": [
+                "base_cabinet",
+                "wall_cabinet",
+                "tall_cabinet",
+                "vanity",
+                "closet",
+                "wardrobe",
+                "furniture"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "cabinet_style: _",
+        "type_info": {
+          "Custom": {
+            "name": "cabinet_style",
+            "kind": {
+              "Enum": [
+                "frameless",
+                "face_frame"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "width",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "height",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "depth",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "position_x",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 9,
+        "name": "position_y",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 10,
+        "name": "position_z",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 11,
+        "name": "rotation",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 12,
+        "name": "wall_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 13,
+        "name": "face_definition",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 14,
+        "name": "interior_definition",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 15,
+        "name": "material_overrides",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 16,
+        "name": "construction_overrides",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 17,
+        "name": "library_entry_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 18,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 19,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        {
+          "Custom": {
+            "name": "product_type",
+            "kind": {
+              "Enum": [
+                "base_cabinet",
+                "wall_cabinet",
+                "tall_cabinet",
+                "vanity",
+                "closet",
+                "wardrobe",
+                "furniture"
+              ]
+            }
+          }
+        },
+        {
+          "Custom": {
+            "name": "cabinet_style",
+            "kind": {
+              "Enum": [
+                "frameless",
+                "face_frame"
+              ]
+            }
+          }
+        },
+        "Float8",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Uuid",
+        "Jsonb",
+        "Jsonb",
+        "Jsonb",
+        "Jsonb",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "90c685ff28cd9531daa31af5f944d738f47f9a24188eef3e8e7955bcf1139c60"
+}

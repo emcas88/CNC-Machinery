@@ -38,10 +38,7 @@ pub async fn list_hardware(pool: web::Data<PgPool>) -> impl Responder {
 
 /// GET /hardware/{id}
 #[get("/{id}")]
-pub async fn get_hardware_item(
-    pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn get_hardware_item(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Responder {
     let id = path.into_inner();
 
     let result = sqlx::query_as!(
@@ -127,12 +124,9 @@ pub async fn update_hardware(
 ) -> impl Responder {
     let id = path.into_inner();
 
-    let exists = sqlx::query_scalar!(
-        "SELECT EXISTS(SELECT 1 FROM hardware WHERE id = $1)",
-        id
-    )
-    .fetch_one(pool.get_ref())
-    .await;
+    let exists = sqlx::query_scalar!("SELECT EXISTS(SELECT 1 FROM hardware WHERE id = $1)", id)
+        .fetch_one(pool.get_ref())
+        .await;
 
     match exists {
         Ok(Some(false)) | Ok(None) => {
@@ -202,12 +196,9 @@ pub async fn update_hardware(
 pub async fn delete_hardware(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Responder {
     let id = path.into_inner();
 
-    let result = sqlx::query!(
-        "DELETE FROM hardware WHERE id = $1 RETURNING id",
-        id
-    )
-    .fetch_optional(pool.get_ref())
-    .await;
+    let result = sqlx::query!("DELETE FROM hardware WHERE id = $1 RETURNING id", id)
+        .fetch_optional(pool.get_ref())
+        .await;
 
     match result {
         Ok(Some(_)) => HttpResponse::NoContent().finish(),

@@ -3,16 +3,16 @@
 // F20 · Auth HTTP handlers (register, login, refresh, me, change-password)
 // ============================================================
 
-use actix_web::{web, HttpRequest, HttpResponse, HttpMessage};
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
 use validator::Validate;
 
 use crate::auth::{
-    generate_token_pair, validate_token, AuthConfig, AuthError, AuthenticatedUser,
-    TokenType, UserRole,
+    generate_token_pair,
     password::{hash_password, validate_password_strength, verify_password},
+    validate_token, AuthConfig, AuthError, AuthenticatedUser, TokenType, UserRole,
 };
 
 // ── Request / Response DTOs ──────────────────────────────────
@@ -84,8 +84,7 @@ pub async fn register(
         .map_err(|e| AuthError::ValidationError(e.to_string()))?;
 
     // Validate password strength beyond length
-    validate_password_strength(&body.password)
-        .map_err(AuthError::ValidationError)?;
+    validate_password_strength(&body.password).map_err(AuthError::ValidationError)?;
 
     // Determine role (default to shop_floor)
     let role = match &body.role {
@@ -174,11 +173,7 @@ pub async fn refresh(
     body: web::Json<RefreshRequest>,
 ) -> Result<HttpResponse, AuthError> {
     // Validate the refresh token
-    let claims = validate_token(
-        &body.refresh_token,
-        &config.jwt_secret,
-        TokenType::Refresh,
-    )?;
+    let claims = validate_token(&body.refresh_token, &config.jwt_secret, TokenType::Refresh)?;
 
     // Verify the user still exists
     let user: UserRow = sqlx::query_as(
@@ -201,10 +196,7 @@ pub async fn refresh(
 
 // ── GET /api/auth/me ─────────────────────────────────────────
 
-pub async fn me(
-    req: HttpRequest,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AuthError> {
+pub async fn me(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, AuthError> {
     let user = req
         .extensions()
         .get::<AuthenticatedUser>()
@@ -244,16 +236,14 @@ pub async fn change_password(
         .ok_or(AuthError::MissingToken)?;
 
     // Validate new password strength
-    validate_password_strength(&body.new_password)
-        .map_err(AuthError::ValidationError)?;
+    validate_password_strength(&body.new_password).map_err(AuthError::ValidationError)?;
 
     // Fetch current hash
-    let current_hash: String =
-        sqlx::query_scalar("SELECT password_hash FROM users WHERE id = $1")
-            .bind(user.user_id)
-            .fetch_one(pool.get_ref())
-            .await
-            .map_err(|e| AuthError::Internal(e.to_string()))?;
+    let current_hash: String = sqlx::query_scalar("SELECT password_hash FROM users WHERE id = $1")
+        .bind(user.user_id)
+        .fetch_one(pool.get_ref())
+        .await
+        .map_err(|e| AuthError::Internal(e.to_string()))?;
 
     // Verify current password
     let valid = verify_password(&body.current_password, &current_hash)

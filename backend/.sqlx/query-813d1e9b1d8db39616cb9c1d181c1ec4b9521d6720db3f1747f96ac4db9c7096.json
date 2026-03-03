@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            id, name, sku, material_type,\n            thickness_mm, width_mm, length_mm,\n            supplier, cost_per_sheet, description,\n            created_at, updated_at\n        FROM materials\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "sku",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "material_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "thickness_mm",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "width_mm",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "length_mm",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "supplier",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "cost_per_sheet",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 9,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "813d1e9b1d8db39616cb9c1d181c1ec4b9521d6720db3f1747f96ac4db9c7096"
+}

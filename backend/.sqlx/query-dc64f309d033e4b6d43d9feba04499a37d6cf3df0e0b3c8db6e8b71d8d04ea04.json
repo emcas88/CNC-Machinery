@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            id, job_id, name,\n            status::TEXT          AS status,\n            quality::TEXT         AS quality,\n            settings, sheets,\n            yield_percentage,\n            created_at, updated_at\n        FROM optimization_runs\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "job_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "quality",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "settings",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "sheets",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 7,
+        "name": "yield_percentage",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      null,
+      null,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "dc64f309d033e4b6d43d9feba04499a37d6cf3df0e0b3c8db6e8b71d8d04ea04"
+}

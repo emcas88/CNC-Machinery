@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO post_processors (\n            id, name, controller_type, file_extension, template_config,\n            created_at, updated_at\n        )\n        VALUES ($1, $2, $3, $4, $5, $6, $7)\n        RETURNING\n            id,\n            name,\n            controller_type,\n            file_extension,\n            template_config,\n            created_at,\n            updated_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "controller_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "file_extension",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "template_config",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "c8a92d81d9cc0516bf199aaabfd65c05262cb5d27f9dc5967aacb6244ef051b0"
+}

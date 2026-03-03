@@ -31,7 +31,7 @@ pub struct PublicUser {
     pub email: String,
     pub name: String,
     pub role: UserRole,
-    pub preferences: Option<serde_json::Value>,
+    pub permissions: Option<serde_json::Value>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -50,7 +50,7 @@ pub async fn list_users(pool: web::Data<PgPool>) -> impl Responder {
             email,
             name,
             role AS "role: UserRole",
-            preferences,
+            permissions,
             created_at,
             updated_at
         FROM users
@@ -87,7 +87,7 @@ pub async fn get_user(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Re
             email,
             name,
             role AS "role: UserRole",
-            preferences,
+            permissions,
             created_at,
             updated_at
         FROM users
@@ -118,10 +118,7 @@ pub async fn get_user(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Re
 // ---------------------------------------------------------------------------
 
 #[post("")]
-pub async fn create_user(
-    pool: web::Data<PgPool>,
-    body: web::Json<CreateUser>,
-) -> impl Responder {
+pub async fn create_user(pool: web::Data<PgPool>, body: web::Json<CreateUser>) -> impl Responder {
     // NOTE: The caller must hash the password before passing `password_hash`.
     // This handler does not perform hashing — that belongs in an auth service.
     let id = Uuid::new_v4();
@@ -131,7 +128,7 @@ pub async fn create_user(
         PublicUser,
         r#"
         INSERT INTO users (
-            id, email, name, password_hash, role, preferences,
+            id, email, name, password_hash, role, permissions,
             created_at, updated_at
         )
         VALUES (
@@ -144,16 +141,16 @@ pub async fn create_user(
             email,
             name,
             role AS "role: UserRole",
-            preferences,
+            permissions,
             created_at,
             updated_at
         "#,
         id,
         body.email,
         body.name,
-        body.password_hash,
+        body.password,
         body.role.to_string(),
-        body.preferences,
+        body.permissions,
         now,
         now
     )
@@ -189,12 +186,9 @@ pub async fn update_user(
     let id = path.into_inner();
     let now = chrono::Utc::now();
 
-    let exists = sqlx::query_scalar!(
-        "SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)",
-        id
-    )
-    .fetch_one(pool.get_ref())
-    .await;
+    let exists = sqlx::query_scalar!("SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)", id)
+        .fetch_one(pool.get_ref())
+        .await;
 
     match exists {
         Ok(Some(false)) | Ok(None) => {
@@ -212,34 +206,30 @@ pub async fn update_user(
         _ => {}
     }
 
-    // password_hash update is allowed (caller provides a new pre-hashed value);
-    // it is never reflected back in the response.
     let result = sqlx::query_as!(
         PublicUser,
         r#"
         UPDATE users SET
-            email         = COALESCE($2, email),
-            name          = COALESCE($3, name),
-            password_hash = COALESCE($4, password_hash),
-            role          = COALESCE($5::text::user_role, role),
-            preferences   = COALESCE($6, preferences),
-            updated_at    = $7
+            email       = COALESCE($2, email),
+            name        = COALESCE($3, name),
+            role        = COALESCE($4::text::user_role, role),
+            permissions = COALESCE($5, permissions),
+            updated_at  = $6
         WHERE id = $1
         RETURNING
             id,
             email,
             name,
             role AS "role: UserRole",
-            preferences,
+            permissions,
             created_at,
             updated_at
         "#,
         id,
         body.email,
         body.name,
-        body.password_hash,
         body.role.as_ref().map(|r| r.to_string()),
-        body.preferences,
+        body.permissions,
         now
     )
     .fetch_one(pool.get_ref())
@@ -269,12 +259,9 @@ pub async fn update_user(
 pub async fn delete_user(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Responder {
     let id = path.into_inner();
 
-    let result = sqlx::query!(
-        "DELETE FROM users WHERE id = $1 RETURNING id",
-        id
-    )
-    .fetch_optional(pool.get_ref())
-    .await;
+    let result = sqlx::query!("DELETE FROM users WHERE id = $1 RETURNING id", id)
+        .fetch_optional(pool.get_ref())
+        .await;
 
     match result {
         Ok(Some(_)) => HttpResponse::NoContent().finish(),

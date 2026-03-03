@@ -34,10 +34,7 @@ pub struct QuoteQuery {
 // ---------------------------------------------------------------------------
 
 #[get("")]
-pub async fn list_quotes(
-    pool: web::Data<PgPool>,
-    query: web::Query<QuoteQuery>,
-) -> impl Responder {
+pub async fn list_quotes(pool: web::Data<PgPool>, query: web::Query<QuoteQuery>) -> impl Responder {
     let result = if let Some(job_id) = query.job_id {
         sqlx::query_as!(
             Quote,
@@ -150,10 +147,7 @@ pub async fn get_quote(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl R
 // ---------------------------------------------------------------------------
 
 #[post("")]
-pub async fn create_quote(
-    pool: web::Data<PgPool>,
-    body: web::Json<CreateQuote>,
-) -> impl Responder {
+pub async fn create_quote(pool: web::Data<PgPool>, body: web::Json<CreateQuote>) -> impl Responder {
     let id = Uuid::new_v4();
     let now = chrono::Utc::now();
 
@@ -259,12 +253,11 @@ pub async fn update_quote(
         }
     };
 
-    let material_cost      = body.material_cost.unwrap_or(current.material_cost);
-    let hardware_cost      = body.hardware_cost.unwrap_or(current.hardware_cost);
-    let labor_cost         = body.labor_cost.unwrap_or(current.labor_cost);
-    let markup_percentage  = body.markup_percentage.unwrap_or(current.markup_percentage);
-    let total              = (material_cost + hardware_cost + labor_cost)
-                                * (1.0 + markup_percentage / 100.0);
+    let material_cost = body.material_cost.unwrap_or(current.material_cost);
+    let hardware_cost = body.hardware_cost.unwrap_or(current.hardware_cost);
+    let labor_cost = body.labor_cost.unwrap_or(current.labor_cost);
+    let markup_percentage = body.markup_percentage.unwrap_or(current.markup_percentage);
+    let total = (material_cost + hardware_cost + labor_cost) * (1.0 + markup_percentage / 100.0);
 
     let result = sqlx::query_as!(
         Quote,
@@ -326,12 +319,9 @@ pub async fn update_quote(
 pub async fn delete_quote(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Responder {
     let id = path.into_inner();
 
-    let result = sqlx::query!(
-        "DELETE FROM quotes WHERE id = $1 RETURNING id",
-        id
-    )
-    .fetch_optional(pool.get_ref())
-    .await;
+    let result = sqlx::query!("DELETE FROM quotes WHERE id = $1 RETURNING id", id)
+        .fetch_optional(pool.get_ref())
+        .await;
 
     match result {
         Ok(Some(_)) => HttpResponse::NoContent().finish(),

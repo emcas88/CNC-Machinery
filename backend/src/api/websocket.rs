@@ -336,11 +336,7 @@ impl WsSession {
     }
 
     /// Handle a parsed `ClientMessage`.
-    fn dispatch(
-        &mut self,
-        ctx: &mut ws::WebsocketContext<Self>,
-        client_msg: ClientMessage,
-    ) {
+    fn dispatch(&mut self, ctx: &mut ws::WebsocketContext<Self>, client_msg: ClientMessage) {
         match client_msg {
             ClientMessage::Auth { token } => {
                 // Minimal token check — in production, verify JWT / database
@@ -394,7 +390,9 @@ impl Actor for WsSession {
     }
 
     fn stopped(&mut self, _ctx: &mut Self::Context) {
-        self.manager.do_send(Disconnect { session_id: self.id });
+        self.manager.do_send(Disconnect {
+            session_id: self.id,
+        });
     }
 }
 
@@ -942,7 +940,7 @@ mod tests {
         let entity_b = make_uuid();
         let session_a = make_uuid();
         let session_b = make_uuid();
- 
+
         subscriptions
             .entry(entity_a)
             .or_insert_with(HashSet::new)

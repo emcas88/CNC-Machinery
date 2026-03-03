@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            r.name                  AS room_name,\n            pr.name                 AS product_name,\n            p.name                  AS part_name,\n            p.part_type::TEXT       AS part_type,\n            m.name                  AS material_name,\n            m.cutlist_name,\n            p.length,\n            p.width,\n            p.thickness,\n            p.grain_direction::TEXT AS grain_direction,\n            p.edge_band_top,\n            p.edge_band_bottom,\n            p.edge_band_left,\n            p.edge_band_right\n        FROM jobs j\n        JOIN rooms      r  ON r.job_id     = j.id\n        JOIN products   pr ON pr.room_id   = r.id\n        JOIN parts      p  ON p.product_id = pr.id\n        JOIN materials  m  ON m.id         = p.material_id\n        WHERE j.id = $1\n        ORDER BY r.name, pr.name, p.name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "room_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "product_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "part_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "part_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "material_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "cutlist_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "length",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "width",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "thickness",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 9,
+        "name": "grain_direction",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "edge_band_top",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 11,
+        "name": "edge_band_bottom",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 12,
+        "name": "edge_band_left",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 13,
+        "name": "edge_band_right",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "b3d9b5284855ace1cdfa731657cfaea417985e79e540f8e6b683807bae0a650d"
+}

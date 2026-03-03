@@ -526,10 +526,7 @@ impl FileExporter {
         dxf.push_str("  9\n$ACADVER\n  1\nAC1009\n"); // AutoCAD R12
         dxf.push_str("  9\n$INSUNITS\n 70\n4\n"); // 4 = millimeters
         dxf.push_str("  9\n$DWGCODEPAGE\n  3\nANSI_1252\n");
-        dxf.push_str(&format!(
-            "  9\n$TDCREATE\n 40\n{:.6}\n",
-            julian_day_now()
-        ));
+        dxf.push_str(&format!("  9\n$TDCREATE\n 40\n{:.6}\n", julian_day_now()));
         dxf.push_str("  0\nENDSEC\n");
 
         // ---- TABLES section -----------------------------------------------
@@ -592,7 +589,12 @@ impl FileExporter {
                         layer, x, y, height, value, x, y
                     ));
                 }
-                DxfEntity::Circle { layer, cx, cy, radius } => {
+                DxfEntity::Circle {
+                    layer,
+                    cx,
+                    cy,
+                    radius,
+                } => {
                     dxf.push_str(&format!(
                         "  0\nCIRCLE\n  8\n{}\n 10\n{:.6}\n 20\n{:.6}\n 30\n0.0\n 40\n{:.6}\n",
                         layer, cx, cy, radius
@@ -716,7 +718,11 @@ impl FileExporter {
         out.push_str(&thin_sep);
         out.push('\n');
 
-        let material_cost: f64 = data.materials_summary.iter().map(|m| m.estimated_cost).sum();
+        let material_cost: f64 = data
+            .materials_summary
+            .iter()
+            .map(|m| m.estimated_cost)
+            .sum();
         let labour_cost = data.labour_cost.unwrap_or(0.0);
         let overhead = data.total_cost - material_cost - labour_cost;
 
@@ -735,10 +741,7 @@ impl FileExporter {
         if total_ops > 0 {
             out.push_str(&thin_sep);
             out.push('\n');
-            out.push_str(&format!(
-                "  OPERATIONS SUMMARY  ({} total)\n",
-                total_ops
-            ));
+            out.push_str(&format!("  OPERATIONS SUMMARY  ({} total)\n", total_ops));
             out.push_str(&thin_sep);
             out.push('\n');
 
@@ -828,11 +831,13 @@ impl FileExporter {
             ));
             rb.push_str(&format!(
                 "pt2 = Geom::Point3d.new({:.6}.inch, {:.6}.inch, 0)\n",
-                x_offset_in + l_in, 0.0
+                x_offset_in + l_in,
+                0.0
             ));
             rb.push_str(&format!(
                 "pt3 = Geom::Point3d.new({:.6}.inch, {:.6}.inch, 0)\n",
-                x_offset_in + l_in, w_in
+                x_offset_in + l_in,
+                w_in
             ));
             rb.push_str(&format!(
                 "pt4 = Geom::Point3d.new({:.6}.inch, {:.6}.inch, 0)\n",
@@ -946,10 +951,34 @@ impl FileExporter {
             let sx1 = sheet.width;
             let sy1 = y_offset + sheet.length;
 
-            entities.push(DxfEntity::Line { layer: sheet_layer.clone(), x1: sx0, y1: sy0, x2: sx1, y2: sy0 });
-            entities.push(DxfEntity::Line { layer: sheet_layer.clone(), x1: sx1, y1: sy0, x2: sx1, y2: sy1 });
-            entities.push(DxfEntity::Line { layer: sheet_layer.clone(), x1: sx1, y1: sy1, x2: sx0, y2: sy1 });
-            entities.push(DxfEntity::Line { layer: sheet_layer.clone(), x1: sx0, y1: sy1, x2: sx0, y2: sy0 });
+            entities.push(DxfEntity::Line {
+                layer: sheet_layer.clone(),
+                x1: sx0,
+                y1: sy0,
+                x2: sx1,
+                y2: sy0,
+            });
+            entities.push(DxfEntity::Line {
+                layer: sheet_layer.clone(),
+                x1: sx1,
+                y1: sy0,
+                x2: sx1,
+                y2: sy1,
+            });
+            entities.push(DxfEntity::Line {
+                layer: sheet_layer.clone(),
+                x1: sx1,
+                y1: sy1,
+                x2: sx0,
+                y2: sy1,
+            });
+            entities.push(DxfEntity::Line {
+                layer: sheet_layer.clone(),
+                x1: sx0,
+                y1: sy1,
+                x2: sx0,
+                y2: sy0,
+            });
 
             // Sheet annotation (material + waste)
             entities.push(DxfEntity::Text {
@@ -976,10 +1005,34 @@ impl FileExporter {
                 let px1 = px0 + pl;
                 let py1 = py0 + pw;
 
-                entities.push(DxfEntity::Line { layer: parts_layer.clone(), x1: px0, y1: py0, x2: px1, y2: py0 });
-                entities.push(DxfEntity::Line { layer: parts_layer.clone(), x1: px1, y1: py0, x2: px1, y2: py1 });
-                entities.push(DxfEntity::Line { layer: parts_layer.clone(), x1: px1, y1: py1, x2: px0, y2: py1 });
-                entities.push(DxfEntity::Line { layer: parts_layer.clone(), x1: px0, y1: py1, x2: px0, y2: py0 });
+                entities.push(DxfEntity::Line {
+                    layer: parts_layer.clone(),
+                    x1: px0,
+                    y1: py0,
+                    x2: px1,
+                    y2: py0,
+                });
+                entities.push(DxfEntity::Line {
+                    layer: parts_layer.clone(),
+                    x1: px1,
+                    y1: py0,
+                    x2: px1,
+                    y2: py1,
+                });
+                entities.push(DxfEntity::Line {
+                    layer: parts_layer.clone(),
+                    x1: px1,
+                    y1: py1,
+                    x2: px0,
+                    y2: py1,
+                });
+                entities.push(DxfEntity::Line {
+                    layer: parts_layer.clone(),
+                    x1: px0,
+                    y1: py1,
+                    x2: px0,
+                    y2: py0,
+                });
 
                 // Part label at centre
                 entities.push(DxfEntity::Text {
@@ -1557,7 +1610,11 @@ mod tests {
         // Each part gets 4 LINE entities for the outline
         let line_count = dxf.matches("  0\nLINE\n").count();
         // 3 parts x 4 lines = 12 minimum
-        assert!(line_count >= 12, "Expected at least 12 LINE entities, got {}", line_count);
+        assert!(
+            line_count >= 12,
+            "Expected at least 12 LINE entities, got {}",
+            line_count
+        );
     }
 
     #[test]
@@ -1567,7 +1624,11 @@ mod tests {
         let dxf = exporter.export_dxf(&data);
         let text_count = dxf.matches("  0\nTEXT\n").count();
         // Each part gets 2 TEXT entities (label + dim)
-        assert!(text_count >= 6, "Expected at least 6 TEXT entities, got {}", text_count);
+        assert!(
+            text_count >= 6,
+            "Expected at least 6 TEXT entities, got {}",
+            text_count
+        );
     }
 
     #[test]

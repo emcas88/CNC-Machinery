@@ -29,14 +29,20 @@ mod password_tests {
     #[test]
     fn test_hash_password_returns_phc_string() {
         let hash = hash_password("Str0ngP@ss!").unwrap();
-        assert!(hash.starts_with("$argon2"), "Expected PHC-formatted hash, got: {hash}");
+        assert!(
+            hash.starts_with("$argon2"),
+            "Expected PHC-formatted hash, got: {hash}"
+        );
     }
 
     #[test]
     fn test_hash_password_different_salts() {
         let h1 = hash_password("Str0ngP@ss!").unwrap();
         let h2 = hash_password("Str0ngP@ss!").unwrap();
-        assert_ne!(h1, h2, "Two hashes of the same password must differ (random salt)");
+        assert_ne!(
+            h1, h2,
+            "Two hashes of the same password must differ (random salt)"
+        );
     }
 
     #[test]
@@ -164,7 +170,8 @@ mod jwt_tests {
     fn test_generate_token_pair() {
         let config = test_config();
         let uid = Uuid::new_v4();
-        let pair = generate_token_pair(uid, "alice@example.com", UserRole::Designer, &config).unwrap();
+        let pair =
+            generate_token_pair(uid, "alice@example.com", UserRole::Designer, &config).unwrap();
 
         assert!(!pair.access_token.is_empty());
         assert!(!pair.refresh_token.is_empty());
@@ -180,7 +187,8 @@ mod jwt_tests {
         let email = "bob@cnc.io";
         let pair = generate_token_pair(uid, email, UserRole::CncOperator, &config).unwrap();
 
-        let claims = validate_token(&pair.access_token, &config.jwt_secret, TokenType::Access).unwrap();
+        let claims =
+            validate_token(&pair.access_token, &config.jwt_secret, TokenType::Access).unwrap();
         assert_eq!(claims.sub, uid);
         assert_eq!(claims.email, email);
         assert_eq!(claims.role, UserRole::CncOperator);
@@ -193,7 +201,8 @@ mod jwt_tests {
         let uid = Uuid::new_v4();
         let pair = generate_token_pair(uid, "carol@cnc.io", UserRole::SuperAdmin, &config).unwrap();
 
-        let claims = validate_token(&pair.refresh_token, &config.jwt_secret, TokenType::Refresh).unwrap();
+        let claims =
+            validate_token(&pair.refresh_token, &config.jwt_secret, TokenType::Refresh).unwrap();
         assert_eq!(claims.sub, uid);
         assert_eq!(claims.token_type, TokenType::Refresh);
         assert_eq!(claims.role, UserRole::SuperAdmin);
@@ -239,7 +248,8 @@ mod jwt_tests {
         let uid = Uuid::new_v4();
         let pair = generate_token_pair(uid, "t@t.com", UserRole::Designer, &config).unwrap();
 
-        let err = validate_token(&pair.access_token, &config.jwt_secret, TokenType::Refresh).unwrap_err();
+        let err =
+            validate_token(&pair.access_token, &config.jwt_secret, TokenType::Refresh).unwrap_err();
         matches!(err, AuthError::WrongTokenType { .. });
     }
 
@@ -249,7 +259,8 @@ mod jwt_tests {
         let uid = Uuid::new_v4();
         let pair = generate_token_pair(uid, "t@t.com", UserRole::Designer, &config).unwrap();
 
-        let err = validate_token(&pair.refresh_token, &config.jwt_secret, TokenType::Access).unwrap_err();
+        let err =
+            validate_token(&pair.refresh_token, &config.jwt_secret, TokenType::Access).unwrap_err();
         matches!(err, AuthError::WrongTokenType { .. });
     }
 
@@ -293,7 +304,9 @@ mod jwt_tests {
         let config = test_config();
         let uid = Uuid::new_v4();
         let pair = generate_token_pair(uid, "t@t.com", UserRole::Designer, &config).unwrap();
-        let claims = decode_token(&pair.access_token, &config.jwt_secret).unwrap().claims;
+        let claims = decode_token(&pair.access_token, &config.jwt_secret)
+            .unwrap()
+            .claims;
         let diff = claims.exp - claims.iat;
         assert_eq!(diff, 86400); // 24 * 60 * 60
     }
@@ -303,7 +316,9 @@ mod jwt_tests {
         let config = test_config();
         let uid = Uuid::new_v4();
         let pair = generate_token_pair(uid, "t@t.com", UserRole::Designer, &config).unwrap();
-        let claims = decode_token(&pair.refresh_token, &config.jwt_secret).unwrap().claims;
+        let claims = decode_token(&pair.refresh_token, &config.jwt_secret)
+            .unwrap()
+            .claims;
         let diff = claims.exp - claims.iat;
         assert_eq!(diff, 604800); // 7 * 24 * 60 * 60
     }
@@ -334,7 +349,12 @@ mod jwt_tests {
     fn test_encode_all_roles() {
         let secret = "role-test";
         let now = Utc::now();
-        for role in [UserRole::SuperAdmin, UserRole::Designer, UserRole::CncOperator, UserRole::ShopFloor] {
+        for role in [
+            UserRole::SuperAdmin,
+            UserRole::Designer,
+            UserRole::CncOperator,
+            UserRole::ShopFloor,
+        ] {
             let claims = Claims {
                 sub: Uuid::new_v4(),
                 email: "r@r.com".into(),
@@ -356,10 +376,22 @@ mod role_tests {
 
     #[test]
     fn test_role_from_str_valid() {
-        assert_eq!(UserRole::from_str_role("super_admin"), Some(UserRole::SuperAdmin));
-        assert_eq!(UserRole::from_str_role("designer"), Some(UserRole::Designer));
-        assert_eq!(UserRole::from_str_role("cnc_operator"), Some(UserRole::CncOperator));
-        assert_eq!(UserRole::from_str_role("shop_floor"), Some(UserRole::ShopFloor));
+        assert_eq!(
+            UserRole::from_str_role("super_admin"),
+            Some(UserRole::SuperAdmin)
+        );
+        assert_eq!(
+            UserRole::from_str_role("designer"),
+            Some(UserRole::Designer)
+        );
+        assert_eq!(
+            UserRole::from_str_role("cnc_operator"),
+            Some(UserRole::CncOperator)
+        );
+        assert_eq!(
+            UserRole::from_str_role("shop_floor"),
+            Some(UserRole::ShopFloor)
+        );
     }
 
     #[test]
@@ -380,7 +412,12 @@ mod role_tests {
 
     #[test]
     fn test_role_display_roundtrip() {
-        for role in [UserRole::SuperAdmin, UserRole::Designer, UserRole::CncOperator, UserRole::ShopFloor] {
+        for role in [
+            UserRole::SuperAdmin,
+            UserRole::Designer,
+            UserRole::CncOperator,
+            UserRole::ShopFloor,
+        ] {
             let s = role.to_string();
             assert_eq!(UserRole::from_str_role(&s), Some(role));
         }
@@ -403,7 +440,12 @@ mod role_tests {
 
     #[test]
     fn test_role_serde_roundtrip() {
-        for role in [UserRole::SuperAdmin, UserRole::Designer, UserRole::CncOperator, UserRole::ShopFloor] {
+        for role in [
+            UserRole::SuperAdmin,
+            UserRole::Designer,
+            UserRole::CncOperator,
+            UserRole::ShopFloor,
+        ] {
             let json = serde_json::to_string(&role).unwrap();
             let deserialized: UserRole = serde_json::from_str(&json).unwrap();
             assert_eq!(deserialized, role);
@@ -597,8 +639,8 @@ mod auth_config_tests {
 #[cfg(test)]
 mod auth_error_tests {
     use crate::auth::*;
-    use actix_web::ResponseError;
     use actix_web::http::StatusCode;
+    use actix_web::ResponseError;
 
     #[test]
     fn test_invalid_token_is_401() {
@@ -620,7 +662,9 @@ mod auth_error_tests {
 
     #[test]
     fn test_wrong_token_type_is_401() {
-        let err = AuthError::WrongTokenType { expected: TokenType::Access };
+        let err = AuthError::WrongTokenType {
+            expected: TokenType::Access,
+        };
         assert_eq!(err.status_code(), StatusCode::UNAUTHORIZED);
     }
 
@@ -664,12 +708,24 @@ mod auth_error_tests {
 
     #[test]
     fn test_error_display_messages() {
-        assert_eq!(AuthError::InvalidToken.to_string(), "Invalid or expired token");
+        assert_eq!(
+            AuthError::InvalidToken.to_string(),
+            "Invalid or expired token"
+        );
         assert_eq!(AuthError::TokenExpired.to_string(), "Token has expired");
-        assert_eq!(AuthError::MissingToken.to_string(), "Missing authorization header");
-        assert_eq!(AuthError::InvalidCredentials.to_string(), "Invalid credentials");
+        assert_eq!(
+            AuthError::MissingToken.to_string(),
+            "Missing authorization header"
+        );
+        assert_eq!(
+            AuthError::InvalidCredentials.to_string(),
+            "Invalid credentials"
+        );
         assert_eq!(AuthError::UserNotFound.to_string(), "User not found");
-        assert_eq!(AuthError::EmailAlreadyExists.to_string(), "Email already registered");
+        assert_eq!(
+            AuthError::EmailAlreadyExists.to_string(),
+            "Email already registered"
+        );
     }
 
     #[test]
@@ -863,15 +919,13 @@ mod middleware_logic_tests {
             access_token_ttl: Duration::hours(1),
             refresh_token_ttl: Duration::days(7),
         };
-        let pair = generate_token_pair(
-            Uuid::new_v4(),
-            "mw@test.com",
-            UserRole::Designer,
-            &config,
-        ).unwrap();
+        let pair = generate_token_pair(Uuid::new_v4(), "mw@test.com", UserRole::Designer, &config)
+            .unwrap();
 
         // The middleware should reject a refresh token used as an access token.
-        let claims = decode_token(&pair.refresh_token, test_secret()).unwrap().claims;
+        let claims = decode_token(&pair.refresh_token, test_secret())
+            .unwrap()
+            .claims;
         assert_eq!(claims.token_type, TokenType::Refresh);
         // In the real middleware, this would result in a 401 because token_type != Access
     }
@@ -883,14 +937,12 @@ mod middleware_logic_tests {
             access_token_ttl: Duration::hours(1),
             refresh_token_ttl: Duration::days(7),
         };
-        let pair = generate_token_pair(
-            Uuid::new_v4(),
-            "mw@test.com",
-            UserRole::Designer,
-            &config,
-        ).unwrap();
+        let pair = generate_token_pair(Uuid::new_v4(), "mw@test.com", UserRole::Designer, &config)
+            .unwrap();
 
-        let claims = decode_token(&pair.access_token, test_secret()).unwrap().claims;
+        let claims = decode_token(&pair.access_token, test_secret())
+            .unwrap()
+            .claims;
         assert_eq!(claims.token_type, TokenType::Access);
     }
 
@@ -939,10 +991,12 @@ mod integration_style_tests {
         // Issue tokens
         let uid = Uuid::new_v4();
         let config = test_config();
-        let pair = generate_token_pair(uid, "login@cnc.io", UserRole::CncOperator, &config).unwrap();
+        let pair =
+            generate_token_pair(uid, "login@cnc.io", UserRole::CncOperator, &config).unwrap();
 
         // Validate access token
-        let claims = validate_token(&pair.access_token, &config.jwt_secret, TokenType::Access).unwrap();
+        let claims =
+            validate_token(&pair.access_token, &config.jwt_secret, TokenType::Access).unwrap();
         assert_eq!(claims.sub, uid);
         assert_eq!(claims.role, UserRole::CncOperator);
     }
@@ -952,18 +1006,17 @@ mod integration_style_tests {
     fn test_full_refresh_flow() {
         let config = test_config();
         let uid = Uuid::new_v4();
-        let pair1 = generate_token_pair(uid, "refresh@cnc.io", UserRole::Designer, &config).unwrap();
+        let pair1 =
+            generate_token_pair(uid, "refresh@cnc.io", UserRole::Designer, &config).unwrap();
 
         // Validate refresh token
-        let refresh_claims = validate_token(
-            &pair1.refresh_token,
-            &config.jwt_secret,
-            TokenType::Refresh,
-        ).unwrap();
+        let refresh_claims =
+            validate_token(&pair1.refresh_token, &config.jwt_secret, TokenType::Refresh).unwrap();
         assert_eq!(refresh_claims.sub, uid);
 
         // Issue new pair (simulating what the /refresh endpoint does)
-        let pair2 = generate_token_pair(uid, "refresh@cnc.io", UserRole::Designer, &config).unwrap();
+        let pair2 =
+            generate_token_pair(uid, "refresh@cnc.io", UserRole::Designer, &config).unwrap();
         assert_ne!(pair1.access_token, pair2.access_token);
     }
 
@@ -996,14 +1049,28 @@ mod integration_style_tests {
         let config = test_config();
 
         let admin_pair = generate_token_pair(
-            Uuid::new_v4(), "admin@cnc.io", UserRole::SuperAdmin, &config,
-        ).unwrap();
-        let floor_pair = generate_token_pair(
-            Uuid::new_v4(), "floor@cnc.io", UserRole::ShopFloor, &config,
-        ).unwrap();
+            Uuid::new_v4(),
+            "admin@cnc.io",
+            UserRole::SuperAdmin,
+            &config,
+        )
+        .unwrap();
+        let floor_pair =
+            generate_token_pair(Uuid::new_v4(), "floor@cnc.io", UserRole::ShopFloor, &config)
+                .unwrap();
 
-        let admin_claims = validate_token(&admin_pair.access_token, &config.jwt_secret, TokenType::Access).unwrap();
-        let floor_claims = validate_token(&floor_pair.access_token, &config.jwt_secret, TokenType::Access).unwrap();
+        let admin_claims = validate_token(
+            &admin_pair.access_token,
+            &config.jwt_secret,
+            TokenType::Access,
+        )
+        .unwrap();
+        let floor_claims = validate_token(
+            &floor_pair.access_token,
+            &config.jwt_secret,
+            TokenType::Access,
+        )
+        .unwrap();
 
         let admin_user = AuthenticatedUser::from_claims(&admin_claims);
         let floor_user = AuthenticatedUser::from_claims(&floor_claims);
@@ -1022,9 +1089,9 @@ mod integration_style_tests {
     #[test]
     fn test_tampered_token_rejected() {
         let config = test_config();
-        let pair = generate_token_pair(
-            Uuid::new_v4(), "tamper@cnc.io", UserRole::Designer, &config,
-        ).unwrap();
+        let pair =
+            generate_token_pair(Uuid::new_v4(), "tamper@cnc.io", UserRole::Designer, &config)
+                .unwrap();
 
         // Flip one character in the token
         let mut tampered = pair.access_token.clone();
@@ -1050,7 +1117,8 @@ mod integration_style_tests {
             refresh_token_ttl: Duration::days(1),
         };
 
-        let pair = generate_token_pair(Uuid::new_v4(), "x@x.com", UserRole::Designer, &config1).unwrap();
+        let pair =
+            generate_token_pair(Uuid::new_v4(), "x@x.com", UserRole::Designer, &config1).unwrap();
         assert!(decode_token(&pair.access_token, &config2.jwt_secret).is_err());
     }
 }

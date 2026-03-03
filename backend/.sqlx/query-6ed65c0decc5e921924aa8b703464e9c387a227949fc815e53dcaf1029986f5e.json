@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, operation_type, position_x, position_y, depth,\n                   width, height, tool_id, side, parameters\n              FROM operations\n             WHERE part_id = $1\n             ORDER BY position_y, position_x\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "operation_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "position_x",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 3,
+        "name": "position_y",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "depth",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "width",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "height",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "tool_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 8,
+        "name": "side",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "parameters",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "6ed65c0decc5e921924aa8b703464e9c387a227949fc815e53dcaf1029986f5e"
+}

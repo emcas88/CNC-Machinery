@@ -7,6 +7,7 @@
 // definitions, and the `AuthenticatedUser` extractor for Actix-web
 // handlers.
 
+pub mod auth_api;
 pub mod middleware;
 pub mod password;
 
@@ -131,8 +132,8 @@ pub struct Claims {
 pub struct TokenPair {
     pub access_token: String,
     pub refresh_token: String,
-    pub token_type: String,       // "Bearer"
-    pub expires_in: i64,          // seconds until access token expires
+    pub token_type: String, // "Bearer"
+    pub expires_in: i64,    // seconds until access token expires
 }
 
 // ── AuthenticatedUser (inserted into request extensions) ─────
@@ -330,7 +331,7 @@ pub fn require_admin(user: &AuthenticatedUser) -> Result<(), AuthError> {
 
 // ── RequireRole extractor ────────────────────────────────────
 
-use actix_web::{FromRequest, HttpRequest};
+use actix_web::{FromRequest, HttpMessage, HttpRequest};
 use std::future::{ready, Ready};
 use std::marker::PhantomData;
 
@@ -359,7 +360,11 @@ impl RoleGuard for DesignerOrAbove {
 pub struct OperatorOrAbove;
 impl RoleGuard for OperatorOrAbove {
     fn allowed_roles() -> Vec<UserRole> {
-        vec![UserRole::SuperAdmin, UserRole::Designer, UserRole::CncOperator]
+        vec![
+            UserRole::SuperAdmin,
+            UserRole::Designer,
+            UserRole::CncOperator,
+        ]
     }
 }
 

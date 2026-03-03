@@ -281,10 +281,7 @@ impl FlipsideManager {
             "; Dimensions: {}mm L x {}mm W x {}mm T",
             part.length, part.width, part.thickness
         ));
-        lines.push(format!(
-            "; Flip direction: {:?}",
-            part.flip_direction
-        ));
+        lines.push(format!("; Flip direction: {:?}", part.flip_direction));
         lines.push(format!("; Safe Z: {}mm", self.safe_z));
         lines.push(String::new());
 
@@ -310,10 +307,7 @@ impl FlipsideManager {
         ));
 
         for pin in &alignment_pins {
-            lines.push(format!(
-                "; Pin {} – {}",
-                pin.index, pin.description
-            ));
+            lines.push(format!("; Pin {} – {}", pin.index, pin.description));
             lines.push(format!("G0 X{:.3} Y{:.3}", pin.x, pin.y));
             lines.push(format!("G0 Z2.000    ; approach"));
             lines.push(format!(
@@ -344,7 +338,10 @@ impl FlipsideManager {
         lines.push("; ═══════════════════════════════════════════════════════".to_string());
         lines.push("; === OPERATOR ACTION REQUIRED – FLIP THE PART ===".to_string());
         lines.push("; ───────────────────────────────────────────────────────".to_string());
-        lines.push(format!("; 1. Rotate part 180° around the {:?} axis", part.flip_direction));
+        lines.push(format!(
+            "; 1. Rotate part 180° around the {:?} axis",
+            part.flip_direction
+        ));
         lines.push(";    (keep front edge against front fence)".to_string());
         lines.push("; 2. Locate part onto the 3 registration pins.".to_string());
         lines.push("; 3. Clamp securely before resuming.".to_string());
@@ -360,7 +357,9 @@ impl FlipsideManager {
 
         let mirrored_pins: Vec<(f64, f64)> = alignment_pins
             .iter()
-            .map(|pin| self.mirror_point(pin.x, pin.y, part.length, part.width, part.flip_direction))
+            .map(|pin| {
+                self.mirror_point(pin.x, pin.y, part.length, part.width, part.flip_direction)
+            })
             .collect();
 
         for (i, (mx, my)) in mirrored_pins.iter().enumerate() {
@@ -539,16 +538,17 @@ impl FlipsideManager {
     ///    bounding-box pair, verify `depth_top + depth_bottom < thickness`.
     /// 3. **Negative / zero dimensions**: warns when an operation has
     ///    non-positive width or height.
-    pub fn validate_flipside_operations(
-        &self,
-        part: &FlipsidePart,
-    ) -> ValidationResult {
+    pub fn validate_flipside_operations(&self, part: &FlipsidePart) -> ValidationResult {
         let mut errors: Vec<String> = Vec::new();
         let mut warnings: Vec<String> = Vec::new();
         let thickness = part.thickness;
 
         // ── Individual depth checks ───────────────────────────────────────
-        for op in part.top_operations.iter().chain(part.bottom_operations.iter()) {
+        for op in part
+            .top_operations
+            .iter()
+            .chain(part.bottom_operations.iter())
+        {
             if op.depth > thickness {
                 errors.push(format!(
                     "Operation {} ({:?} side) depth {:.3}mm exceeds part thickness {:.3}mm",
@@ -579,15 +579,16 @@ impl FlipsideManager {
                             "Collision detected: top operation {} (depth {:.3}mm) and \
                              bottom operation {} (depth {:.3}mm) overlap XY \
                              and combined depth {:.3}mm exceeds thickness {:.3}mm",
-                            top_op.id, top_op.depth,
-                            bot_op.id, bot_op.depth,
-                            combined, thickness
+                            top_op.id, top_op.depth, bot_op.id, bot_op.depth, combined, thickness
                         ));
                     } else if combined > thickness * 0.9 {
                         warnings.push(format!(
                             "Warning: top op {} and bottom op {} overlap XY with combined \
                              depth {:.3}mm – only {:.3}mm of material remains (< 10%)",
-                            top_op.id, bot_op.id, combined, thickness - combined
+                            top_op.id,
+                            bot_op.id,
+                            combined,
+                            thickness - combined
                         ));
                     }
                 }
@@ -680,7 +681,8 @@ impl FlipsideManager {
             // Plunge
             lines.push(format!(
                 "G1 Z-{:.3} F{:.0}  ; plunge to depth",
-                op.depth, self.default_feed_rate / 2.0
+                op.depth,
+                self.default_feed_rate / 2.0
             ));
 
             // If the operation has a non-trivial footprint, emit a simple bounding pass
@@ -714,9 +716,11 @@ impl FlipsideManager {
     ) -> usize {
         lines.push(format!("; Tool change – {}", description));
         match tool_id {
-            Some(id) => lines.push(format!("T{}  ; tool UUID prefix: {}",
+            Some(id) => lines.push(format!(
+                "T{}  ; tool UUID prefix: {}",
                 // Use first 8 hex chars as a short tool index for readability
-                &id.to_string()[..8], id
+                &id.to_string()[..8],
+                id
             )),
             None => lines.push("T0  ; unassigned tool slot".to_string()),
         }
@@ -1078,8 +1082,16 @@ mod tests {
         let width = 300.0;
         let pins = mgr().alignment_system(length, width, &[]);
         for pin in &pins {
-            assert!(pin.x >= 0.0 && pin.x <= length, "Pin X out of bounds: {}", pin.x);
-            assert!(pin.y >= 0.0 && pin.y <= width, "Pin Y out of bounds: {}", pin.y);
+            assert!(
+                pin.x >= 0.0 && pin.x <= length,
+                "Pin X out of bounds: {}",
+                pin.x
+            );
+            assert!(
+                pin.y >= 0.0 && pin.y <= width,
+                "Pin Y out of bounds: {}",
+                pin.y
+            );
         }
     }
 
@@ -1133,7 +1145,7 @@ mod tests {
         let origin = m.calculate_flip_origin(600.0, 300.0, FlipDirection::FlipY);
         let (nx, ny) = m.apply_flip_transform(100.0, 50.0, &origin);
         assert_eq!(nx, 500.0); // 600 - 100
-        assert_eq!(ny, 50.0);  // unchanged
+        assert_eq!(ny, 50.0); // unchanged
     }
 
     #[test]
@@ -1208,7 +1220,10 @@ mod tests {
     fn test_gcode_contains_program_pause_m0() {
         let part = simple_flipside_part();
         let result = mgr().generate_flip_gcode(&part);
-        assert!(result.gcode.contains("M0"), "G-code must contain M0 operator pause");
+        assert!(
+            result.gcode.contains("M0"),
+            "G-code must contain M0 operator pause"
+        );
     }
 
     #[test]
@@ -1246,7 +1261,10 @@ mod tests {
     fn test_gcode_contains_g90_absolute() {
         let part = simple_flipside_part();
         let result = mgr().generate_flip_gcode(&part);
-        assert!(result.gcode.contains("G90"), "G-code must use absolute mode");
+        assert!(
+            result.gcode.contains("G90"),
+            "G-code must use absolute mode"
+        );
     }
 
     #[test]
@@ -1313,7 +1331,10 @@ mod tests {
         );
         let result = mgr().generate_flip_gcode(&part);
         // side-B x should be 600 - 100 = 500
-        assert!(result.gcode.contains("X500.000"), "Expected mirrored X=500.000");
+        assert!(
+            result.gcode.contains("X500.000"),
+            "Expected mirrored X=500.000"
+        );
     }
 
     #[test]
@@ -1321,8 +1342,24 @@ mod tests {
         let t1 = Uuid::new_v4();
         let t2 = Uuid::new_v4();
         let top_op = make_op_typed(FlipSide::Top, 10.0, 10.0, 8.0, 8.0, 5.0, "drill", Some(t1));
-        let bot_op = make_op_typed(FlipSide::Bottom, 50.0, 50.0, 8.0, 8.0, 5.0, "dado", Some(t2));
-        let part = make_flipside_part(600.0, 300.0, 18.0, vec![top_op], vec![bot_op], FlipDirection::FlipY);
+        let bot_op = make_op_typed(
+            FlipSide::Bottom,
+            50.0,
+            50.0,
+            8.0,
+            8.0,
+            5.0,
+            "dado",
+            Some(t2),
+        );
+        let part = make_flipside_part(
+            600.0,
+            300.0,
+            18.0,
+            vec![top_op],
+            vec![bot_op],
+            FlipDirection::FlipY,
+        );
         let result = mgr().generate_flip_gcode(&part);
         // pin drill + t1 + t2 = at least 3 tool changes
         assert!(result.tool_changes >= 3);
@@ -1332,7 +1369,9 @@ mod tests {
     fn test_gcode_empty_ops_on_side_handled_gracefully() {
         // Should never happen (detect filters these out) but manager must not panic
         let part = make_flipside_part(
-            600.0, 300.0, 18.0,
+            600.0,
+            300.0,
+            18.0,
             vec![],
             vec![make_op(FlipSide::Bottom, 50.0, 50.0, 8.0, 8.0, 5.0)],
             FlipDirection::FlipY,
@@ -1346,7 +1385,9 @@ mod tests {
     #[test]
     fn test_validate_clean_part_is_valid() {
         let part = make_flipside_part(
-            600.0, 300.0, 18.0,
+            600.0,
+            300.0,
+            18.0,
             vec![make_op(FlipSide::Top, 10.0, 10.0, 8.0, 8.0, 5.0)],
             vec![make_op(FlipSide::Bottom, 200.0, 200.0, 8.0, 8.0, 6.0)],
             FlipDirection::FlipY,
@@ -1359,7 +1400,9 @@ mod tests {
     #[test]
     fn test_validate_top_op_exceeds_thickness_error() {
         let part = make_flipside_part(
-            600.0, 300.0, 18.0,
+            600.0,
+            300.0,
+            18.0,
             vec![make_op(FlipSide::Top, 10.0, 10.0, 8.0, 8.0, 20.0)], // 20 > 18
             vec![make_op(FlipSide::Bottom, 200.0, 200.0, 8.0, 8.0, 5.0)],
             FlipDirection::FlipY,
@@ -1373,7 +1416,9 @@ mod tests {
     #[test]
     fn test_validate_bottom_op_exceeds_thickness_error() {
         let part = make_flipside_part(
-            600.0, 300.0, 18.0,
+            600.0,
+            300.0,
+            18.0,
             vec![make_op(FlipSide::Top, 10.0, 10.0, 8.0, 8.0, 5.0)],
             vec![make_op(FlipSide::Bottom, 200.0, 200.0, 8.0, 8.0, 25.0)], // 25 > 18
             FlipDirection::FlipY,
@@ -1386,7 +1431,9 @@ mod tests {
     fn test_validate_overlapping_ops_collision_error() {
         // Both ops at same XY, combined depth > thickness
         let part = make_flipside_part(
-            600.0, 300.0, 18.0,
+            600.0,
+            300.0,
+            18.0,
             vec![make_op(FlipSide::Top, 50.0, 50.0, 20.0, 20.0, 10.0)],
             vec![make_op(FlipSide::Bottom, 50.0, 50.0, 20.0, 20.0, 10.0)],
             FlipDirection::FlipY,
@@ -1400,7 +1447,9 @@ mod tests {
     fn test_validate_overlapping_ops_combined_depth_ok() {
         // Ops overlap XY but combined depth is within thickness
         let part = make_flipside_part(
-            600.0, 300.0, 18.0,
+            600.0,
+            300.0,
+            18.0,
             vec![make_op(FlipSide::Top, 50.0, 50.0, 20.0, 20.0, 6.0)],
             vec![make_op(FlipSide::Bottom, 50.0, 50.0, 20.0, 20.0, 5.0)],
             FlipDirection::FlipY,
@@ -1413,7 +1462,9 @@ mod tests {
     fn test_validate_non_overlapping_high_depth_is_valid() {
         // Deep ops but they don't overlap XY so no collision
         let part = make_flipside_part(
-            600.0, 300.0, 18.0,
+            600.0,
+            300.0,
+            18.0,
             vec![make_op(FlipSide::Top, 10.0, 10.0, 20.0, 20.0, 16.0)],
             vec![make_op(FlipSide::Bottom, 200.0, 200.0, 20.0, 20.0, 16.0)],
             FlipDirection::FlipY,
@@ -1425,7 +1476,9 @@ mod tests {
     #[test]
     fn test_validate_zero_depth_op_is_error() {
         let part = make_flipside_part(
-            600.0, 300.0, 18.0,
+            600.0,
+            300.0,
+            18.0,
             vec![make_op(FlipSide::Top, 10.0, 10.0, 8.0, 8.0, 0.0)],
             vec![make_op(FlipSide::Bottom, 200.0, 200.0, 8.0, 8.0, 5.0)],
             FlipDirection::FlipY,
@@ -1438,7 +1491,9 @@ mod tests {
     #[test]
     fn test_validate_negative_depth_is_error() {
         let part = make_flipside_part(
-            600.0, 300.0, 18.0,
+            600.0,
+            300.0,
+            18.0,
             vec![make_op(FlipSide::Top, 10.0, 10.0, 8.0, 8.0, -1.0)],
             vec![make_op(FlipSide::Bottom, 200.0, 200.0, 8.0, 8.0, 5.0)],
             FlipDirection::FlipY,
@@ -1450,10 +1505,12 @@ mod tests {
     #[test]
     fn test_validate_multiple_errors_reported() {
         let part = make_flipside_part(
-            600.0, 300.0, 18.0,
+            600.0,
+            300.0,
+            18.0,
             vec![
-                make_op(FlipSide::Top, 10.0, 10.0, 8.0, 8.0, 20.0),  // exceeds thickness
-                make_op(FlipSide::Top, 20.0, 20.0, 8.0, 8.0, -2.0),  // negative depth
+                make_op(FlipSide::Top, 10.0, 10.0, 8.0, 8.0, 20.0), // exceeds thickness
+                make_op(FlipSide::Top, 20.0, 20.0, 8.0, 8.0, -2.0), // negative depth
             ],
             vec![make_op(FlipSide::Bottom, 200.0, 200.0, 8.0, 8.0, 5.0)],
             FlipDirection::FlipY,
@@ -1466,9 +1523,11 @@ mod tests {
     fn test_validate_near_thickness_warning_issued() {
         // 10 + 8 = 18mm; combined = 100% of thickness, > 90% → warning expected
         let part = make_flipside_part(
-            600.0, 300.0, 18.0,
+            600.0,
+            300.0,
+            18.0,
             vec![make_op(FlipSide::Top, 50.0, 50.0, 20.0, 20.0, 10.0)],
-            vec![make_op(FlipSide::Bottom, 50.0, 50.0, 20.0, 20.0, 8.0)],  // 10+8=18 >= 18
+            vec![make_op(FlipSide::Bottom, 50.0, 50.0, 20.0, 20.0, 8.0)], // 10+8=18 >= 18
             FlipDirection::FlipY,
         );
         let v = mgr().validate_flipside_operations(&part);
@@ -1482,7 +1541,9 @@ mod tests {
         op.width = 0.0;
         op.height = 0.0;
         let part = make_flipside_part(
-            600.0, 300.0, 18.0,
+            600.0,
+            300.0,
+            18.0,
             vec![op],
             vec![make_op(FlipSide::Bottom, 200.0, 200.0, 8.0, 8.0, 5.0)],
             FlipDirection::FlipY,
@@ -1546,8 +1607,18 @@ mod tests {
 
     #[test]
     fn test_flip_origin_struct_equality() {
-        let o1 = FlipOrigin { offset_x: 600.0, offset_y: 0.0, mirror_x: true, mirror_y: false };
-        let o2 = FlipOrigin { offset_x: 600.0, offset_y: 0.0, mirror_x: true, mirror_y: false };
+        let o1 = FlipOrigin {
+            offset_x: 600.0,
+            offset_y: 0.0,
+            mirror_x: true,
+            mirror_y: false,
+        };
+        let o2 = FlipOrigin {
+            offset_x: 600.0,
+            offset_y: 0.0,
+            mirror_x: true,
+            mirror_y: false,
+        };
         assert_eq!(o1, o2);
     }
 }

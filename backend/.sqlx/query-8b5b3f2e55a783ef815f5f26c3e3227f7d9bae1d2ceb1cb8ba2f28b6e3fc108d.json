@@ -1,0 +1,63 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE construction_methods SET\n            name            = COALESCE($2, name),\n            joinery_type    = CASE WHEN $3::text[] IS NOT NULL THEN $3 ELSE joinery_type END,\n            fastener_specs  = COALESCE($4, fastener_specs),\n            placement_rules = COALESCE($5, placement_rules),\n            updated_at      = $6\n        WHERE id = $1\n        RETURNING\n            id,\n            name,\n            joinery_type,\n            fastener_specs,\n            placement_rules,\n            created_at,\n            updated_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "joinery_type",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 3,
+        "name": "fastener_specs",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "placement_rules",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "TextArray",
+        "Jsonb",
+        "Jsonb",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "8b5b3f2e55a783ef815f5f26c3e3227f7d9bae1d2ceb1cb8ba2f28b6e3fc108d"
+}

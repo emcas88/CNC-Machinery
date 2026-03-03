@@ -518,7 +518,11 @@ impl ConstructionMethodsEngine {
         let iw = dims.interior_width(); // width between the two sides
 
         // Toe-kick height: base/vanity/tall = 89 mm (3½"), others = 0.
-        let tk_h = if dims.category.has_toe_kick() { 89.0 } else { 0.0 };
+        let tk_h = if dims.category.has_toe_kick() {
+            89.0
+        } else {
+            0.0
+        };
 
         // ── Carcass sides ────────────────────────────────────────────────────
         // Sides are always full height × full depth.
@@ -1347,23 +1351,13 @@ impl ConstructionMethodsEngine {
     // ─────────────────────────────────────────────────────────────────────────
 
     /// Count parts by type from a parts list.
-    pub fn count_parts_by_type(
-        &self,
-        parts: &[CarcassPart],
-        part_type: CarcassPartType,
-    ) -> usize {
-        parts
-            .iter()
-            .filter(|p| p.part_type == part_type)
-            .count()
+    pub fn count_parts_by_type(&self, parts: &[CarcassPart], part_type: CarcassPartType) -> usize {
+        parts.iter().filter(|p| p.part_type == part_type).count()
     }
 
     /// Total sheet area (mm²) for all parts in a list, accounting for quantity.
     pub fn total_sheet_area(&self, parts: &[CarcassPart]) -> f64 {
-        parts
-            .iter()
-            .map(|p| p.area() * p.qty as f64)
-            .sum()
+        parts.iter().map(|p| p.area() * p.qty as f64).sum()
     }
 
     /// Returns the default panel thickness for the given method.
@@ -1419,9 +1413,7 @@ mod tests {
             "Frameless (Euro/32mm)"
         );
         assert_eq!(ConstructionMethod::Inset.display_name(), "Inset");
-        assert!(ConstructionMethod::Hybrid
-            .display_name()
-            .contains("Hybrid"));
+        assert!(ConstructionMethod::Hybrid.display_name().contains("Hybrid"));
     }
 
     #[test]
@@ -1531,7 +1523,10 @@ mod tests {
         let e = engine();
         let dims = base_dims();
         let parts = e.determine_parts(&dims, ConstructionMethod::Frameless);
-        let top = parts.iter().find(|p| p.part_type == CarcassPartType::Top).unwrap();
+        let top = parts
+            .iter()
+            .find(|p| p.part_type == CarcassPartType::Top)
+            .unwrap();
         assert!((top.width - dims.interior_width()).abs() < 1e-6);
     }
 
@@ -1553,30 +1548,21 @@ mod tests {
     fn test_determine_parts_frameless_has_stretcher() {
         let e = engine();
         let parts = e.determine_parts(&base_dims(), ConstructionMethod::Frameless);
-        assert_eq!(
-            e.count_parts_by_type(&parts, CarcassPartType::Stretcher),
-            1
-        );
+        assert_eq!(e.count_parts_by_type(&parts, CarcassPartType::Stretcher), 1);
     }
 
     #[test]
     fn test_determine_parts_frameless_wall_no_toe_kick() {
         let e = engine();
         let parts = e.determine_parts(&wall_dims(), ConstructionMethod::Frameless);
-        assert_eq!(
-            e.count_parts_by_type(&parts, CarcassPartType::ToeKick),
-            0
-        );
+        assert_eq!(e.count_parts_by_type(&parts, CarcassPartType::ToeKick), 0);
     }
 
     #[test]
     fn test_determine_parts_frameless_base_has_toe_kick() {
         let e = engine();
         let parts = e.determine_parts(&base_dims(), ConstructionMethod::Frameless);
-        assert_eq!(
-            e.count_parts_by_type(&parts, CarcassPartType::ToeKick),
-            1
-        );
+        assert_eq!(e.count_parts_by_type(&parts, CarcassPartType::ToeKick), 1);
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -1640,20 +1626,14 @@ mod tests {
     fn test_determine_parts_faceframe_no_stretcher() {
         let e = engine();
         let parts = e.determine_parts(&base_dims(), ConstructionMethod::FaceFrame);
-        assert_eq!(
-            e.count_parts_by_type(&parts, CarcassPartType::Stretcher),
-            0
-        );
+        assert_eq!(e.count_parts_by_type(&parts, CarcassPartType::Stretcher), 0);
     }
 
     #[test]
     fn test_determine_parts_faceframe_wall_no_toe_kick() {
         let e = engine();
         let parts = e.determine_parts(&wall_dims(), ConstructionMethod::FaceFrame);
-        assert_eq!(
-            e.count_parts_by_type(&parts, CarcassPartType::ToeKick),
-            0
-        );
+        assert_eq!(e.count_parts_by_type(&parts, CarcassPartType::ToeKick), 0);
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -1697,10 +1677,7 @@ mod tests {
     fn test_determine_parts_inset_tall_has_toe_kick() {
         let e = engine();
         let parts = e.determine_parts(&tall_dims(), ConstructionMethod::Inset);
-        assert_eq!(
-            e.count_parts_by_type(&parts, CarcassPartType::ToeKick),
-            1
-        );
+        assert_eq!(e.count_parts_by_type(&parts, CarcassPartType::ToeKick), 1);
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -1723,20 +1700,14 @@ mod tests {
             e.count_parts_by_type(&parts, CarcassPartType::FaceFrameRail),
             2
         );
-        assert_eq!(
-            e.count_parts_by_type(&parts, CarcassPartType::Stretcher),
-            1
-        );
+        assert_eq!(e.count_parts_by_type(&parts, CarcassPartType::Stretcher), 1);
     }
 
     #[test]
     fn test_determine_parts_hybrid_wall_no_toe_kick() {
         let e = engine();
         let parts = e.determine_parts(&wall_dims(), ConstructionMethod::Hybrid);
-        assert_eq!(
-            e.count_parts_by_type(&parts, CarcassPartType::ToeKick),
-            0
-        );
+        assert_eq!(e.count_parts_by_type(&parts, CarcassPartType::ToeKick), 0);
     }
 
     #[test]
@@ -1859,9 +1830,7 @@ mod tests {
     fn test_joinery_faceframe_has_glue_joint() {
         let e = engine();
         let ops = e.calculate_joinery(ConstructionMethod::FaceFrame, DEFAULT_PANEL_THICKNESS);
-        assert!(ops
-            .iter()
-            .any(|o| o.joinery_type == JoineryType::GlueJoint));
+        assert!(ops.iter().any(|o| o.joinery_type == JoineryType::GlueJoint));
     }
 
     #[test]
@@ -1890,9 +1859,7 @@ mod tests {
     fn test_joinery_inset_has_glue_joint() {
         let e = engine();
         let ops = e.calculate_joinery(ConstructionMethod::Inset, DEFAULT_PANEL_THICKNESS);
-        assert!(ops
-            .iter()
-            .any(|o| o.joinery_type == JoineryType::GlueJoint));
+        assert!(ops.iter().any(|o| o.joinery_type == JoineryType::GlueJoint));
     }
 
     #[test]
@@ -1940,7 +1907,9 @@ mod tests {
         assert_eq!(JoineryType::Rabbet.display_name(), "Rabbet");
         assert_eq!(JoineryType::Dowel.display_name(), "Dowel");
         assert!(JoineryType::CamLock.display_name().contains("Cam"));
-        assert!(JoineryType::ConfirmatScrew.display_name().contains("Confirmat"));
+        assert!(JoineryType::ConfirmatScrew
+            .display_name()
+            .contains("Confirmat"));
         assert!(JoineryType::PocketScrew.display_name().contains("Pocket"));
         assert!(JoineryType::Biscuit.display_name().contains("Biscuit"));
         assert!(JoineryType::GlueJoint.display_name().contains("Glue"));
@@ -1987,9 +1956,11 @@ mod tests {
     fn test_32mm_pattern_spacing_32mm() {
         let e = engine();
         let pat = e.generate_32mm_pattern(720.0, 560.0, None, "L");
-        let front_holes: Vec<_> = pat.holes.iter().filter(|h| {
-            (h.x - MM32_FRONT_INSET).abs() < 1e-6
-        }).collect();
+        let front_holes: Vec<_> = pat
+            .holes
+            .iter()
+            .filter(|h| (h.x - MM32_FRONT_INSET).abs() < 1e-6)
+            .collect();
         if front_holes.len() >= 2 {
             let delta = front_holes[1].y - front_holes[0].y;
             assert!((delta - MM32_SPACING).abs() < 1e-6);
@@ -2153,7 +2124,8 @@ mod tests {
             ConstructionMethod::Hybrid,
         ] {
             assert!(
-                e.calculate_toe_kick(method, ProductCategory::Furniture).is_none(),
+                e.calculate_toe_kick(method, ProductCategory::Furniture)
+                    .is_none(),
                 "Expected None for {:?} + Furniture",
                 method
             );
@@ -2201,7 +2173,11 @@ mod tests {
             let tk = e
                 .calculate_toe_kick(method, ProductCategory::BaseCabinet)
                 .unwrap();
-            assert!(tk.is_applied_panel, "Expected applied panel for {:?}", method);
+            assert!(
+                tk.is_applied_panel,
+                "Expected applied panel for {:?}",
+                method
+            );
             assert!(tk.panel_thickness.is_some());
         }
     }
@@ -2229,42 +2205,35 @@ mod tests {
     #[test]
     fn test_validate_frameless_base_ok() {
         let e = engine();
-        let errors = e.validate_method(
-            ConstructionMethod::Frameless,
-            ProductCategory::BaseCabinet,
-        );
+        let errors = e.validate_method(ConstructionMethod::Frameless, ProductCategory::BaseCabinet);
         assert!(errors.is_empty());
     }
 
     #[test]
     fn test_validate_faceframe_base_ok() {
         let e = engine();
-        let errors =
-            e.validate_method(ConstructionMethod::FaceFrame, ProductCategory::BaseCabinet);
+        let errors = e.validate_method(ConstructionMethod::FaceFrame, ProductCategory::BaseCabinet);
         assert!(errors.is_empty());
     }
 
     #[test]
     fn test_validate_hybrid_wall_ok() {
         let e = engine();
-        let errors =
-            e.validate_method(ConstructionMethod::Hybrid, ProductCategory::WallCabinet);
+        let errors = e.validate_method(ConstructionMethod::Hybrid, ProductCategory::WallCabinet);
         assert!(errors.is_empty());
     }
 
     #[test]
     fn test_validate_frameless_wall_ok() {
         let e = engine();
-        let errors =
-            e.validate_method(ConstructionMethod::Frameless, ProductCategory::WallCabinet);
+        let errors = e.validate_method(ConstructionMethod::Frameless, ProductCategory::WallCabinet);
         assert!(errors.is_empty());
     }
 
     #[test]
     fn test_validate_inset_furniture_warning() {
         let e = engine();
-        let errors =
-            e.validate_method(ConstructionMethod::Inset, ProductCategory::Furniture);
+        let errors = e.validate_method(ConstructionMethod::Inset, ProductCategory::Furniture);
         assert!(!errors.is_empty());
         assert!(!errors[0].is_blocking);
     }
@@ -2272,8 +2241,7 @@ mod tests {
     #[test]
     fn test_validate_inset_tall_warning() {
         let e = engine();
-        let errors =
-            e.validate_method(ConstructionMethod::Inset, ProductCategory::TallCabinet);
+        let errors = e.validate_method(ConstructionMethod::Inset, ProductCategory::TallCabinet);
         assert!(!errors.is_empty());
         assert!(!errors[0].is_blocking);
     }
@@ -2281,24 +2249,21 @@ mod tests {
     #[test]
     fn test_validate_inset_closet_warning() {
         let e = engine();
-        let errors =
-            e.validate_method(ConstructionMethod::Inset, ProductCategory::Closet);
+        let errors = e.validate_method(ConstructionMethod::Inset, ProductCategory::Closet);
         assert!(!errors.is_empty());
     }
 
     #[test]
     fn test_validate_inset_wardrobe_warning() {
         let e = engine();
-        let errors =
-            e.validate_method(ConstructionMethod::Inset, ProductCategory::Wardrobe);
+        let errors = e.validate_method(ConstructionMethod::Inset, ProductCategory::Wardrobe);
         assert!(!errors.is_empty());
     }
 
     #[test]
     fn test_validate_error_fields_populated() {
         let e = engine();
-        let errors =
-            e.validate_method(ConstructionMethod::Inset, ProductCategory::Furniture);
+        let errors = e.validate_method(ConstructionMethod::Inset, ProductCategory::Furniture);
         let err = &errors[0];
         assert_eq!(err.method, ConstructionMethod::Inset);
         assert_eq!(err.category, ProductCategory::Furniture);

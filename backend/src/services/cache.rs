@@ -156,7 +156,10 @@ impl CacheService {
     }
 
     fn check_connected(&self) -> CacheResult<()> {
-        let connected = self.connected.lock().map_err(|e| CacheError::Other(e.to_string()))?;
+        let connected = self
+            .connected
+            .lock()
+            .map_err(|e| CacheError::Other(e.to_string()))?;
         if !*connected {
             return Err(CacheError::ConnectionError("not connected".into()));
         }
@@ -176,7 +179,12 @@ impl CacheService {
     /// Store a JSON-serialisable value under `key` with an optional TTL
     /// (seconds). If `ttl` is `None` the `default_ttl_secs` from the config
     /// is used; pass `Some(0)` for no expiry.
-    pub fn set<T: Serialize>(&self, key: &str, value: &T, ttl_secs: Option<u64>) -> CacheResult<()> {
+    pub fn set<T: Serialize>(
+        &self,
+        key: &str,
+        value: &T,
+        ttl_secs: Option<u64>,
+    ) -> CacheResult<()> {
         self.check_connected()?;
         let json = serde_json::to_string(value)
             .map_err(|e| CacheError::SerializationError(e.to_string()))?;
@@ -188,8 +196,17 @@ impl CacheService {
             self.effective_ttl(ttl_secs).map(|d| Instant::now() + d)
         };
 
-        let mut store = self.store.lock().map_err(|e| CacheError::Other(e.to_string()))?;
-        store.insert(ns_key, CacheEntry { value: json, expires_at });
+        let mut store = self
+            .store
+            .lock()
+            .map_err(|e| CacheError::Other(e.to_string()))?;
+        store.insert(
+            ns_key,
+            CacheEntry {
+                value: json,
+                expires_at,
+            },
+        );
         Ok(())
     }
 
@@ -198,7 +215,10 @@ impl CacheService {
     pub fn get<T: DeserializeOwned>(&self, key: &str) -> CacheResult<Option<T>> {
         self.check_connected()?;
         let ns_key = self.namespaced_key(key);
-        let store = self.store.lock().map_err(|e| CacheError::Other(e.to_string()))?;
+        let store = self
+            .store
+            .lock()
+            .map_err(|e| CacheError::Other(e.to_string()))?;
 
         match store.get(&ns_key) {
             Some(entry) if !entry.is_expired() => {
@@ -214,7 +234,10 @@ impl CacheService {
     pub fn delete(&self, key: &str) -> CacheResult<bool> {
         self.check_connected()?;
         let ns_key = self.namespaced_key(key);
-        let mut store = self.store.lock().map_err(|e| CacheError::Other(e.to_string()))?;
+        let mut store = self
+            .store
+            .lock()
+            .map_err(|e| CacheError::Other(e.to_string()))?;
         Ok(store.remove(&ns_key).is_some())
     }
 
@@ -222,7 +245,10 @@ impl CacheService {
     pub fn exists(&self, key: &str) -> CacheResult<bool> {
         self.check_connected()?;
         let ns_key = self.namespaced_key(key);
-        let store = self.store.lock().map_err(|e| CacheError::Other(e.to_string()))?;
+        let store = self
+            .store
+            .lock()
+            .map_err(|e| CacheError::Other(e.to_string()))?;
         Ok(store.get(&ns_key).map_or(false, |e| !e.is_expired()))
     }
 
@@ -231,7 +257,10 @@ impl CacheService {
     pub fn expire(&self, key: &str, ttl_secs: u64) -> CacheResult<bool> {
         self.check_connected()?;
         let ns_key = self.namespaced_key(key);
-        let mut store = self.store.lock().map_err(|e| CacheError::Other(e.to_string()))?;
+        let mut store = self
+            .store
+            .lock()
+            .map_err(|e| CacheError::Other(e.to_string()))?;
 
         if let Some(entry) = store.get_mut(&ns_key) {
             if entry.is_expired() {
@@ -249,7 +278,10 @@ impl CacheService {
     pub fn persist(&self, key: &str) -> CacheResult<bool> {
         self.check_connected()?;
         let ns_key = self.namespaced_key(key);
-        let mut store = self.store.lock().map_err(|e| CacheError::Other(e.to_string()))?;
+        let mut store = self
+            .store
+            .lock()
+            .map_err(|e| CacheError::Other(e.to_string()))?;
 
         if let Some(entry) = store.get_mut(&ns_key) {
             entry.expires_at = None;
@@ -264,7 +296,10 @@ impl CacheService {
     pub fn ttl(&self, key: &str) -> CacheResult<Option<u64>> {
         self.check_connected()?;
         let ns_key = self.namespaced_key(key);
-        let store = self.store.lock().map_err(|e| CacheError::Other(e.to_string()))?;
+        let store = self
+            .store
+            .lock()
+            .map_err(|e| CacheError::Other(e.to_string()))?;
 
         match store.get(&ns_key) {
             Some(entry) if !entry.is_expired() => match entry.expires_at {
@@ -289,7 +324,11 @@ impl CacheService {
     }
 
     /// Set multiple keys at once with the same TTL.
-    pub fn mset<T: Serialize>(&self, entries: &[(&str, &T)], ttl_secs: Option<u64>) -> CacheResult<()> {
+    pub fn mset<T: Serialize>(
+        &self,
+        entries: &[(&str, &T)],
+        ttl_secs: Option<u64>,
+    ) -> CacheResult<()> {
         self.check_connected()?;
         for (key, value) in entries {
             self.set(key, value, ttl_secs)?;
@@ -301,7 +340,10 @@ impl CacheService {
     pub fn delete_pattern(&self, pattern: &str) -> CacheResult<usize> {
         self.check_connected()?;
         let full_prefix = self.namespaced_key(pattern);
-        let mut store = self.store.lock().map_err(|e| CacheError::Other(e.to_string()))?;
+        let mut store = self
+            .store
+            .lock()
+            .map_err(|e| CacheError::Other(e.to_string()))?;
         let keys_to_remove: Vec<String> = store
             .keys()
             .filter(|k| k.starts_with(&full_prefix))
@@ -318,14 +360,20 @@ impl CacheService {
     pub fn key_count(&self) -> CacheResult<usize> {
         self.check_connected()?;
         self.purge_expired();
-        let store = self.store.lock().map_err(|e| CacheError::Other(e.to_string()))?;
+        let store = self
+            .store
+            .lock()
+            .map_err(|e| CacheError::Other(e.to_string()))?;
         Ok(store.len())
     }
 
     /// Flush all keys in the namespace.
     pub fn flush(&self) -> CacheResult<()> {
         self.check_connected()?;
-        let mut store = self.store.lock().map_err(|e| CacheError::Other(e.to_string()))?;
+        let mut store = self
+            .store
+            .lock()
+            .map_err(|e| CacheError::Other(e.to_string()))?;
         store.clear();
         Ok(())
     }
@@ -445,14 +493,20 @@ mod tests {
 
     #[test]
     fn test_reject_empty_url() {
-        let cfg = CacheConfig { url: "".into(), ..CacheConfig::default() };
+        let cfg = CacheConfig {
+            url: "".into(),
+            ..CacheConfig::default()
+        };
         let err = CacheService::new(cfg).unwrap_err();
         assert!(matches!(err, CacheError::ConnectionError(_)));
     }
 
     #[test]
     fn test_reject_zero_pool_size() {
-        let cfg = CacheConfig { pool_size: 0, ..CacheConfig::default() };
+        let cfg = CacheConfig {
+            pool_size: 0,
+            ..CacheConfig::default()
+        };
         let err = CacheService::new(cfg).unwrap_err();
         assert!(matches!(err, CacheError::PoolError(_)));
     }
@@ -462,7 +516,9 @@ mod tests {
     #[test]
     fn test_set_and_get_string() {
         let cache = make_cache();
-        cache.set("greeting", &"hello world".to_string(), None).unwrap();
+        cache
+            .set("greeting", &"hello world".to_string(), None)
+            .unwrap();
         let val: Option<String> = cache.get("greeting").unwrap();
         assert_eq!(val, Some("hello world".to_string()));
     }
@@ -470,7 +526,10 @@ mod tests {
     #[test]
     fn test_set_and_get_struct() {
         #[derive(Debug, Serialize, Deserialize, PartialEq)]
-        struct Point { x: f64, y: f64 }
+        struct Point {
+            x: f64,
+            y: f64,
+        }
 
         let cache = make_cache();
         let p = Point { x: 1.0, y: 2.0 };
@@ -523,7 +582,8 @@ mod tests {
         let cache = CacheService::new(CacheConfig {
             default_ttl_secs: None,
             ..CacheConfig::default()
-        }).unwrap();
+        })
+        .unwrap();
 
         // Set with 1-second TTL
         cache.set("short-lived", &"data", Some(1)).unwrap();
@@ -588,7 +648,8 @@ mod tests {
         let cache = CacheService::new(CacheConfig {
             namespace: "myapp:".into(),
             ..CacheConfig::default()
-        }).unwrap();
+        })
+        .unwrap();
         assert_eq!(cache.namespaced_key("bar"), "myapp:bar");
     }
 
@@ -602,7 +663,10 @@ mod tests {
         cache.mset(&[("a", &a), ("b", &b)], None).unwrap();
 
         let results: Vec<Option<String>> = cache.mget(&["a", "b", "c"]).unwrap();
-        assert_eq!(results, vec![Some("alpha".into()), Some("beta".into()), None]);
+        assert_eq!(
+            results,
+            vec![Some("alpha".into()), Some("beta".into()), None]
+        );
     }
 
     #[test]
@@ -642,10 +706,16 @@ mod tests {
     #[test]
     fn test_cache_nesting_result() {
         #[derive(Debug, Serialize, Deserialize, PartialEq)]
-        struct NestingResult { sheets: u32, yield_pct: f64 }
+        struct NestingResult {
+            sheets: u32,
+            yield_pct: f64,
+        }
 
         let cache = make_cache();
-        let result = NestingResult { sheets: 3, yield_pct: 87.5 };
+        let result = NestingResult {
+            sheets: 3,
+            yield_pct: 87.5,
+        };
         cache.cache_nesting_result("job-42", &result).unwrap();
         let got: Option<NestingResult> = cache.get_nesting_result("job-42").unwrap();
         assert_eq!(got, Some(result));
@@ -671,14 +741,26 @@ mod tests {
     #[test]
     fn test_session_lifecycle() {
         #[derive(Debug, Serialize, Deserialize, PartialEq)]
-        struct Session { user_id: String, role: String }
+        struct Session {
+            user_id: String,
+            role: String,
+        }
 
         let cache = make_cache();
-        let s = Session { user_id: "u-1".into(), role: "admin".into() };
+        let s = Session {
+            user_id: "u-1".into(),
+            role: "admin".into(),
+        };
         cache.set_session("sess-abc", &s).unwrap();
 
         let got: Option<Session> = cache.get_session("sess-abc").unwrap();
-        assert_eq!(got, Some(Session { user_id: "u-1".into(), role: "admin".into() }));
+        assert_eq!(
+            got,
+            Some(Session {
+                user_id: "u-1".into(),
+                role: "admin".into()
+            })
+        );
 
         assert!(cache.delete_session("sess-abc").unwrap());
         let gone: Option<Session> = cache.get_session("sess-abc").unwrap();
@@ -727,9 +809,14 @@ mod tests {
     #[test]
     fn test_cache_complex_nested_struct() {
         #[derive(Debug, Serialize, Deserialize, PartialEq)]
-        struct Inner { val: Vec<u32> }
+        struct Inner {
+            val: Vec<u32>,
+        }
         #[derive(Debug, Serialize, Deserialize, PartialEq)]
-        struct Outer { name: String, inner: Inner }
+        struct Outer {
+            name: String,
+            inner: Inner,
+        }
 
         let cache = make_cache();
         let data = Outer {

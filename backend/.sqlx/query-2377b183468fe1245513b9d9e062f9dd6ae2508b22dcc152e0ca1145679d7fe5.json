@@ -1,0 +1,44 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE optimization_runs SET\n            name             = COALESCE($2, name),\n            status           = COALESCE($3::optimization_status, status),\n            quality          = COALESCE($4::optimization_quality, quality),\n            settings         = COALESCE($5, settings),\n            sheets           = COALESCE($6, sheets),\n            yield_percentage = COALESCE($7, yield_percentage),\n            updated_at       = NOW()\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        {
+          "Custom": {
+            "name": "optimization_status",
+            "kind": {
+              "Enum": [
+                "pending",
+                "running",
+                "completed",
+                "failed"
+              ]
+            }
+          }
+        },
+        {
+          "Custom": {
+            "name": "optimization_quality",
+            "kind": {
+              "Enum": [
+                "fast_estimate",
+                "good",
+                "better",
+                "best"
+              ]
+            }
+          }
+        },
+        "Jsonb",
+        "Jsonb",
+        "Float8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2377b183468fe1245513b9d9e062f9dd6ae2508b22dcc152e0ca1145679d7fe5"
+}

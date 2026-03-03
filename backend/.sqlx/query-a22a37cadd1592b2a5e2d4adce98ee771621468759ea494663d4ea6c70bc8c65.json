@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, job_id, name, width, height, depth, notes,\n               material_overrides, construction_overrides,\n               created_at, updated_at\n        FROM rooms\n        WHERE job_id = $1\n        ORDER BY created_at ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "job_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "width",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "height",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "depth",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "material_overrides",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 8,
+        "name": "construction_overrides",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "a22a37cadd1592b2a5e2d4adce98ee771621468759ea494663d4ea6c70bc8c65"
+}

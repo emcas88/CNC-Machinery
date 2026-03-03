@@ -116,7 +116,10 @@ impl LaborRate {
     ) -> Self {
         assert!(hourly_rate >= 0.0, "hourly_rate must be >= 0");
         assert!(setup_time_minutes >= 0.0, "setup_time_minutes must be >= 0");
-        assert!(per_unit_time_minutes >= 0.0, "per_unit_time_minutes must be >= 0");
+        assert!(
+            per_unit_time_minutes >= 0.0,
+            "per_unit_time_minutes must be >= 0"
+        );
         Self {
             operation_type,
             hourly_rate,
@@ -549,9 +552,7 @@ impl CostCalculator {
                     Some(format!("{:.1}% x ${:.2}", value, subtotal))
                 }
                 MarkupKind::Fixed { amount: _ } => Some("Fixed charge".to_string()),
-                MarkupKind::Tiered { tiers: _ } => {
-                    Some(format!("Tiered on ${:.2}", subtotal))
-                }
+                MarkupKind::Tiered { tiers: _ } => Some(format!("Tiered on ${:.2}", subtotal)),
             };
             quote_lines.push(QuoteLineItem {
                 category: "markup".to_string(),
@@ -680,16 +681,16 @@ mod tests {
         calc.add_material_pricing(MaterialPricing::new(
             material_id_a(),
             "18mm Melamine White",
-            2.50,  // $2.50/sqft
-            0.0,   // no minimum
-            0.10,  // 10% waste
+            2.50, // $2.50/sqft
+            0.0,  // no minimum
+            0.10, // 10% waste
         ));
         calc.add_material_pricing(MaterialPricing::new(
             material_id_b(),
             "3mm HDF Back",
-            0.80,  // $0.80/sqft
-            2.0,   // 2 sqft minimum
-            0.05,  // 5% waste
+            0.80, // $0.80/sqft
+            2.0,  // 2 sqft minimum
+            0.05, // 5% waste
         ));
         calc
     }
@@ -716,8 +717,8 @@ mod tests {
             part_id: part_id(1),
             part_name: "Test".to_string(),
             material_id: material_id_a(),
-            length_mm: 304.8,  // exactly 1 ft
-            width_mm: 304.8,   // exactly 1 ft
+            length_mm: 304.8, // exactly 1 ft
+            width_mm: 304.8,  // exactly 1 ft
             quantity: 1,
         };
         // 304.8^2 mm^2 = 92_903.04 mm^2 = 1 ft^2
@@ -864,9 +865,18 @@ mod tests {
             enabled: true,
             kind: MarkupKind::Tiered {
                 tiers: vec![
-                    MarkupTier { threshold: 0.0, rate: 30.0 },
-                    MarkupTier { threshold: 500.0, rate: 25.0 },
-                    MarkupTier { threshold: 2000.0, rate: 20.0 },
+                    MarkupTier {
+                        threshold: 0.0,
+                        rate: 30.0,
+                    },
+                    MarkupTier {
+                        threshold: 500.0,
+                        rate: 25.0,
+                    },
+                    MarkupTier {
+                        threshold: 2000.0,
+                        rate: 20.0,
+                    },
                 ],
             },
         };
@@ -884,7 +894,10 @@ mod tests {
             name: "High threshold".to_string(),
             enabled: true,
             kind: MarkupKind::Tiered {
-                tiers: vec![MarkupTier { threshold: 1000.0, rate: 15.0 }],
+                tiers: vec![MarkupTier {
+                    threshold: 1000.0,
+                    rate: 15.0,
+                }],
             },
         };
         // subtotal=50 is below the only threshold -> 0
@@ -897,7 +910,10 @@ mod tests {
             name: "Exact".to_string(),
             enabled: true,
             kind: MarkupKind::Tiered {
-                tiers: vec![MarkupTier { threshold: 500.0, rate: 10.0 }],
+                tiers: vec![MarkupTier {
+                    threshold: 500.0,
+                    rate: 10.0,
+                }],
             },
         };
         assert_approx!(rule.compute_markup(500.0), 50.0);
@@ -1024,7 +1040,9 @@ mod tests {
         let lines = calc.calculate_material_cost(&parts);
         assert_eq!(lines.len(), 2);
         // material B is cheaper ($0.80 vs $2.50) even with higher minimum
-        assert!(lines[1].cost < lines[0].cost || lines[1].area_billed_sqft >= lines[0].area_billed_sqft);
+        assert!(
+            lines[1].cost < lines[0].cost || lines[1].area_billed_sqft >= lines[0].area_billed_sqft
+        );
     }
 
     #[test]
@@ -1421,13 +1439,11 @@ mod tests {
     #[test]
     fn test_apply_cost_rules_all_disabled() {
         let calc = test_calculator();
-        let rules = vec![
-            CostRule {
-                name: "R".to_string(),
-                enabled: false,
-                kind: MarkupKind::Percentage { value: 30.0 },
-            },
-        ];
+        let rules = vec![CostRule {
+            name: "R".to_string(),
+            enabled: false,
+            kind: MarkupKind::Percentage { value: 30.0 },
+        }];
         assert_approx!(calc.apply_cost_rules(1000.0, &rules), 0.0);
     }
 
@@ -1493,7 +1509,11 @@ mod tests {
         let result = calc.generate_quote(&parts, &[], &rules, None);
         let expected_markup = result.material_total * 0.30;
         assert_approx!(result.markup_total, expected_markup, 1e-6);
-        assert_approx!(result.grand_total, result.material_total + expected_markup, 1e-6);
+        assert_approx!(
+            result.grand_total,
+            result.material_total + expected_markup,
+            1e-6
+        );
     }
 
     #[test]
@@ -1661,8 +1681,14 @@ mod tests {
             enabled: true,
             kind: MarkupKind::Tiered {
                 tiers: vec![
-                    MarkupTier { threshold: 0.0, rate: 30.0 },
-                    MarkupTier { threshold: 100.0, rate: 20.0 },
+                    MarkupTier {
+                        threshold: 0.0,
+                        rate: 30.0,
+                    },
+                    MarkupTier {
+                        threshold: 100.0,
+                        rate: 20.0,
+                    },
                 ],
             },
         }];
@@ -1733,13 +1759,24 @@ mod tests {
     fn test_default_cost_calculator_has_all_labor_rates() {
         let calc = default_cost_calculator();
         let ops = vec![
-            OperationType::Cut, OperationType::Bore, OperationType::Route,
-            OperationType::EdgeBand, OperationType::Dado, OperationType::Pocket,
-            OperationType::Profile, OperationType::Drill, OperationType::Tenon,
-            OperationType::Cutout, OperationType::Custom,
+            OperationType::Cut,
+            OperationType::Bore,
+            OperationType::Route,
+            OperationType::EdgeBand,
+            OperationType::Dado,
+            OperationType::Pocket,
+            OperationType::Profile,
+            OperationType::Drill,
+            OperationType::Tenon,
+            OperationType::Cutout,
+            OperationType::Custom,
         ];
         for op in ops {
-            assert!(calc.labor_rates.contains_key(&op), "Missing rate for {:?}", op);
+            assert!(
+                calc.labor_rates.contains_key(&op),
+                "Missing rate for {:?}",
+                op
+            );
         }
     }
 
@@ -1748,7 +1785,11 @@ mod tests {
         let calc = test_calculator();
         let parts = single_part_a();
         let result = calc.generate_quote(&parts, &[], &[], None);
-        let mat_line = result.quote_lines.iter().find(|l| l.category == "material").unwrap();
+        let mat_line = result
+            .quote_lines
+            .iter()
+            .find(|l| l.category == "material")
+            .unwrap();
         assert!(mat_line.description.contains("Left Side"));
         assert!(mat_line.description.contains("18mm Melamine White"));
     }
@@ -1765,7 +1806,11 @@ mod tests {
             quantity: 1,
         }];
         let result = calc.generate_quote(&[], &ops, &[], None);
-        let labor_line = result.quote_lines.iter().find(|l| l.category == "labor").unwrap();
+        let labor_line = result
+            .quote_lines
+            .iter()
+            .find(|l| l.category == "labor")
+            .unwrap();
         assert_eq!(labor_line.description, "Shelf pin holes");
     }
 
@@ -1773,7 +1818,13 @@ mod tests {
     fn test_add_material_pricing_overwrite() {
         let mut calc = test_calculator();
         // Overwrite material A with a different price
-        calc.add_material_pricing(MaterialPricing::new(material_id_a(), "Updated", 5.0, 0.0, 0.0));
+        calc.add_material_pricing(MaterialPricing::new(
+            material_id_a(),
+            "Updated",
+            5.0,
+            0.0,
+            0.0,
+        ));
         let parts = single_part_a();
         let lines = calc.calculate_material_cost(&parts);
         // Should use the updated price of $5/sqft

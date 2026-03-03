@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE drawing_templates SET\n            name        = COALESCE($2, name),\n            page_size   = COALESCE($3, page_size),\n            layout      = COALESCE($4, layout),\n            title_block = COALESCE($5, title_block),\n            updated_at  = NOW()\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ee3a03bdda812e70ba48ef2499fe8f6eeb83fd30f4c33a5eca62c77ca440b04a"
+}

@@ -27,10 +27,7 @@ use uuid::Uuid;
 ///   Length (mm), Width (mm), Thickness (mm), Grain Direction,
 ///   Edge Top, Edge Bottom, Edge Left, Edge Right
 #[get("/export/csv/{job_id}")]
-pub async fn export_csv(
-    pool: web::Data<PgPool>,
-    job_id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn export_csv(pool: web::Data<PgPool>, job_id: web::Path<Uuid>) -> impl Responder {
     let job_id = *job_id;
 
     let rows = sqlx::query!(
@@ -91,7 +88,7 @@ pub async fn export_csv(
                 csv.push(',');
                 csv.push_str(&csv_field(&r.part_name));
                 csv.push(',');
-                csv.push_str(&csv_field(r.part_type.as_deref().unwrap_or("")));
+                csv.push_str(&csv_field(&r.part_type));
                 csv.push(',');
                 csv.push_str(&csv_field(&r.material_name));
                 csv.push(',');
@@ -103,7 +100,7 @@ pub async fn export_csv(
                 csv.push(',');
                 csv.push_str(&r.thickness.to_string());
                 csv.push(',');
-                csv.push_str(&csv_field(r.grain_direction.as_deref().unwrap_or("none")));
+                csv.push_str(&csv_field(&r.grain_direction));
                 csv.push(',');
                 csv.push_str(&opt_i32_to_csv(r.edge_band_top));
                 csv.push(',');
@@ -139,10 +136,7 @@ pub async fn export_csv(
 /// Each label object includes a `barcode_data` field containing the part UUID
 /// as a plain string, ready to be encoded as Code-128 or QR.
 #[get("/export/labels/{job_id}")]
-pub async fn export_labels(
-    pool: web::Data<PgPool>,
-    job_id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn export_labels(pool: web::Data<PgPool>, job_id: web::Path<Uuid>) -> impl Responder {
     let job_id = *job_id;
 
     let rows = sqlx::query!(
@@ -217,8 +211,7 @@ pub async fn export_labels(
                 "labels": labels,
             });
 
-            let body = serde_json::to_string_pretty(&payload)
-                .unwrap_or_else(|_| "{}".into());
+            let body = serde_json::to_string_pretty(&payload).unwrap_or_else(|_| "{}".into());
 
             let filename = format!("labels-{job_id}.json");
 

@@ -307,42 +307,10 @@ impl DovetailGenerator {
         );
 
         // ── Build the four sides ───────────────────────────────────────────
-        let front = self.build_side(
-            "Front",
-            front_back_len,
-            board_height,
-            t,
-            spec,
-            &geom,
-            true,
-        );
-        let back = self.build_side(
-            "Back",
-            front_back_len,
-            board_height,
-            t,
-            spec,
-            &geom,
-            true,
-        );
-        let left = self.build_side(
-            "Left Side",
-            side_len,
-            board_height,
-            t,
-            spec,
-            &geom,
-            false,
-        );
-        let right = self.build_side(
-            "Right Side",
-            side_len,
-            board_height,
-            t,
-            spec,
-            &geom,
-            false,
-        );
+        let front = self.build_side("Front", front_back_len, board_height, t, spec, &geom, true);
+        let back = self.build_side("Back", front_back_len, board_height, t, spec, &geom, true);
+        let left = self.build_side("Left Side", side_len, board_height, t, spec, &geom, false);
+        let right = self.build_side("Right Side", side_len, board_height, t, spec, &geom, false);
 
         // ── Bottom panel ────────────────────────────────────────────────────
         let bottom = self.generate_box_bottom(spec);
@@ -431,18 +399,30 @@ impl DovetailGenerator {
         joint_type: &DovetailJointType,
     ) -> Vec<DovetailOperation> {
         match joint_type {
-            DovetailJointType::BoxJoint => {
-                self.box_joint_operations(geom, board_height, board_thickness, is_pin_board, x_offset)
-            }
+            DovetailJointType::BoxJoint => self.box_joint_operations(
+                geom,
+                board_height,
+                board_thickness,
+                is_pin_board,
+                x_offset,
+            ),
             DovetailJointType::SlidingDovetail => {
                 self.sliding_dovetail_operations(geom, board_height, board_thickness, x_offset)
             }
-            DovetailJointType::HalfBlind => {
-                self.half_blind_operations(geom, board_height, board_thickness, is_pin_board, x_offset)
-            }
-            DovetailJointType::Through => {
-                self.through_dovetail_operations(geom, board_height, board_thickness, is_pin_board, x_offset)
-            }
+            DovetailJointType::HalfBlind => self.half_blind_operations(
+                geom,
+                board_height,
+                board_thickness,
+                is_pin_board,
+                x_offset,
+            ),
+            DovetailJointType::Through => self.through_dovetail_operations(
+                geom,
+                board_height,
+                board_thickness,
+                is_pin_board,
+                x_offset,
+            ),
         }
     }
 
@@ -717,14 +697,8 @@ impl DovetailGenerator {
         // Tag all ops as half-blind.
         for op in &mut ops {
             if let serde_json::Value::Object(ref mut m) = op.metadata {
-                m.insert(
-                    "half_blind".to_string(),
-                    serde_json::Value::Bool(true),
-                );
-                m.insert(
-                    "blind_depth_mm".to_string(),
-                    serde_json::json!(blind_depth),
-                );
+                m.insert("half_blind".to_string(), serde_json::Value::Bool(true));
+                m.insert("blind_depth_mm".to_string(), serde_json::json!(blind_depth));
             }
             op.description = format!("[Half-Blind] {}", op.description);
         }
@@ -928,8 +902,10 @@ mod tests {
     fn test_geometry_tail_wider_than_pin_for_dovetail() {
         let g = gen();
         let geom = g.calculate_joint_geometry(300.0, 18.0, 14.0);
-        assert!(geom.tail_width > geom.pin_width,
-            "tails should be wider than pins in a dovetail joint");
+        assert!(
+            geom.tail_width > geom.pin_width,
+            "tails should be wider than pins in a dovetail joint"
+        );
     }
 
     #[test]
@@ -983,7 +959,7 @@ mod tests {
     fn test_geometry_pin_count_scales_with_length() {
         let g = gen();
         let geom_short = g.calculate_joint_geometry(100.0, 18.0, 14.0);
-        let geom_long  = g.calculate_joint_geometry(500.0, 18.0, 14.0);
+        let geom_long = g.calculate_joint_geometry(500.0, 18.0, 14.0);
         assert!(geom_long.pin_count > geom_short.pin_count);
     }
 
@@ -1080,7 +1056,11 @@ mod tests {
         let g = gen();
         let db = g.generate_drawer_box(&standard_spec());
         for side in &db.sides {
-            assert!(!side.operations.is_empty(), "{} has no operations", side.label);
+            assert!(
+                !side.operations.is_empty(),
+                "{} has no operations",
+                side.label
+            );
         }
     }
 
@@ -1116,7 +1096,14 @@ mod tests {
     fn test_through_dovetail_pin_board_has_pocket_ops() {
         let g = gen();
         let geom = g.calculate_joint_geometry(300.0, 18.0, 14.0);
-        let ops = g.generate_dovetail_operations(&geom, 100.0, 18.0, true, 0.0, &DovetailJointType::Through);
+        let ops = g.generate_dovetail_operations(
+            &geom,
+            100.0,
+            18.0,
+            true,
+            0.0,
+            &DovetailJointType::Through,
+        );
         let pocket_count = ops.iter().filter(|o| o.operation_type == "pocket").count();
         assert!(pocket_count > 0);
     }
@@ -1125,7 +1112,14 @@ mod tests {
     fn test_through_dovetail_tail_board_has_pocket_and_profile() {
         let g = gen();
         let geom = g.calculate_joint_geometry(300.0, 18.0, 14.0);
-        let ops = g.generate_dovetail_operations(&geom, 100.0, 18.0, false, 0.0, &DovetailJointType::Through);
+        let ops = g.generate_dovetail_operations(
+            &geom,
+            100.0,
+            18.0,
+            false,
+            0.0,
+            &DovetailJointType::Through,
+        );
         let has_pocket = ops.iter().any(|o| o.operation_type == "pocket");
         let has_profile = ops.iter().any(|o| o.operation_type == "profile_cut");
         assert!(has_pocket);
@@ -1136,7 +1130,14 @@ mod tests {
     fn test_through_dovetail_socket_count_equals_pin_count_plus_one() {
         let g = gen();
         let geom = g.calculate_joint_geometry(200.0, 18.0, 14.0);
-        let ops = g.generate_dovetail_operations(&geom, 100.0, 18.0, true, 0.0, &DovetailJointType::Through);
+        let ops = g.generate_dovetail_operations(
+            &geom,
+            100.0,
+            18.0,
+            true,
+            0.0,
+            &DovetailJointType::Through,
+        );
         let pocket_count = ops.iter().filter(|o| o.operation_type == "pocket").count();
         // pin board has (pin_count + 1) tail sockets
         assert_eq!(pocket_count as u32, geom.pin_count + 1);
@@ -1146,9 +1147,20 @@ mod tests {
     fn test_through_dovetail_all_depths_positive() {
         let g = gen();
         let geom = g.calculate_joint_geometry(300.0, 18.0, 14.0);
-        let ops = g.generate_dovetail_operations(&geom, 100.0, 18.0, true, 0.0, &DovetailJointType::Through);
+        let ops = g.generate_dovetail_operations(
+            &geom,
+            100.0,
+            18.0,
+            true,
+            0.0,
+            &DovetailJointType::Through,
+        );
         for op in &ops {
-            assert!(op.depth > 0.0, "op {} has non-positive depth", op.description);
+            assert!(
+                op.depth > 0.0,
+                "op {} has non-positive depth",
+                op.description
+            );
         }
     }
 
@@ -1157,7 +1169,14 @@ mod tests {
         let g = gen();
         let geom = g.calculate_joint_geometry(300.0, 18.0, 14.0);
         let offset = 50.0;
-        let ops = g.generate_dovetail_operations(&geom, 100.0, 18.0, true, offset, &DovetailJointType::Through);
+        let ops = g.generate_dovetail_operations(
+            &geom,
+            100.0,
+            18.0,
+            true,
+            offset,
+            &DovetailJointType::Through,
+        );
         // First pocket must start at or after x_offset.
         let first_pocket = ops.iter().find(|o| o.operation_type == "pocket").unwrap();
         assert!(first_pocket.x_start >= offset);
@@ -1167,7 +1186,14 @@ mod tests {
     fn test_through_dovetail_metadata_has_angle() {
         let g = gen();
         let geom = g.calculate_joint_geometry(300.0, 18.0, 14.0);
-        let ops = g.generate_dovetail_operations(&geom, 100.0, 18.0, true, 0.0, &DovetailJointType::Through);
+        let ops = g.generate_dovetail_operations(
+            &geom,
+            100.0,
+            18.0,
+            true,
+            0.0,
+            &DovetailJointType::Through,
+        );
         for op in ops.iter().filter(|o| o.operation_type == "pocket") {
             assert!(op.metadata.get("angle_degrees").is_some());
         }
@@ -1181,10 +1207,23 @@ mod tests {
     fn test_half_blind_tagged_in_metadata() {
         let g = gen();
         let geom = g.calculate_joint_geometry(300.0, 18.0, 14.0);
-        let ops = g.generate_dovetail_operations(&geom, 100.0, 18.0, true, 0.0, &DovetailJointType::HalfBlind);
-        let tagged = ops.iter().filter(|o| {
-            o.metadata.get("half_blind").and_then(|v| v.as_bool()).unwrap_or(false)
-        }).count();
+        let ops = g.generate_dovetail_operations(
+            &geom,
+            100.0,
+            18.0,
+            true,
+            0.0,
+            &DovetailJointType::HalfBlind,
+        );
+        let tagged = ops
+            .iter()
+            .filter(|o| {
+                o.metadata
+                    .get("half_blind")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false)
+            })
+            .count();
         assert!(tagged > 0, "at least one op must be tagged half_blind");
     }
 
@@ -1192,26 +1231,65 @@ mod tests {
     fn test_half_blind_depth_less_than_through() {
         let g = gen();
         let geom = g.calculate_joint_geometry(300.0, 18.0, 14.0);
-        let through_ops = g.generate_dovetail_operations(&geom, 100.0, 18.0, true, 0.0, &DovetailJointType::Through);
-        let blind_ops   = g.generate_dovetail_operations(&geom, 100.0, 18.0, true, 0.0, &DovetailJointType::HalfBlind);
-        let through_max = through_ops.iter().map(|o| o.depth).fold(f64::NEG_INFINITY, f64::max);
-        let blind_max   = blind_ops.iter().map(|o| o.depth).fold(f64::NEG_INFINITY, f64::max);
-        assert!(blind_max <= through_max, "half-blind depth must not exceed through depth");
+        let through_ops = g.generate_dovetail_operations(
+            &geom,
+            100.0,
+            18.0,
+            true,
+            0.0,
+            &DovetailJointType::Through,
+        );
+        let blind_ops = g.generate_dovetail_operations(
+            &geom,
+            100.0,
+            18.0,
+            true,
+            0.0,
+            &DovetailJointType::HalfBlind,
+        );
+        let through_max = through_ops
+            .iter()
+            .map(|o| o.depth)
+            .fold(f64::NEG_INFINITY, f64::max);
+        let blind_max = blind_ops
+            .iter()
+            .map(|o| o.depth)
+            .fold(f64::NEG_INFINITY, f64::max);
+        assert!(
+            blind_max <= through_max,
+            "half-blind depth must not exceed through depth"
+        );
     }
 
     #[test]
     fn test_half_blind_description_prefix() {
         let g = gen();
         let geom = g.calculate_joint_geometry(300.0, 18.0, 14.0);
-        let ops = g.generate_dovetail_operations(&geom, 100.0, 18.0, true, 0.0, &DovetailJointType::HalfBlind);
-        assert!(ops.iter().all(|o| o.description.starts_with("[Half-Blind]")));
+        let ops = g.generate_dovetail_operations(
+            &geom,
+            100.0,
+            18.0,
+            true,
+            0.0,
+            &DovetailJointType::HalfBlind,
+        );
+        assert!(ops
+            .iter()
+            .all(|o| o.description.starts_with("[Half-Blind]")));
     }
 
     #[test]
     fn test_half_blind_has_operations() {
         let g = gen();
         let geom = g.calculate_joint_geometry(300.0, 18.0, 14.0);
-        let ops = g.generate_dovetail_operations(&geom, 100.0, 18.0, false, 0.0, &DovetailJointType::HalfBlind);
+        let ops = g.generate_dovetail_operations(
+            &geom,
+            100.0,
+            18.0,
+            false,
+            0.0,
+            &DovetailJointType::HalfBlind,
+        );
         assert!(!ops.is_empty());
     }
 
@@ -1223,15 +1301,33 @@ mod tests {
     fn test_sliding_dovetail_returns_three_ops() {
         let g = gen();
         let geom = g.calculate_joint_geometry(300.0, 18.0, 14.0);
-        let ops = g.generate_dovetail_operations(&geom, 300.0, 18.0, false, 0.0, &DovetailJointType::SlidingDovetail);
-        assert_eq!(ops.len(), 3, "sliding dovetail should produce exactly 3 operations");
+        let ops = g.generate_dovetail_operations(
+            &geom,
+            300.0,
+            18.0,
+            false,
+            0.0,
+            &DovetailJointType::SlidingDovetail,
+        );
+        assert_eq!(
+            ops.len(),
+            3,
+            "sliding dovetail should produce exactly 3 operations"
+        );
     }
 
     #[test]
     fn test_sliding_dovetail_has_pocket() {
         let g = gen();
         let geom = g.calculate_joint_geometry(300.0, 18.0, 14.0);
-        let ops = g.generate_dovetail_operations(&geom, 300.0, 18.0, false, 0.0, &DovetailJointType::SlidingDovetail);
+        let ops = g.generate_dovetail_operations(
+            &geom,
+            300.0,
+            18.0,
+            false,
+            0.0,
+            &DovetailJointType::SlidingDovetail,
+        );
         assert!(ops.iter().any(|o| o.operation_type == "pocket"));
     }
 
@@ -1239,8 +1335,18 @@ mod tests {
     fn test_sliding_dovetail_has_two_wall_cleanups() {
         let g = gen();
         let geom = g.calculate_joint_geometry(300.0, 18.0, 14.0);
-        let ops = g.generate_dovetail_operations(&geom, 300.0, 18.0, false, 0.0, &DovetailJointType::SlidingDovetail);
-        let profile_count = ops.iter().filter(|o| o.operation_type == "profile_cut").count();
+        let ops = g.generate_dovetail_operations(
+            &geom,
+            300.0,
+            18.0,
+            false,
+            0.0,
+            &DovetailJointType::SlidingDovetail,
+        );
+        let profile_count = ops
+            .iter()
+            .filter(|o| o.operation_type == "profile_cut")
+            .count();
         assert_eq!(profile_count, 2);
     }
 
@@ -1248,9 +1354,19 @@ mod tests {
     fn test_sliding_dovetail_metadata_sliding_true() {
         let g = gen();
         let geom = g.calculate_joint_geometry(300.0, 18.0, 14.0);
-        let ops = g.generate_dovetail_operations(&geom, 300.0, 18.0, false, 0.0, &DovetailJointType::SlidingDovetail);
+        let ops = g.generate_dovetail_operations(
+            &geom,
+            300.0,
+            18.0,
+            false,
+            0.0,
+            &DovetailJointType::SlidingDovetail,
+        );
         let pocket = ops.iter().find(|o| o.operation_type == "pocket").unwrap();
-        assert_eq!(pocket.metadata.get("sliding").and_then(|v| v.as_bool()), Some(true));
+        assert_eq!(
+            pocket.metadata.get("sliding").and_then(|v| v.as_bool()),
+            Some(true)
+        );
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1261,7 +1377,14 @@ mod tests {
     fn test_box_joint_all_pockets() {
         let g = gen();
         let geom = g.calculate_joint_geometry(200.0, 18.0, 0.0);
-        let ops = g.generate_dovetail_operations(&geom, 100.0, 18.0, true, 0.0, &DovetailJointType::BoxJoint);
+        let ops = g.generate_dovetail_operations(
+            &geom,
+            100.0,
+            18.0,
+            true,
+            0.0,
+            &DovetailJointType::BoxJoint,
+        );
         assert!(ops.iter().all(|o| o.operation_type == "pocket"));
     }
 
@@ -1276,11 +1399,31 @@ mod tests {
     fn test_box_joint_pin_board_vs_tail_board_different_pockets() {
         let g = gen();
         let geom = g.calculate_joint_geometry(200.0, 18.0, 0.0);
-        let pin_ops  = g.generate_dovetail_operations(&geom, 100.0, 18.0, true,  0.0, &DovetailJointType::BoxJoint);
-        let tail_ops = g.generate_dovetail_operations(&geom, 100.0, 18.0, false, 0.0, &DovetailJointType::BoxJoint);
+        let pin_ops = g.generate_dovetail_operations(
+            &geom,
+            100.0,
+            18.0,
+            true,
+            0.0,
+            &DovetailJointType::BoxJoint,
+        );
+        let tail_ops = g.generate_dovetail_operations(
+            &geom,
+            100.0,
+            18.0,
+            false,
+            0.0,
+            &DovetailJointType::BoxJoint,
+        );
         // x positions should differ (interleaved pattern)
-        let pin_xs:  Vec<i64> = pin_ops.iter().map(|o| (o.x_start * 1000.0) as i64).collect();
-        let tail_xs: Vec<i64> = tail_ops.iter().map(|o| (o.x_start * 1000.0) as i64).collect();
+        let pin_xs: Vec<i64> = pin_ops
+            .iter()
+            .map(|o| (o.x_start * 1000.0) as i64)
+            .collect();
+        let tail_xs: Vec<i64> = tail_ops
+            .iter()
+            .map(|o| (o.x_start * 1000.0) as i64)
+            .collect();
         // They must not be identical sets
         assert_ne!(pin_xs, tail_xs);
     }
@@ -1289,9 +1432,20 @@ mod tests {
     fn test_box_joint_metadata_angle_zero() {
         let g = gen();
         let geom = g.calculate_joint_geometry(200.0, 18.0, 0.0);
-        let ops = g.generate_dovetail_operations(&geom, 100.0, 18.0, true, 0.0, &DovetailJointType::BoxJoint);
+        let ops = g.generate_dovetail_operations(
+            &geom,
+            100.0,
+            18.0,
+            true,
+            0.0,
+            &DovetailJointType::BoxJoint,
+        );
         for op in &ops {
-            let angle = op.metadata.get("angle_degrees").and_then(|v| v.as_i64()).unwrap_or(99);
+            let angle = op
+                .metadata
+                .get("angle_degrees")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(99);
             assert_eq!(angle, 0);
         }
     }
@@ -1377,7 +1531,10 @@ mod tests {
     fn test_bottom_has_perimeter_cut_op() {
         let g = gen();
         let bottom = g.generate_box_bottom(&standard_spec());
-        assert!(bottom.operations.iter().any(|o| o.operation_type == "profile_cut"));
+        assert!(bottom
+            .operations
+            .iter()
+            .any(|o| o.operation_type == "profile_cut"));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1396,7 +1553,9 @@ mod tests {
         spec.width = 50.0;
         let g = gen();
         let errs = g.validate_spec(&spec).unwrap_err();
-        assert!(errs.iter().any(|e| matches!(e, ValidationError::WidthTooSmall { .. })));
+        assert!(errs
+            .iter()
+            .any(|e| matches!(e, ValidationError::WidthTooSmall { .. })));
     }
 
     #[test]
@@ -1405,7 +1564,9 @@ mod tests {
         spec.depth = 40.0;
         let g = gen();
         let errs = g.validate_spec(&spec).unwrap_err();
-        assert!(errs.iter().any(|e| matches!(e, ValidationError::DepthTooSmall { .. })));
+        assert!(errs
+            .iter()
+            .any(|e| matches!(e, ValidationError::DepthTooSmall { .. })));
     }
 
     #[test]
@@ -1414,7 +1575,9 @@ mod tests {
         spec.height = 20.0;
         let g = gen();
         let errs = g.validate_spec(&spec).unwrap_err();
-        assert!(errs.iter().any(|e| matches!(e, ValidationError::HeightTooSmall { .. })));
+        assert!(errs
+            .iter()
+            .any(|e| matches!(e, ValidationError::HeightTooSmall { .. })));
     }
 
     #[test]
@@ -1423,7 +1586,9 @@ mod tests {
         spec.material_thickness = 3.0;
         let g = gen();
         let errs = g.validate_spec(&spec).unwrap_err();
-        assert!(errs.iter().any(|e| matches!(e, ValidationError::MaterialThicknessTooSmall { .. })));
+        assert!(errs
+            .iter()
+            .any(|e| matches!(e, ValidationError::MaterialThicknessTooSmall { .. })));
     }
 
     #[test]
@@ -1432,7 +1597,9 @@ mod tests {
         spec.material_thickness = 60.0;
         let g = gen();
         let errs = g.validate_spec(&spec).unwrap_err();
-        assert!(errs.iter().any(|e| matches!(e, ValidationError::MaterialThicknessTooLarge { .. })));
+        assert!(errs
+            .iter()
+            .any(|e| matches!(e, ValidationError::MaterialThicknessTooLarge { .. })));
     }
 
     #[test]
@@ -1441,7 +1608,9 @@ mod tests {
         spec.bottom_thickness = 1.0;
         let g = gen();
         let errs = g.validate_spec(&spec).unwrap_err();
-        assert!(errs.iter().any(|e| matches!(e, ValidationError::BottomThicknessTooSmall { .. })));
+        assert!(errs
+            .iter()
+            .any(|e| matches!(e, ValidationError::BottomThicknessTooSmall { .. })));
     }
 
     #[test]
@@ -1450,7 +1619,9 @@ mod tests {
         spec.bottom_thickness = 16.0; // > 18 * 0.75 = 13.5
         let g = gen();
         let errs = g.validate_spec(&spec).unwrap_err();
-        assert!(errs.iter().any(|e| matches!(e, ValidationError::BottomThicknessTooLarge { .. })));
+        assert!(errs
+            .iter()
+            .any(|e| matches!(e, ValidationError::BottomThicknessTooLarge { .. })));
     }
 
     #[test]
@@ -1459,7 +1630,9 @@ mod tests {
         spec.height = 35.0; // 35 - 2*18 = -1 → interior < 10
         let g = gen();
         let errs = g.validate_spec(&spec).unwrap_err();
-        assert!(errs.iter().any(|e| matches!(e, ValidationError::InsufficientInteriorSpace)));
+        assert!(errs
+            .iter()
+            .any(|e| matches!(e, ValidationError::InsufficientInteriorSpace)));
     }
 
     #[test]
@@ -1474,7 +1647,10 @@ mod tests {
         };
         let g = gen();
         let errs = g.validate_spec(&spec).unwrap_err();
-        assert!(errs.len() > 3, "should collect multiple errors simultaneously");
+        assert!(
+            errs.len() > 3,
+            "should collect multiple errors simultaneously"
+        );
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1598,7 +1774,11 @@ mod tests {
         let db = g.generate_drawer_box(&standard_spec());
         for side in &db.sides {
             for op in &side.operations {
-                assert!(op.feed_rate > 0.0, "feed_rate must be positive in {}", op.description);
+                assert!(
+                    op.feed_rate > 0.0,
+                    "feed_rate must be positive in {}",
+                    op.description
+                );
             }
         }
     }
@@ -1618,9 +1798,20 @@ mod tests {
     fn test_through_dovetail_ten_degree_softwood() {
         let g = gen();
         let geom = g.calculate_joint_geometry(300.0, 18.0, 10.0);
-        let ops = g.generate_dovetail_operations(&geom, 100.0, 18.0, true, 0.0, &DovetailJointType::Through);
+        let ops = g.generate_dovetail_operations(
+            &geom,
+            100.0,
+            18.0,
+            true,
+            0.0,
+            &DovetailJointType::Through,
+        );
         for op in ops.iter().filter(|o| o.operation_type == "pocket") {
-            let angle = op.metadata.get("angle_degrees").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            let angle = op
+                .metadata
+                .get("angle_degrees")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
             assert!((angle - 10.0).abs() < 1e-9);
         }
     }

@@ -177,12 +177,9 @@ pub async fn update_machine(
     let id = path.into_inner();
     let now = chrono::Utc::now();
 
-    let exists = sqlx::query_scalar!(
-        "SELECT EXISTS(SELECT 1 FROM machines WHERE id = $1)",
-        id
-    )
-    .fetch_one(pool.get_ref())
-    .await;
+    let exists = sqlx::query_scalar!("SELECT EXISTS(SELECT 1 FROM machines WHERE id = $1)", id)
+        .fetch_one(pool.get_ref())
+        .await;
 
     match exists {
         Ok(Some(false)) | Ok(None) => {
@@ -260,12 +257,9 @@ pub async fn update_machine(
 pub async fn delete_machine(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Responder {
     let id = path.into_inner();
 
-    let result = sqlx::query!(
-        "DELETE FROM machines WHERE id = $1 RETURNING id",
-        id
-    )
-    .fetch_optional(pool.get_ref())
-    .await;
+    let result = sqlx::query!("DELETE FROM machines WHERE id = $1 RETURNING id", id)
+        .fetch_optional(pool.get_ref())
+        .await;
 
     match result {
         Ok(Some(_)) => HttpResponse::NoContent().finish(),

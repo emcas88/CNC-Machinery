@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            id, optimization_run_id, material_id,\n            sheet_index, width, length,\n            parts_layout, waste_percentage, gcode_file,\n            created_at\n        FROM nested_sheets\n        WHERE optimization_run_id = $1\n        ORDER BY sheet_index\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "optimization_run_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "material_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "sheet_index",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "width",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "length",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "parts_layout",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 7,
+        "name": "waste_percentage",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "gcode_file",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "16e4e689c356355372c03a72167db45d9cb76a6938c95ef227c70c00bd843792"
+}

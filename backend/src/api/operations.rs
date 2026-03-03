@@ -10,10 +10,7 @@ use crate::models::operation::{CreateOperation, Operation, UpdateOperation};
 
 /// GET /parts/{part_id}/operations
 #[get("")]
-pub async fn list_operations(
-    pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn list_operations(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Responder {
     let part_id = path.into_inner();
 
     let result = sqlx::query_as!(

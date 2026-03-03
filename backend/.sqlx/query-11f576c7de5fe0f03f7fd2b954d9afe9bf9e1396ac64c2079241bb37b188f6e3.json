@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO drawing_templates\n            (id, name, page_size, layout, title_block, created_at, updated_at)\n        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "11f576c7de5fe0f03f7fd2b954d9afe9bf9e1396ac64c2079241bb37b188f6e3"
+}

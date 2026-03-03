@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            hw_item->>'name'           AS hardware_name,\n            SUM((hw_item->>'qty')::BIGINT)::BIGINT AS total_quantity\n        FROM jobs j\n        JOIN rooms    r  ON r.job_id   = j.id\n        JOIN products pr ON pr.room_id = r.id,\n        LATERAL (\n            SELECT jsonb_array_elements(\n                COALESCE(pr.face_definition->'hardware',     '[]'::jsonb) ||\n                COALESCE(pr.interior_definition->'hardware', '[]'::jsonb)\n            ) AS hw_item\n        ) hw\n        WHERE j.id = $1\n          AND hw_item ? 'name'\n          AND hw_item ? 'qty'\n        GROUP BY hw_item->>'name'\n        ORDER BY hw_item->>'name'\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "hardware_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "total_quantity",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "74a2964d58889c1c1a9824b654d5b4b8b51e8f4b86be27ad2b50393eb520132b"
+}

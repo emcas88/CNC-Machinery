@@ -20,6 +20,7 @@ pub mod shop_apps;
 pub mod textures;
 pub mod tools;
 pub mod users;
+pub mod websocket;
 
 use actix_web::web;
 
@@ -38,7 +39,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     tools::configure(cfg);
     post_processors::configure(cfg);
     optimizer::configure(cfg);
-    gcode::configure(cfg);
+    gcode::configure_routes(cfg);
     labels::configure(cfg);
     drawings::configure(cfg);
     cutlists::configure(cfg);

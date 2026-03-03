@@ -2,7 +2,7 @@ use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::models::product::{CreateProduct, Product, UpdateProduct};
+use crate::models::product::{CreateProduct, Product, ProductType, UpdateProduct};
 
 // ---------------------------------------------------------------------------
 // Handlers
@@ -10,10 +10,7 @@ use crate::models::product::{CreateProduct, Product, UpdateProduct};
 
 /// GET /rooms/{room_id}/products
 #[get("")]
-pub async fn list_products(
-    pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn list_products(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Responder {
     let room_id = path.into_inner();
 
     let result = sqlx::query_as!(
@@ -52,10 +49,7 @@ pub async fn list_products(
 
 /// GET /rooms/{room_id}/products/{id}
 #[get("/{id}")]
-pub async fn get_product(
-    pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> impl Responder {
+pub async fn get_product(pool: web::Data<PgPool>, path: web::Path<(Uuid, Uuid)>) -> impl Responder {
     let (room_id, id) = path.into_inner();
 
     let result = sqlx::query_as!(
@@ -144,7 +138,7 @@ pub async fn create_product(
         "#,
         room_id,
         body.name,
-        body.product_type as String,
+        body.product_type.clone() as ProductType,
         body.cabinet_style as _,
         body.width,
         body.height,

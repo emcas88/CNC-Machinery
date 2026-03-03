@@ -1,0 +1,107 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            id, product_id, material_id, name, part_type,\n            width_mm, height_mm, thickness_mm, quantity,\n            edge_banding, machining_data,\n            grain_direction, notes,\n            created_at, updated_at\n        FROM parts\n        WHERE id = $1 AND product_id = $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "product_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "material_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "part_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "width_mm",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "height_mm",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "thickness_mm",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "quantity",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "edge_banding",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 10,
+        "name": "machining_data",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 11,
+        "name": "grain_direction",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 14,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "15aaeafef7f44ac2cccda71a89d6158c950ecb0d09a18c291b1a7874d93771d4"
+}

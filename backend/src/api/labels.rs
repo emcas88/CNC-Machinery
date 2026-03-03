@@ -74,10 +74,7 @@ pub async fn list_label_templates(pool: web::Data<PgPool>) -> impl Responder {
 
 /// Retrieve a single label template by UUID.
 #[get("/label-templates/{id}")]
-pub async fn get_label_template(
-    pool: web::Data<PgPool>,
-    id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn get_label_template(pool: web::Data<PgPool>, id: web::Path<Uuid>) -> impl Responder {
     let template_id = *id;
 
     let row = sqlx::query!(
@@ -137,8 +134,8 @@ pub async fn create_label_template(
         "#,
         new_id,
         dto.name,
-        dto.width,
-        dto.height,
+        dto.width_mm,
+        dto.height_mm,
         dto.fields,
     )
     .execute(pool.get_ref())
@@ -185,8 +182,8 @@ pub async fn update_label_template(
         "#,
         template_id,
         dto.name,
-        dto.width,
-        dto.height,
+        dto.width_mm,
+        dto.height_mm,
         dto.fields,
     )
     .execute(pool.get_ref())
@@ -201,12 +198,10 @@ pub async fn update_label_template(
                 "detail": e.to_string()
             }))
         }
-        Ok(r) if r.rows_affected() == 0 => {
-            HttpResponse::NotFound().json(json!({
-                "status": "error",
-                "message": format!("Label template {} not found", template_id)
-            }))
-        }
+        Ok(r) if r.rows_affected() == 0 => HttpResponse::NotFound().json(json!({
+            "status": "error",
+            "message": format!("Label template {} not found", template_id)
+        })),
         Ok(_) => HttpResponse::Ok().json(json!({
             "status":  "ok",
             "message": format!("Label template {} updated", template_id),
@@ -219,18 +214,12 @@ pub async fn update_label_template(
 
 /// Permanently delete a label template.
 #[delete("/label-templates/{id}")]
-pub async fn delete_label_template(
-    pool: web::Data<PgPool>,
-    id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn delete_label_template(pool: web::Data<PgPool>, id: web::Path<Uuid>) -> impl Responder {
     let template_id = *id;
 
-    let result = sqlx::query!(
-        "DELETE FROM label_templates WHERE id = $1",
-        template_id
-    )
-    .execute(pool.get_ref())
-    .await;
+    let result = sqlx::query!("DELETE FROM label_templates WHERE id = $1", template_id)
+        .execute(pool.get_ref())
+        .await;
 
     match result {
         Err(e) => {
@@ -241,12 +230,10 @@ pub async fn delete_label_template(
                 "detail": e.to_string()
             }))
         }
-        Ok(r) if r.rows_affected() == 0 => {
-            HttpResponse::NotFound().json(json!({
-                "status": "error",
-                "message": format!("Label template {} not found", template_id)
-            }))
-        }
+        Ok(r) if r.rows_affected() == 0 => HttpResponse::NotFound().json(json!({
+            "status": "error",
+            "message": format!("Label template {} not found", template_id)
+        })),
         Ok(_) => HttpResponse::Ok().json(json!({
             "status":  "ok",
             "message": format!("Label template {} deleted", template_id),
@@ -292,10 +279,7 @@ pub async fn delete_label_template(
 /// }
 /// ```
 #[get("/jobs/{job_id}/labels")]
-pub async fn get_job_labels(
-    pool: web::Data<PgPool>,
-    job_id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn get_job_labels(pool: web::Data<PgPool>, job_id: web::Path<Uuid>) -> impl Responder {
     let job_id = *job_id;
 
     let rows = sqlx::query!(

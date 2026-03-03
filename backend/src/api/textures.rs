@@ -3,8 +3,8 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::models::texture::{
-    CreateTexture, CreateTextureGroup, Sheen, GrainOrientation,
-    Texture, TextureGroup, UpdateTexture, UpdateTextureGroup,
+    CreateTexture, CreateTextureGroup, GrainOrientation, Sheen, Texture, TextureGroup,
+    UpdateTexture, UpdateTextureGroup,
 };
 
 // ---------------------------------------------------------------------------
@@ -149,7 +149,7 @@ pub async fn create_texture(
         )
         VALUES (
             $1, $2, $3, $4,
-            $5::text::sheen, $6::text::grain_orientation,
+            $5::text::texture_sheen, $6::text::texture_grain_orientation,
             $7, $8,
             $9, $10, $11,
             $12,
@@ -213,12 +213,9 @@ pub async fn update_texture(
     let id = path.into_inner();
     let now = chrono::Utc::now();
 
-    let exists = sqlx::query_scalar!(
-        "SELECT EXISTS(SELECT 1 FROM textures WHERE id = $1)",
-        id
-    )
-    .fetch_one(pool.get_ref())
-    .await;
+    let exists = sqlx::query_scalar!("SELECT EXISTS(SELECT 1 FROM textures WHERE id = $1)", id)
+        .fetch_one(pool.get_ref())
+        .await;
 
     match exists {
         Ok(Some(false)) | Ok(None) => {
@@ -243,8 +240,8 @@ pub async fn update_texture(
             name              = COALESCE($2, name),
             abbreviation      = COALESCE($3, abbreviation),
             image_url         = COALESCE($4, image_url),
-            sheen             = COALESCE($5::text::sheen, sheen),
-            grain_orientation = COALESCE($6::text::grain_orientation, grain_orientation),
+            sheen             = COALESCE($5::text::texture_sheen, sheen),
+            grain_orientation = COALESCE($6::text::texture_grain_orientation, grain_orientation),
             transparency      = COALESCE($7, transparency),
             metallicness      = COALESCE($8, metallicness),
             visual_width      = COALESCE($9, visual_width),
@@ -305,12 +302,9 @@ pub async fn update_texture(
 pub async fn delete_texture(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Responder {
     let id = path.into_inner();
 
-    let result = sqlx::query!(
-        "DELETE FROM textures WHERE id = $1 RETURNING id",
-        id
-    )
-    .fetch_optional(pool.get_ref())
-    .await;
+    let result = sqlx::query!("DELETE FROM textures WHERE id = $1 RETURNING id", id)
+        .fetch_optional(pool.get_ref())
+        .await;
 
     match result {
         Ok(Some(_)) => HttpResponse::NoContent().finish(),
@@ -448,12 +442,9 @@ pub async fn delete_texture_group(
 ) -> impl Responder {
     let id = path.into_inner();
 
-    let result = sqlx::query!(
-        "DELETE FROM texture_groups WHERE id = $1 RETURNING id",
-        id
-    )
-    .fetch_optional(pool.get_ref())
-    .await;
+    let result = sqlx::query!("DELETE FROM texture_groups WHERE id = $1 RETURNING id", id)
+        .fetch_optional(pool.get_ref())
+        .await;
 
     match result {
         Ok(Some(_)) => HttpResponse::NoContent().finish(),

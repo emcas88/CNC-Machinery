@@ -88,8 +88,7 @@ fn entity_type_from_path(path: &str) -> String {
 /// Try to extract a UUID entity id from the request path.
 /// Looks for the first path segment that parses as a UUID.
 fn entity_id_from_path(path: &str) -> Option<Uuid> {
-    path.split('/')
-        .find_map(|seg| Uuid::parse_str(seg).ok())
+    path.split('/').find_map(|seg| Uuid::parse_str(seg).ok())
 }
 
 /// Map an HTTP method to an audit action verb.
@@ -181,10 +180,7 @@ where
                 .map(|u| u.user_id);
 
             // Extract client IP from connection info.
-            let ip_address = req
-                .connection_info()
-                .peer_addr()
-                .map(|s| s.to_string());
+            let ip_address = req.connection_info().peer_addr().map(|s| s.to_string());
 
             // Grab a handle to the DB pool (added via app_data).
             let pool = req.app_data::<web::Data<PgPool>>().cloned();

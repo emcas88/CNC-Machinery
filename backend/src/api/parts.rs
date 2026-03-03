@@ -10,10 +10,7 @@ use crate::models::part::{CreatePart, Part, UpdatePart};
 
 /// GET /products/{product_id}/parts
 #[get("")]
-pub async fn list_parts(
-    pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn list_parts(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Responder {
     let product_id = path.into_inner();
 
     let result = sqlx::query_as!(
@@ -47,10 +44,7 @@ pub async fn list_parts(
 
 /// GET /products/{product_id}/parts/{id}
 #[get("/{id}")]
-pub async fn get_part(
-    pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> impl Responder {
+pub async fn get_part(pool: web::Data<PgPool>, path: web::Path<(Uuid, Uuid)>) -> impl Responder {
     let (product_id, id) = path.into_inner();
 
     let result = sqlx::query_as!(
@@ -251,10 +245,7 @@ pub async fn update_part(
 
 /// DELETE /products/{product_id}/parts/{id}
 #[delete("/{id}")]
-pub async fn delete_part(
-    pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> impl Responder {
+pub async fn delete_part(pool: web::Data<PgPool>, path: web::Path<(Uuid, Uuid)>) -> impl Responder {
     let (product_id, id) = path.into_inner();
 
     let result = sqlx::query!(

@@ -73,10 +73,7 @@ pub async fn list_drawing_templates(pool: web::Data<PgPool>) -> impl Responder {
 
 /// Retrieve a single drawing template by UUID.
 #[get("/drawing-templates/{id}")]
-pub async fn get_drawing_template(
-    pool: web::Data<PgPool>,
-    id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn get_drawing_template(pool: web::Data<PgPool>, id: web::Path<Uuid>) -> impl Responder {
     let template_id = *id;
 
     let row = sqlx::query!(
@@ -205,12 +202,10 @@ pub async fn update_drawing_template(
                 "detail": e.to_string()
             }))
         }
-        Ok(r) if r.rows_affected() == 0 => {
-            HttpResponse::NotFound().json(json!({
-                "status": "error",
-                "message": format!("Drawing template {} not found", template_id)
-            }))
-        }
+        Ok(r) if r.rows_affected() == 0 => HttpResponse::NotFound().json(json!({
+            "status": "error",
+            "message": format!("Drawing template {} not found", template_id)
+        })),
         Ok(_) => HttpResponse::Ok().json(json!({
             "status":  "ok",
             "message": format!("Drawing template {} updated", template_id),
@@ -229,12 +224,9 @@ pub async fn delete_drawing_template(
 ) -> impl Responder {
     let template_id = *id;
 
-    let result = sqlx::query!(
-        "DELETE FROM drawing_templates WHERE id = $1",
-        template_id
-    )
-    .execute(pool.get_ref())
-    .await;
+    let result = sqlx::query!("DELETE FROM drawing_templates WHERE id = $1", template_id)
+        .execute(pool.get_ref())
+        .await;
 
     match result {
         Err(e) => {
@@ -245,12 +237,10 @@ pub async fn delete_drawing_template(
                 "detail": e.to_string()
             }))
         }
-        Ok(r) if r.rows_affected() == 0 => {
-            HttpResponse::NotFound().json(json!({
-                "status": "error",
-                "message": format!("Drawing template {} not found", template_id)
-            }))
-        }
+        Ok(r) if r.rows_affected() == 0 => HttpResponse::NotFound().json(json!({
+            "status": "error",
+            "message": format!("Drawing template {} not found", template_id)
+        })),
         Ok(_) => HttpResponse::Ok().json(json!({
             "status":  "ok",
             "message": format!("Drawing template {} deleted", template_id),

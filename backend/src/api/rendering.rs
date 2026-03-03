@@ -29,11 +29,11 @@
 //!   GET  /renders              — List render requests (optional ?status= filter)
 
 use actix_web::{get, post, web, HttpResponse, Responder};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sqlx::PgPool;
 use uuid::Uuid;
-use chrono::Utc;
 
 // ─── DTOs ─────────────────────────────────────────────────────────────────────
 
@@ -171,10 +171,7 @@ pub async fn create_render(
 
 /// Return the status and result of a render request.
 #[get("/renders/{id}")]
-pub async fn get_render(
-    pool: web::Data<PgPool>,
-    id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn get_render(pool: web::Data<PgPool>, id: web::Path<Uuid>) -> impl Responder {
     let render_id = *id;
 
     let row = sqlx::query!(
@@ -204,7 +201,7 @@ pub async fn get_render(
         })),
         Ok(Some(r)) => {
             let request_payload = &r.camera_position;
-            let status_payload  = &r.layer_visibility;
+            let status_payload = &r.layer_visibility;
 
             HttpResponse::Ok().json(json!({
                 "status": "ok",
@@ -252,7 +249,7 @@ pub async fn list_renders(
           )
         ORDER BY created_at DESC
         "#,
-        query.status as Option<String>,
+        query.status.clone(),
         query.job_id as Option<Uuid>,
     )
     .fetch_all(pool.get_ref())

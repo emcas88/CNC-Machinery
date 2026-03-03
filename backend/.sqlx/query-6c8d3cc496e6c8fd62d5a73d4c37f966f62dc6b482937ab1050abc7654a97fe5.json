@@ -1,0 +1,80 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id,\n                job_id,\n                quote_number,\n                material_cost,\n                hardware_cost,\n                labor_cost,\n                markup_percentage,\n                total,\n                line_items,\n                created_at,\n                updated_at\n            FROM quotes\n            ORDER BY created_at DESC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "job_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "quote_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "material_cost",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "hardware_cost",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "labor_cost",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "markup_percentage",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "total",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "line_items",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6c8d3cc496e6c8fd62d5a73d4c37f966f62dc6b482937ab1050abc7654a97fe5"
+}

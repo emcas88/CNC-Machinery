@@ -63,7 +63,10 @@ impl std::fmt::Display for StorageError {
             }
             StorageError::IoError(msg) => write!(f, "storage I/O error: {msg}"),
             StorageError::PermissionDenied(msg) => write!(f, "permission denied: {msg}"),
-            StorageError::SizeLimitExceeded { max_bytes, actual_bytes } => {
+            StorageError::SizeLimitExceeded {
+                max_bytes,
+                actual_bytes,
+            } => {
                 write!(f, "size limit exceeded: {actual_bytes} > {max_bytes}")
             }
             StorageError::Other(msg) => write!(f, "storage error: {msg}"),
@@ -200,7 +203,10 @@ impl StorageService {
     }
 
     fn check_connected(&self) -> StorageResult<()> {
-        let c = self.connected.lock().map_err(|e| StorageError::Other(e.to_string()))?;
+        let c = self
+            .connected
+            .lock()
+            .map_err(|e| StorageError::Other(e.to_string()))?;
         if !*c {
             return Err(StorageError::ConnectionError("not connected".into()));
         }
@@ -213,7 +219,10 @@ impl StorageService {
 
     pub fn create_bucket(&self, name: &str) -> StorageResult<BucketInfo> {
         self.check_connected()?;
-        let mut buckets = self.buckets.lock().map_err(|e| StorageError::Other(e.to_string()))?;
+        let mut buckets = self
+            .buckets
+            .lock()
+            .map_err(|e| StorageError::Other(e.to_string()))?;
         if buckets.contains_key(name) {
             return Err(StorageError::BucketAlreadyExists(name.into()));
         }
@@ -223,13 +232,22 @@ impl StorageService {
             object_count: 0,
             total_size_bytes: 0,
         };
-        buckets.insert(name.into(), Bucket { info: info.clone(), objects: HashMap::new() });
+        buckets.insert(
+            name.into(),
+            Bucket {
+                info: info.clone(),
+                objects: HashMap::new(),
+            },
+        );
         Ok(info)
     }
 
     pub fn delete_bucket(&self, name: &str) -> StorageResult<()> {
         self.check_connected()?;
-        let mut buckets = self.buckets.lock().map_err(|e| StorageError::Other(e.to_string()))?;
+        let mut buckets = self
+            .buckets
+            .lock()
+            .map_err(|e| StorageError::Other(e.to_string()))?;
         if !buckets.contains_key(name) {
             return Err(StorageError::BucketNotFound(name.into()));
         }
@@ -239,19 +257,28 @@ impl StorageService {
 
     pub fn list_buckets(&self) -> StorageResult<Vec<BucketInfo>> {
         self.check_connected()?;
-        let buckets = self.buckets.lock().map_err(|e| StorageError::Other(e.to_string()))?;
+        let buckets = self
+            .buckets
+            .lock()
+            .map_err(|e| StorageError::Other(e.to_string()))?;
         Ok(buckets.values().map(|b| b.info.clone()).collect())
     }
 
     pub fn bucket_exists(&self, name: &str) -> StorageResult<bool> {
         self.check_connected()?;
-        let buckets = self.buckets.lock().map_err(|e| StorageError::Other(e.to_string()))?;
+        let buckets = self
+            .buckets
+            .lock()
+            .map_err(|e| StorageError::Other(e.to_string()))?;
         Ok(buckets.contains_key(name))
     }
 
     pub fn bucket_info(&self, name: &str) -> StorageResult<BucketInfo> {
         self.check_connected()?;
-        let buckets = self.buckets.lock().map_err(|e| StorageError::Other(e.to_string()))?;
+        let buckets = self
+            .buckets
+            .lock()
+            .map_err(|e| StorageError::Other(e.to_string()))?;
         buckets
             .get(name)
             .map(|b| b.info.clone())
@@ -305,7 +332,10 @@ impl StorageService {
             metadata: metadata.unwrap_or_default(),
         };
 
-        let mut buckets = self.buckets.lock().map_err(|e| StorageError::Other(e.to_string()))?;
+        let mut buckets = self
+            .buckets
+            .lock()
+            .map_err(|e| StorageError::Other(e.to_string()))?;
         let bkt = buckets
             .get_mut(bucket)
             .ok_or_else(|| StorageError::BucketNotFound(bucket.into()))?;
@@ -320,7 +350,10 @@ impl StorageService {
 
         bkt.objects.insert(
             key.into(),
-            StoredObject { data: data.to_vec(), info: info.clone() },
+            StoredObject {
+                data: data.to_vec(),
+                info: info.clone(),
+            },
         );
 
         Ok(info)
@@ -329,7 +362,10 @@ impl StorageService {
     /// Download an object's data.
     pub fn download(&self, bucket: &str, key: &str) -> StorageResult<Vec<u8>> {
         self.check_connected()?;
-        let buckets = self.buckets.lock().map_err(|e| StorageError::Other(e.to_string()))?;
+        let buckets = self
+            .buckets
+            .lock()
+            .map_err(|e| StorageError::Other(e.to_string()))?;
         let bkt = buckets
             .get(bucket)
             .ok_or_else(|| StorageError::BucketNotFound(bucket.into()))?;
@@ -346,7 +382,10 @@ impl StorageService {
     /// Get object metadata without downloading data.
     pub fn head(&self, bucket: &str, key: &str) -> StorageResult<ObjectInfo> {
         self.check_connected()?;
-        let buckets = self.buckets.lock().map_err(|e| StorageError::Other(e.to_string()))?;
+        let buckets = self
+            .buckets
+            .lock()
+            .map_err(|e| StorageError::Other(e.to_string()))?;
         let bkt = buckets
             .get(bucket)
             .ok_or_else(|| StorageError::BucketNotFound(bucket.into()))?;
@@ -362,7 +401,10 @@ impl StorageService {
     /// Delete an object.
     pub fn delete_object(&self, bucket: &str, key: &str) -> StorageResult<()> {
         self.check_connected()?;
-        let mut buckets = self.buckets.lock().map_err(|e| StorageError::Other(e.to_string()))?;
+        let mut buckets = self
+            .buckets
+            .lock()
+            .map_err(|e| StorageError::Other(e.to_string()))?;
         let bkt = buckets
             .get_mut(bucket)
             .ok_or_else(|| StorageError::BucketNotFound(bucket.into()))?;
@@ -387,7 +429,10 @@ impl StorageService {
         max_keys: Option<usize>,
     ) -> StorageResult<ObjectListPage> {
         self.check_connected()?;
-        let buckets = self.buckets.lock().map_err(|e| StorageError::Other(e.to_string()))?;
+        let buckets = self
+            .buckets
+            .lock()
+            .map_err(|e| StorageError::Other(e.to_string()))?;
         let bkt = buckets
             .get(bucket)
             .ok_or_else(|| StorageError::BucketNotFound(bucket.into()))?;
@@ -587,11 +632,7 @@ impl StorageService {
 
 /// Simple content type guesser based on file extension.
 fn guess_content_type(filename: &str) -> String {
-    let ext = filename
-        .rsplit('.')
-        .next()
-        .unwrap_or("")
-        .to_lowercase();
+    let ext = filename.rsplit('.').next().unwrap_or("").to_lowercase();
 
     match ext.as_str() {
         "png" => "image/png",
@@ -651,14 +692,26 @@ mod tests {
 
     #[test]
     fn test_reject_empty_endpoint() {
-        let cfg = StorageConfig { endpoint: "".into(), ..StorageConfig::default() };
-        assert!(matches!(StorageService::new(cfg), Err(StorageError::ConnectionError(_))));
+        let cfg = StorageConfig {
+            endpoint: "".into(),
+            ..StorageConfig::default()
+        };
+        assert!(matches!(
+            StorageService::new(cfg),
+            Err(StorageError::ConnectionError(_))
+        ));
     }
 
     #[test]
     fn test_reject_empty_credentials() {
-        let cfg = StorageConfig { access_key: "".into(), ..StorageConfig::default() };
-        assert!(matches!(StorageService::new(cfg), Err(StorageError::PermissionDenied(_))));
+        let cfg = StorageConfig {
+            access_key: "".into(),
+            ..StorageConfig::default()
+        };
+        assert!(matches!(
+            StorageService::new(cfg),
+            Err(StorageError::PermissionDenied(_))
+        ));
     }
 
     // --- Bucket management ---
@@ -675,7 +728,10 @@ mod tests {
     fn test_create_duplicate_bucket() {
         let s = make_storage();
         s.create_bucket("dup").unwrap();
-        assert!(matches!(s.create_bucket("dup"), Err(StorageError::BucketAlreadyExists(_))));
+        assert!(matches!(
+            s.create_bucket("dup"),
+            Err(StorageError::BucketAlreadyExists(_))
+        ));
     }
 
     #[test]
@@ -688,7 +744,10 @@ mod tests {
     #[test]
     fn test_delete_nonexistent_bucket() {
         let s = make_storage();
-        assert!(matches!(s.delete_bucket("nope"), Err(StorageError::BucketNotFound(_))));
+        assert!(matches!(
+            s.delete_bucket("nope"),
+            Err(StorageError::BucketNotFound(_))
+        ));
     }
 
     #[test]
@@ -735,14 +794,24 @@ mod tests {
     #[test]
     fn test_upload_auto_content_type() {
         let s = setup_with_bucket("files");
-        let info = s.upload("files", "photo.png", b"png-data", None, None).unwrap();
+        let info = s
+            .upload("files", "photo.png", b"png-data", None, None)
+            .unwrap();
         assert_eq!(info.content_type, "image/png");
     }
 
     #[test]
     fn test_upload_explicit_content_type() {
         let s = setup_with_bucket("files");
-        let info = s.upload("files", "data.bin", b"binary", Some("application/custom"), None).unwrap();
+        let info = s
+            .upload(
+                "files",
+                "data.bin",
+                b"binary",
+                Some("application/custom"),
+                None,
+            )
+            .unwrap();
         assert_eq!(info.content_type, "application/custom");
     }
 
@@ -751,14 +820,18 @@ mod tests {
         let s = setup_with_bucket("files");
         let mut meta = HashMap::new();
         meta.insert("author".into(), "john".into());
-        let info = s.upload("files", "doc.pdf", b"pdf-data", None, Some(meta)).unwrap();
+        let info = s
+            .upload("files", "doc.pdf", b"pdf-data", None, Some(meta))
+            .unwrap();
         assert_eq!(info.metadata.get("author").unwrap(), "john");
     }
 
     #[test]
     fn test_upload_to_nonexistent_bucket() {
         let s = make_storage();
-        let err = s.upload("nope", "file.txt", b"data", None, None).unwrap_err();
+        let err = s
+            .upload("nope", "file.txt", b"data", None, None)
+            .unwrap_err();
         assert!(matches!(err, StorageError::BucketNotFound(_)));
     }
 
@@ -767,9 +840,12 @@ mod tests {
         let s = StorageService::new(StorageConfig {
             max_upload_bytes: 10,
             ..StorageConfig::default()
-        }).unwrap();
+        })
+        .unwrap();
         s.create_bucket("small").unwrap();
-        let err = s.upload("small", "big.bin", &[0u8; 20], None, None).unwrap_err();
+        let err = s
+            .upload("small", "big.bin", &[0u8; 20], None, None)
+            .unwrap_err();
         assert!(matches!(err, StorageError::SizeLimitExceeded { .. }));
     }
 
@@ -870,7 +946,8 @@ mod tests {
     fn test_list_objects_max_keys() {
         let s = setup_with_bucket("files");
         for i in 0..5 {
-            s.upload("files", &format!("{}.txt", i), b"x", None, None).unwrap();
+            s.upload("files", &format!("{}.txt", i), b"x", None, None)
+                .unwrap();
         }
         let page = s.list_objects("files", None, Some(3)).unwrap();
         assert_eq!(page.objects.len(), 3);
@@ -884,7 +961,8 @@ mod tests {
         let s = make_storage();
         s.create_bucket("src").unwrap();
         s.create_bucket("dst").unwrap();
-        s.upload("src", "file.txt", b"original", None, None).unwrap();
+        s.upload("src", "file.txt", b"original", None, None)
+            .unwrap();
 
         let info = s.copy_object("src", "file.txt", "dst", "copy.txt").unwrap();
         assert_eq!(info.key, "copy.txt");
@@ -943,7 +1021,9 @@ mod tests {
     #[test]
     fn test_store_export() {
         let s = make_storage();
-        let info = s.store_export("job-42", "output.gcode", b"G0 X0 Y0").unwrap();
+        let info = s
+            .store_export("job-42", "output.gcode", b"G0 X0 Y0")
+            .unwrap();
         assert_eq!(info.bucket, "exports");
         assert_eq!(info.key, "job-42/output.gcode");
     }

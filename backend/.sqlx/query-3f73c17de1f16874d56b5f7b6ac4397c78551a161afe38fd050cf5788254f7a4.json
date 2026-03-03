@@ -1,0 +1,95 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            id, part_id, machine_id, operation_type,\n            sequence_order, tool_id,\n            feed_rate_mm_min, spindle_speed_rpm, depth_mm,\n            parameters, status,\n            created_at, updated_at\n        FROM operations\n        WHERE id = $1 AND part_id = $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "part_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "machine_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "operation_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "sequence_order",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "tool_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 6,
+        "name": "feed_rate_mm_min",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "spindle_speed_rpm",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "depth_mm",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 9,
+        "name": "parameters",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 10,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 12,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "3f73c17de1f16874d56b5f7b6ac4397c78551a161afe38fd050cf5788254f7a4"
+}

@@ -1,0 +1,56 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, name, page_size, layout, title_block, created_at, updated_at\n        FROM drawing_templates\n        ORDER BY name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "page_size",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "layout",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "title_block",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "f4ced70e1d965aab3fe83735e45cae6ff087eff7e4b22818a57fc43c0c2cf78d"
+}

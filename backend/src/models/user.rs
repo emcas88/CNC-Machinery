@@ -14,6 +14,17 @@ pub enum UserRole {
     ShopFloor,
 }
 
+impl std::fmt::Display for UserRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::SuperAdmin => write!(f, "super_admin"),
+            Self::Designer => write!(f, "designer"),
+            Self::CncOperator => write!(f, "cnc_operator"),
+            Self::ShopFloor => write!(f, "shop_floor"),
+        }
+    }
+}
+
 /// A system user account.
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct User {

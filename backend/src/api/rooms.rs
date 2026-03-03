@@ -10,10 +10,7 @@ use crate::models::room::{CreateRoom, Room, UpdateRoom};
 
 /// GET /jobs/{job_id}/rooms
 #[get("")]
-pub async fn list_rooms(
-    pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn list_rooms(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Responder {
     let job_id = path.into_inner();
 
     let result = sqlx::query_as!(
@@ -44,10 +41,7 @@ pub async fn list_rooms(
 
 /// GET /jobs/{job_id}/rooms/{id}
 #[get("/{id}")]
-pub async fn get_room(
-    pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> impl Responder {
+pub async fn get_room(pool: web::Data<PgPool>, path: web::Path<(Uuid, Uuid)>) -> impl Responder {
     let (job_id, id) = path.into_inner();
 
     let result = sqlx::query_as!(
@@ -216,10 +210,7 @@ pub async fn update_room(
 
 /// DELETE /jobs/{job_id}/rooms/{id}
 #[delete("/{id}")]
-pub async fn delete_room(
-    pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> impl Responder {
+pub async fn delete_room(pool: web::Data<PgPool>, path: web::Path<(Uuid, Uuid)>) -> impl Responder {
     let (job_id, id) = path.into_inner();
 
     let result = sqlx::query!(

@@ -312,7 +312,10 @@ mod tests {
             let calc = CostCalculator::new(85.0, 4.5);
             // -10% markup = subtotal * 0.90
             let result = calc.apply_markups(1000.0, -10.0);
-            assert!((result - 900.0).abs() < 1e-9, "Expected 900.0, got {result}");
+            assert!(
+                (result - 900.0).abs() < 1e-9,
+                "Expected 900.0, got {result}"
+            );
         }
 
         #[test]
@@ -333,7 +336,10 @@ mod tests {
             let calc = CostCalculator::new(85.0, 4.5);
             // 12.5% on 800 = 900
             let result = calc.apply_markups(800.0, 12.5);
-            assert!((result - 900.0).abs() < 1e-9, "Expected 900.0, got {result}");
+            assert!(
+                (result - 900.0).abs() < 1e-9,
+                "Expected 900.0, got {result}"
+            );
         }
 
         #[test]
@@ -401,7 +407,7 @@ mod tests {
         #[test]
         fn test_cost_line_item_struct_fields() {
             let item = CostLineItem {
-                description: "18mm White Melamine \u2013 12 sheets".to_string(),
+                description: "18mm White Melamine \u{2013} 12 sheets".to_string(),
                 quantity: 12.0,
                 unit: "sheet".to_string(),
                 unit_cost: 45.0,
@@ -600,7 +606,10 @@ mod tests {
         fn test_generate_mdf_door_has_operations_array() {
             let gen = DoorProfileGenerator::new();
             let result = gen.generate_mdf_door(&sample_params());
-            assert!(result["operations"].is_array(), "operations must be an array");
+            assert!(
+                result["operations"].is_array(),
+                "operations must be an array"
+            );
         }
 
         #[test]
@@ -700,7 +709,10 @@ mod tests {
             let gcode = mgr
                 .generate_flip_gcode(Uuid::new_v4(), Uuid::new_v4(), &pool)
                 .await;
-            assert!(gcode.contains("M30"), "G-code must contain M30 end-of-program");
+            assert!(
+                gcode.contains("M30"),
+                "G-code must contain M30 end-of-program"
+            );
         }
 
         #[tokio::test]
@@ -759,15 +771,22 @@ mod tests {
         async fn test_generate_label_pdf_bytes_is_empty() {
             let gen = LabelGenerator::new();
             let pool = lazy_pool();
-            let label = gen.generate_label(Uuid::new_v4(), Uuid::new_v4(), &pool).await;
-            assert!(label.pdf_bytes.is_empty(), "Stub must return empty pdf_bytes");
+            let label = gen
+                .generate_label(Uuid::new_v4(), Uuid::new_v4(), &pool)
+                .await;
+            assert!(
+                label.pdf_bytes.is_empty(),
+                "Stub must return empty pdf_bytes"
+            );
         }
 
         #[tokio::test]
         async fn test_generate_label_width_is_100() {
             let gen = LabelGenerator::new();
             let pool = lazy_pool();
-            let label = gen.generate_label(Uuid::new_v4(), Uuid::new_v4(), &pool).await;
+            let label = gen
+                .generate_label(Uuid::new_v4(), Uuid::new_v4(), &pool)
+                .await;
             assert_eq!(label.width_mm, 100.0);
         }
 
@@ -775,7 +794,9 @@ mod tests {
         async fn test_generate_label_height_is_50() {
             let gen = LabelGenerator::new();
             let pool = lazy_pool();
-            let label = gen.generate_label(Uuid::new_v4(), Uuid::new_v4(), &pool).await;
+            let label = gen
+                .generate_label(Uuid::new_v4(), Uuid::new_v4(), &pool)
+                .await;
             assert_eq!(label.height_mm, 50.0);
         }
 
@@ -973,7 +994,10 @@ mod tests {
         async fn test_export_sketchup_error_message_not_empty() {
             let exp = FileExporter::new();
             let pool = lazy_pool();
-            let err = exp.export_sketchup(Uuid::new_v4(), &pool).await.unwrap_err();
+            let err = exp
+                .export_sketchup(Uuid::new_v4(), &pool)
+                .await
+                .unwrap_err();
             assert!(!err.is_empty());
         }
 
@@ -1002,7 +1026,10 @@ mod tests {
             let pool = lazy_pool();
             let bytes = exp.export_csv(Uuid::new_v4(), &pool).await.unwrap();
             let csv = String::from_utf8(bytes).unwrap();
-            assert!(csv.contains("Part Name"), "CSV header must contain 'Part Name'");
+            assert!(
+                csv.contains("Part Name"),
+                "CSV header must contain 'Part Name'"
+            );
         }
 
         #[tokio::test]

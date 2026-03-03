@@ -1,0 +1,47 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, name, camera_position, layer_visibility, created_at\n        FROM saved_views\n        WHERE name LIKE 'render:%'\n          AND (\n              $1::TEXT IS NULL\n              OR layer_visibility->>'status' = $1\n          )\n          AND (\n              $2::UUID IS NULL\n              OR camera_position->>'job_id' = $2::TEXT\n          )\n        ORDER BY created_at DESC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "camera_position",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 3,
+        "name": "layer_visibility",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "b139718b98ceb8eee19fd0cd40ecb64eb56422da48244b3af6f49b98ef328462"
+}

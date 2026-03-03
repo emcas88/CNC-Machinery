@@ -8,7 +8,7 @@ use uuid::Uuid;
 pub struct Operation {
     pub id: Uuid,
     pub part_id: Uuid,
-    pub machine_id: Uuid,
+    pub machine_id: Option<Uuid>,
     /// Operation type: "profile_cut", "pocket", "drill", "engrave", "edge_band", etc.
     pub operation_type: String,
     /// Sequence order within the part's operations list.
@@ -32,7 +32,7 @@ pub struct Operation {
 #[derive(Debug, Deserialize)]
 pub struct CreateOperation {
     pub part_id: Uuid,
-    pub machine_id: Uuid,
+    pub machine_id: Option<Uuid>,
     pub operation_type: String,
     pub sequence_order: Option<i32>,
     pub tool_id: Option<Uuid>,
@@ -40,11 +40,13 @@ pub struct CreateOperation {
     pub spindle_speed_rpm: Option<i32>,
     pub depth_mm: Option<f64>,
     pub parameters: Option<Value>,
+    pub status: Option<String>,
 }
 
 /// DTO for updating an operation.
 #[derive(Debug, Deserialize)]
 pub struct UpdateOperation {
+    pub machine_id: Option<Uuid>,
     pub operation_type: Option<String>,
     pub sequence_order: Option<i32>,
     pub tool_id: Option<Uuid>,

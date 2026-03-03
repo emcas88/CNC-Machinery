@@ -107,10 +107,7 @@ pub async fn get_tool(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Re
 // ---------------------------------------------------------------------------
 
 #[post("")]
-pub async fn create_tool(
-    pool: web::Data<PgPool>,
-    body: web::Json<CreateTool>,
-) -> impl Responder {
+pub async fn create_tool(pool: web::Data<PgPool>, body: web::Json<CreateTool>) -> impl Responder {
     let id = Uuid::new_v4();
     let now = chrono::Utc::now();
 
@@ -181,12 +178,9 @@ pub async fn update_tool(
     let now = chrono::Utc::now();
 
     // Verify existence first
-    let exists = sqlx::query_scalar!(
-        "SELECT EXISTS(SELECT 1 FROM tools WHERE id = $1)",
-        id
-    )
-    .fetch_one(pool.get_ref())
-    .await;
+    let exists = sqlx::query_scalar!("SELECT EXISTS(SELECT 1 FROM tools WHERE id = $1)", id)
+        .fetch_one(pool.get_ref())
+        .await;
 
     match exists {
         Ok(Some(false)) | Ok(None) => {
@@ -261,12 +255,9 @@ pub async fn update_tool(
 pub async fn delete_tool(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Responder {
     let id = path.into_inner();
 
-    let result = sqlx::query!(
-        "DELETE FROM tools WHERE id = $1 RETURNING id",
-        id
-    )
-    .fetch_optional(pool.get_ref())
-    .await;
+    let result = sqlx::query!("DELETE FROM tools WHERE id = $1 RETURNING id", id)
+        .fetch_optional(pool.get_ref())
+        .await;
 
     match result {
         Ok(Some(_)) => HttpResponse::NoContent().finish(),

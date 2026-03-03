@@ -8,11 +8,8 @@ use uuid::Uuid;
 pub struct DrawingTemplate {
     pub id: Uuid,
     pub name: String,
-    /// Page size (e.g., "A4", "Letter", "Arch D").
     pub page_size: String,
-    /// Page orientation: "portrait" or "landscape".
-    pub orientation: String,
-    /// Title block configuration as JSON.
+    pub layout: Value,
     pub title_block: Value,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -23,7 +20,7 @@ pub struct DrawingTemplate {
 pub struct CreateDrawingTemplate {
     pub name: String,
     pub page_size: String,
-    pub orientation: String,
+    pub layout: Option<Value>,
     pub title_block: Option<Value>,
 }
 
@@ -32,6 +29,6 @@ pub struct CreateDrawingTemplate {
 pub struct UpdateDrawingTemplate {
     pub name: Option<String>,
     pub page_size: Option<String>,
-    pub orientation: Option<String>,
+    pub layout: Option<Value>,
     pub title_block: Option<Value>,
 }

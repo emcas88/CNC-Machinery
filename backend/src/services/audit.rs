@@ -164,7 +164,9 @@ impl AuditEntry {
             return Err(AuditError::ValidationError("user_id is required".into()));
         }
         if self.entity_type.is_empty() {
-            return Err(AuditError::ValidationError("entity_type is required".into()));
+            return Err(AuditError::ValidationError(
+                "entity_type is required".into(),
+            ));
         }
         if self.entity_id.is_empty() {
             return Err(AuditError::ValidationError("entity_id is required".into()));
@@ -193,7 +195,10 @@ pub struct AuditQuery {
 
 impl AuditQuery {
     pub fn by_user(user_id: &str) -> Self {
-        Self { user_id: Some(user_id.into()), ..Default::default() }
+        Self {
+            user_id: Some(user_id.into()),
+            ..Default::default()
+        }
     }
 
     pub fn by_entity(entity_type: &str, entity_id: &str) -> Self {
@@ -205,15 +210,25 @@ impl AuditQuery {
     }
 
     pub fn by_action(action: AuditAction) -> Self {
-        Self { action: Some(action), ..Default::default() }
+        Self {
+            action: Some(action),
+            ..Default::default()
+        }
     }
 
     pub fn by_entity_type(entity_type: &str) -> Self {
-        Self { entity_type: Some(entity_type.into()), ..Default::default() }
+        Self {
+            entity_type: Some(entity_type.into()),
+            ..Default::default()
+        }
     }
 
     pub fn in_range(start: DateTime<Utc>, end: DateTime<Utc>) -> Self {
-        Self { start_time: Some(start), end_time: Some(end), ..Default::default() }
+        Self {
+            start_time: Some(start),
+            end_time: Some(end),
+            ..Default::default()
+        }
     }
 
     pub fn with_limit(mut self, limit: usize) -> Self {
@@ -297,7 +312,10 @@ impl AuditService {
 
         let id = entry.id.clone();
 
-        let mut entries = self.entries.lock().map_err(|e| AuditError::StorageError(e.to_string()))?;
+        let mut entries = self
+            .entries
+            .lock()
+            .map_err(|e| AuditError::StorageError(e.to_string()))?;
         entries.push(entry);
         Ok(id)
     }
@@ -345,32 +363,52 @@ impl AuditService {
 
     /// Query audit logs with filters.
     pub fn query_logs(&self, query: AuditQuery) -> AuditResult<AuditQueryResult> {
-        let entries = self.entries.lock().map_err(|e| AuditError::StorageError(e.to_string()))?;
+        let entries = self
+            .entries
+            .lock()
+            .map_err(|e| AuditError::StorageError(e.to_string()))?;
 
-        let mut filtered: Vec<&AuditEntry> = entries.iter().filter(|e| {
-            if let Some(ref uid) = query.user_id {
-                if &e.user_id != uid { return false; }
-            }
-            if let Some(ref et) = query.entity_type {
-                if &e.entity_type != et { return false; }
-            }
-            if let Some(ref eid) = query.entity_id {
-                if &e.entity_id != eid { return false; }
-            }
-            if let Some(ref action) = query.action {
-                if &e.action != action { return false; }
-            }
-            if let Some(ref start) = query.start_time {
-                if &e.timestamp < start { return false; }
-            }
-            if let Some(ref end) = query.end_time {
-                if &e.timestamp > end { return false; }
-            }
-            if let Some(ref ip) = query.ip_address {
-                if e.ip_address.as_deref() != Some(ip.as_str()) { return false; }
-            }
-            true
-        }).collect();
+        let mut filtered: Vec<&AuditEntry> = entries
+            .iter()
+            .filter(|e| {
+                if let Some(ref uid) = query.user_id {
+                    if &e.user_id != uid {
+                        return false;
+                    }
+                }
+                if let Some(ref et) = query.entity_type {
+                    if &e.entity_type != et {
+                        return false;
+                    }
+                }
+                if let Some(ref eid) = query.entity_id {
+                    if &e.entity_id != eid {
+                        return false;
+                    }
+                }
+                if let Some(ref action) = query.action {
+                    if &e.action != action {
+                        return false;
+                    }
+                }
+                if let Some(ref start) = query.start_time {
+                    if &e.timestamp < start {
+                        return false;
+                    }
+                }
+                if let Some(ref end) = query.end_time {
+                    if &e.timestamp > end {
+                        return false;
+                    }
+                }
+                if let Some(ref ip) = query.ip_address {
+                    if e.ip_address.as_deref() != Some(ip.as_str()) {
+                        return false;
+                    }
+                }
+                true
+            })
+            .collect();
 
         // Sort by timestamp descending (newest first)
         filtered.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
@@ -386,24 +424,38 @@ impl AuditService {
             .cloned()
             .collect();
 
-        Ok(AuditQueryResult { entries, total_count, offset, limit })
+        Ok(AuditQueryResult {
+            entries,
+            total_count,
+            offset,
+            limit,
+        })
     }
 
     /// Get a single audit entry by ID.
     pub fn get_entry(&self, id: &str) -> AuditResult<Option<AuditEntry>> {
-        let entries = self.entries.lock().map_err(|e| AuditError::StorageError(e.to_string()))?;
+        let entries = self
+            .entries
+            .lock()
+            .map_err(|e| AuditError::StorageError(e.to_string()))?;
         Ok(entries.iter().find(|e| e.id == id).cloned())
     }
 
     /// Count total audit entries.
     pub fn count(&self) -> AuditResult<usize> {
-        let entries = self.entries.lock().map_err(|e| AuditError::StorageError(e.to_string()))?;
+        let entries = self
+            .entries
+            .lock()
+            .map_err(|e| AuditError::StorageError(e.to_string()))?;
         Ok(entries.len())
     }
 
     /// Count entries matching a query.
     pub fn count_matching(&self, query: AuditQuery) -> AuditResult<usize> {
-        let result = self.query_logs(AuditQuery { limit: Some(usize::MAX), ..query })?;
+        let result = self.query_logs(AuditQuery {
+            limit: Some(usize::MAX),
+            ..query
+        })?;
         Ok(result.total_count)
     }
 
@@ -456,7 +508,10 @@ impl AuditService {
 
     /// Purge entries older than the given date.
     pub fn purge_before(&self, before: DateTime<Utc>) -> AuditResult<usize> {
-        let mut entries = self.entries.lock().map_err(|e| AuditError::StorageError(e.to_string()))?;
+        let mut entries = self
+            .entries
+            .lock()
+            .map_err(|e| AuditError::StorageError(e.to_string()))?;
         let before_len = entries.len();
         entries.retain(|e| e.timestamp >= before);
         Ok(before_len - entries.len())
@@ -464,7 +519,10 @@ impl AuditService {
 
     /// Clear all entries.
     pub fn clear(&self) -> AuditResult<()> {
-        let mut entries = self.entries.lock().map_err(|e| AuditError::StorageError(e.to_string()))?;
+        let mut entries = self
+            .entries
+            .lock()
+            .map_err(|e| AuditError::StorageError(e.to_string()))?;
         entries.clear();
         Ok(())
     }
@@ -489,7 +547,12 @@ mod tests {
         AuditService::new()
     }
 
-    fn sample_entry(user: &str, action: AuditAction, entity_type: &str, entity_id: &str) -> AuditEntry {
+    fn sample_entry(
+        user: &str,
+        action: AuditAction,
+        entity_type: &str,
+        entity_id: &str,
+    ) -> AuditEntry {
         AuditEntry {
             user_id: user.into(),
             action,
@@ -504,7 +567,9 @@ mod tests {
     #[test]
     fn test_log_action() {
         let svc = make_service();
-        let id = svc.log_action(sample_entry("u-1", AuditAction::Create, "job", "j-1")).unwrap();
+        let id = svc
+            .log_action(sample_entry("u-1", AuditAction::Create, "job", "j-1"))
+            .unwrap();
         assert!(!id.is_empty());
         assert_eq!(svc.count().unwrap(), 1);
     }
@@ -512,14 +577,24 @@ mod tests {
     #[test]
     fn test_log_simple() {
         let svc = make_service();
-        let id = svc.log_simple("u-1", AuditAction::Delete, "part", "p-42").unwrap();
+        let id = svc
+            .log_simple("u-1", AuditAction::Delete, "part", "p-42")
+            .unwrap();
         assert!(!id.is_empty());
     }
 
     #[test]
     fn test_log_update_with_values() {
         let svc = make_service();
-        let id = svc.log_update("u-1", "material", "m-1", r#"{"name":"Oak"}"#, r#"{"name":"Walnut"}"#).unwrap();
+        let id = svc
+            .log_update(
+                "u-1",
+                "material",
+                "m-1",
+                r#"{"name":"Oak"}"#,
+                r#"{"name":"Walnut"}"#,
+            )
+            .unwrap();
         let entry = svc.get_entry(&id).unwrap().unwrap();
         assert_eq!(entry.old_value.as_deref(), Some(r#"{"name":"Oak"}"#));
         assert_eq!(entry.new_value.as_deref(), Some(r#"{"name":"Walnut"}"#));
@@ -528,7 +603,9 @@ mod tests {
     #[test]
     fn test_auto_generates_id() {
         let svc = make_service();
-        let id = svc.log_action(sample_entry("u-1", AuditAction::Create, "job", "j-1")).unwrap();
+        let id = svc
+            .log_action(sample_entry("u-1", AuditAction::Create, "job", "j-1"))
+            .unwrap();
         // Should be a valid UUID
         assert!(Uuid::parse_str(&id).is_ok());
     }
@@ -548,21 +625,30 @@ mod tests {
     fn test_reject_empty_user_id() {
         let svc = make_service();
         let entry = sample_entry("", AuditAction::Create, "job", "j-1");
-        assert!(matches!(svc.log_action(entry), Err(AuditError::ValidationError(_))));
+        assert!(matches!(
+            svc.log_action(entry),
+            Err(AuditError::ValidationError(_))
+        ));
     }
 
     #[test]
     fn test_reject_empty_entity_type() {
         let svc = make_service();
         let entry = sample_entry("u-1", AuditAction::Create, "", "j-1");
-        assert!(matches!(svc.log_action(entry), Err(AuditError::ValidationError(_))));
+        assert!(matches!(
+            svc.log_action(entry),
+            Err(AuditError::ValidationError(_))
+        ));
     }
 
     #[test]
     fn test_reject_empty_entity_id() {
         let svc = make_service();
         let entry = sample_entry("u-1", AuditAction::Create, "job", "");
-        assert!(matches!(svc.log_action(entry), Err(AuditError::ValidationError(_))));
+        assert!(matches!(
+            svc.log_action(entry),
+            Err(AuditError::ValidationError(_))
+        ));
     }
 
     // --- Query by user ---
@@ -570,9 +656,12 @@ mod tests {
     #[test]
     fn test_query_by_user() {
         let svc = make_service();
-        svc.log_simple("alice", AuditAction::Create, "job", "j-1").unwrap();
-        svc.log_simple("bob", AuditAction::Create, "job", "j-2").unwrap();
-        svc.log_simple("alice", AuditAction::Update, "job", "j-1").unwrap();
+        svc.log_simple("alice", AuditAction::Create, "job", "j-1")
+            .unwrap();
+        svc.log_simple("bob", AuditAction::Create, "job", "j-2")
+            .unwrap();
+        svc.log_simple("alice", AuditAction::Update, "job", "j-1")
+            .unwrap();
 
         let result = svc.query_logs(AuditQuery::by_user("alice")).unwrap();
         assert_eq!(result.total_count, 2);
@@ -584,9 +673,12 @@ mod tests {
     #[test]
     fn test_query_by_entity() {
         let svc = make_service();
-        svc.log_simple("u-1", AuditAction::Create, "job", "j-1").unwrap();
-        svc.log_simple("u-1", AuditAction::Update, "job", "j-1").unwrap();
-        svc.log_simple("u-1", AuditAction::Create, "part", "p-1").unwrap();
+        svc.log_simple("u-1", AuditAction::Create, "job", "j-1")
+            .unwrap();
+        svc.log_simple("u-1", AuditAction::Update, "job", "j-1")
+            .unwrap();
+        svc.log_simple("u-1", AuditAction::Create, "part", "p-1")
+            .unwrap();
 
         let result = svc.query_logs(AuditQuery::by_entity("job", "j-1")).unwrap();
         assert_eq!(result.total_count, 2);
@@ -595,9 +687,12 @@ mod tests {
     #[test]
     fn test_query_by_entity_type() {
         let svc = make_service();
-        svc.log_simple("u-1", AuditAction::Create, "job", "j-1").unwrap();
-        svc.log_simple("u-1", AuditAction::Create, "part", "p-1").unwrap();
-        svc.log_simple("u-1", AuditAction::Create, "part", "p-2").unwrap();
+        svc.log_simple("u-1", AuditAction::Create, "job", "j-1")
+            .unwrap();
+        svc.log_simple("u-1", AuditAction::Create, "part", "p-1")
+            .unwrap();
+        svc.log_simple("u-1", AuditAction::Create, "part", "p-2")
+            .unwrap();
 
         let result = svc.query_logs(AuditQuery::by_entity_type("part")).unwrap();
         assert_eq!(result.total_count, 2);
@@ -608,11 +703,16 @@ mod tests {
     #[test]
     fn test_query_by_action() {
         let svc = make_service();
-        svc.log_simple("u-1", AuditAction::Create, "job", "j-1").unwrap();
-        svc.log_simple("u-1", AuditAction::Delete, "job", "j-2").unwrap();
-        svc.log_simple("u-1", AuditAction::Create, "part", "p-1").unwrap();
+        svc.log_simple("u-1", AuditAction::Create, "job", "j-1")
+            .unwrap();
+        svc.log_simple("u-1", AuditAction::Delete, "job", "j-2")
+            .unwrap();
+        svc.log_simple("u-1", AuditAction::Create, "part", "p-1")
+            .unwrap();
 
-        let result = svc.query_logs(AuditQuery::by_action(AuditAction::Create)).unwrap();
+        let result = svc
+            .query_logs(AuditQuery::by_action(AuditAction::Create))
+            .unwrap();
         assert_eq!(result.total_count, 2);
     }
 
@@ -627,7 +727,8 @@ mod tests {
         old_entry.timestamp = now - Duration::hours(48);
         svc.log_action(old_entry).unwrap();
 
-        svc.log_simple("u-1", AuditAction::Create, "job", "j-new").unwrap();
+        svc.log_simple("u-1", AuditAction::Create, "job", "j-new")
+            .unwrap();
 
         let start = now - Duration::hours(1);
         let end = now + Duration::hours(1);
@@ -649,10 +750,12 @@ mod tests {
         e2.ip_address = Some("10.0.0.1".into());
         svc.log_action(e2).unwrap();
 
-        let result = svc.query_logs(AuditQuery {
-            ip_address: Some("192.168.1.1".into()),
-            ..Default::default()
-        }).unwrap();
+        let result = svc
+            .query_logs(AuditQuery {
+                ip_address: Some("192.168.1.1".into()),
+                ..Default::default()
+            })
+            .unwrap();
         assert_eq!(result.total_count, 1);
     }
 
@@ -662,7 +765,8 @@ mod tests {
     fn test_query_with_limit() {
         let svc = make_service();
         for i in 0..10 {
-            svc.log_simple("u-1", AuditAction::Create, "job", &format!("j-{}", i)).unwrap();
+            svc.log_simple("u-1", AuditAction::Create, "job", &format!("j-{}", i))
+                .unwrap();
         }
 
         let result = svc.query_logs(AuditQuery::default().with_limit(3)).unwrap();
@@ -674,10 +778,13 @@ mod tests {
     fn test_query_with_offset() {
         let svc = make_service();
         for i in 0..5 {
-            svc.log_simple("u-1", AuditAction::Create, "job", &format!("j-{}", i)).unwrap();
+            svc.log_simple("u-1", AuditAction::Create, "job", &format!("j-{}", i))
+                .unwrap();
         }
 
-        let result = svc.query_logs(AuditQuery::default().with_limit(2).with_offset(2)).unwrap();
+        let result = svc
+            .query_logs(AuditQuery::default().with_limit(2).with_offset(2))
+            .unwrap();
         assert_eq!(result.entries.len(), 2);
         assert_eq!(result.offset, 2);
     }
@@ -707,7 +814,9 @@ mod tests {
     #[test]
     fn test_get_entry_by_id() {
         let svc = make_service();
-        let id = svc.log_simple("u-1", AuditAction::Create, "job", "j-1").unwrap();
+        let id = svc
+            .log_simple("u-1", AuditAction::Create, "job", "j-1")
+            .unwrap();
         let entry = svc.get_entry(&id).unwrap().unwrap();
         assert_eq!(entry.user_id, "u-1");
         assert_eq!(entry.entity_id, "j-1");
@@ -861,7 +970,8 @@ mod tests {
         old.timestamp = now - Duration::days(30);
         svc.log_action(old).unwrap();
 
-        svc.log_simple("u-1", AuditAction::Create, "job", "j-new").unwrap();
+        svc.log_simple("u-1", AuditAction::Create, "job", "j-new")
+            .unwrap();
 
         let purged = svc.purge_before(now - Duration::days(7)).unwrap();
         assert_eq!(purged, 1);
@@ -871,8 +981,10 @@ mod tests {
     #[test]
     fn test_clear() {
         let svc = make_service();
-        svc.log_simple("u-1", AuditAction::Create, "job", "j-1").unwrap();
-        svc.log_simple("u-1", AuditAction::Create, "job", "j-2").unwrap();
+        svc.log_simple("u-1", AuditAction::Create, "job", "j-1")
+            .unwrap();
+        svc.log_simple("u-1", AuditAction::Create, "job", "j-2")
+            .unwrap();
         svc.clear().unwrap();
         assert_eq!(svc.count().unwrap(), 0);
     }
@@ -882,7 +994,14 @@ mod tests {
     #[test]
     fn test_custom_action() {
         let svc = make_service();
-        let id = svc.log_simple("u-1", AuditAction::Custom("nest_optimize".into()), "job", "j-1").unwrap();
+        let id = svc
+            .log_simple(
+                "u-1",
+                AuditAction::Custom("nest_optimize".into()),
+                "job",
+                "j-1",
+            )
+            .unwrap();
         let entry = svc.get_entry(&id).unwrap().unwrap();
         assert_eq!(entry.action, AuditAction::Custom("nest_optimize".into()));
         assert_eq!(entry.action.as_str(), "nest_optimize");
@@ -899,12 +1018,15 @@ mod tests {
 
         let h1 = thread::spawn(move || {
             for i in 0..50 {
-                svc_clone.log_simple("u-1", AuditAction::Create, "job", &format!("j-{}", i)).unwrap();
+                svc_clone
+                    .log_simple("u-1", AuditAction::Create, "job", &format!("j-{}", i))
+                    .unwrap();
             }
         });
 
         for i in 50..100 {
-            svc.log_simple("u-2", AuditAction::Create, "part", &format!("p-{}", i)).unwrap();
+            svc.log_simple("u-2", AuditAction::Create, "part", &format!("p-{}", i))
+                .unwrap();
         }
 
         h1.join().unwrap();
