@@ -1,0 +1,39 @@
+# ============================================================
+# F20: Authentication System — Additional Cargo Dependencies
+# ============================================================
+# Add these entries under [dependencies] in backend/Cargo.toml
+#
+# Existing deps assumed:
+#   actix-web = "4"
+#   serde = { version = "1", features = ["derive"] }
+#   sqlx = { version = "0.7", features = ["runtime-tokio", "postgres", "uuid", "chrono"] }
+#   uuid = { version = "1", features = ["v4", "serde"] }
+#   chrono = { version = "0.4", features = ["serde"] }
+#   tokio = { version = "1", features = ["full"] }
+#   thiserror = "1"
+#   validator = { version = "0.18", features = ["derive"] }
+
+# --- New dependencies for F20 ---
+
+# JWT encoding / decoding (RS256, HS256, etc.)
+jsonwebtoken = "9"
+
+# Argon2id password hashing (OWASP-recommended)
+argon2 = "0.5"
+
+# Needed by argon2 for salt generation
+rand_core = { version = "0.6", features = ["std"] }
+
+# For env-var config (JWT_SECRET, token lifetimes, etc.)
+dotenvy = "0.15"
+
+# actix-web typed extractors for JSON responses
+actix-rt = "2"                       # already pulled in by actix-web; listed for test harness clarity
+
+# Logging (likely already present — ensure it's available)
+log = "0.4"
+env_logger = "0.11"
+
+# --- Dev dependencies (add under [dev-dependencies]) ---
+# actix-rt = "2"        # for #[actix_rt::test]
+# actix-web = "4"       # test server helpers
