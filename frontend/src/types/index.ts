@@ -1,52 +1,41 @@
-export type { Job, CreateJob, UpdateJob, JobDashboard } from './job'
-export { JobStatus } from './job'
+// frontend/src/types/index.ts
+// Central type re-exports for the frontend.
 
-export type { Room, CreateRoom, UpdateRoom, Elevation, FloorPlan, Wall, Opening, PlacedProduct } from './room'
+export type { User, UserRole, CreateUserPayload, UpdateUserPayload, ListUsersParams } from './user'
 
-export type { Product, CreateProduct, UpdateProduct } from './product'
-export { ProductType, CabinetStyle } from './product'
+// Auth payloads
+export interface LoginPayload {
+  email: string
+  password: string
+}
 
-export type { Part, CreatePart, EdgeBanding } from './part'
-export { PartType, GrainDirection } from './part'
+export interface RegisterPayload {
+  email: string
+  password: string
+  first_name?: string
+  last_name?: string
+}
 
-export type { Operation } from './operation'
-export { OperationType, OperationSide } from './operation'
+export interface AuthTokens {
+  access_token: string
+  refresh_token: string
+  token_type: string
+}
 
-export type { Material, MaterialTemplate, CreateMaterial } from './material'
-export { MaterialCategory, CostUnit } from './material'
+// Generic paginated response
+export interface Paginated<T> {
+  items: T[]
+  total: number
+  limit: number
+  offset: number
+}
 
-export type { Texture, TextureGroup, CreateTexture } from './texture'
-export { Sheen, GrainOrientation } from './texture'
+// API error shape returned by the backend
+export interface ApiError {
+  error: string
+}
 
-export type { Hardware, HardwareBrand, CreateHardware } from './hardware'
-export { HardwareType } from './hardware'
-
-export type { ConstructionMethod, CreateConstructionMethod } from './construction-method'
-export { JoiningMethod, BackPanelStyle, BottomPanelStyle } from './construction-method'
-
-export type { Machine, AtcToolSet, ToolSlot, CreateMachine } from './machine'
-export { MachineType } from './machine'
-
-export type { Tool, CreateTool } from './tool'
-export { ToolType } from './tool'
-
-export type { PostProcessor, PostProcessorVariable, CreatePostProcessor } from './post-processor'
-export { OutputFormat } from './post-processor'
-
-export type { OptimizationRun, NestedSheet, NestedPart, OptimizationSettings } from './optimization'
-export { OptimizationQuality, OptimizationStatus } from './optimization'
-
-export type { LabelTemplate, LabelField } from './label'
-export { LabelFieldType } from './label'
-
-export type {
-  DrawingTemplate, DrawingView, SavedView, AnnotationLayer, Annotation, TitleBlock,
-} from './drawing'
-
-export type { Quote, QuoteLineItem, CostEstimate, CostBreakdown, CreateQuote } from './quote'
-export { QuoteStatus } from './quote'
-
-export type { User, CreateUser, UpdateUser, LoginRequest, AuthResponse } from './user'
-export { UserRole } from './user'
-
-export type { Remnant, CreateRemnant } from './remnant'
+// Generic ID response
+export interface IdResponse {
+  id: string
+}

@@ -1,68 +1,63 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import api from '@/services/api'
-import { usersService } from '@/services/users'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { getUsers, getUser, createUser, updateUser, deleteUser } from '../users'
+import { apiClient } from '../api'
 
-const mockUser = {
-  id: 'user-1',
-  email: 'john@example.com',
-  name: 'John Doe',
-  role: 'operator',
-  isActive: true,
-  createdAt: '2026-01-01T00:00:00Z',
-  updatedAt: '2026-01-01T00:00:00Z',
-}
+vi.mock('../api', () => ({
+  apiClient: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+  },
+}))
 
-describe('usersService', () => {
-  let getSpy: ReturnType<typeof vi.spyOn>
-  let postSpy: ReturnType<typeof vi.spyOn>
-  let patchSpy: ReturnType<typeof vi.spyOn>
-  let deleteSpy: ReturnType<typeof vi.spyOn>
+const mockGet = vi.mocked(apiClient.get)
+const mockPost = vi.mocked(apiClient.post)
+const mockPut = vi.mocked(apiClient.put)
+const mockDelete = vi.mocked(apiClient.delete)
 
-  beforeEach(() => {
-    getSpy = vi.spyOn(api, 'get').mockResolvedValue({ data: mockUser })
-    postSpy = vi.spyOn(api, 'post').mockResolvedValue({ data: mockUser })
-    patchSpy = vi.spyOn(api, 'patch').mockResolvedValue({ data: mockUser })
-    deleteSpy = vi.spyOn(api, 'delete').mockResolvedValue({ data: { status: 'ok' } })
+describe('users service', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('getUsers calls GET /api/users', async () => {
+    mockGet.mockResolvedValue({ data: [] })
+    await getUsers()
+    expect(mockGet).toHaveBeenCalledWith('/api/users', { params: undefined })
   })
 
-  afterEach(() => vi.restoreAllMocks())
-
-  it('getUsers calls GET /users and returns data', async () => {
-    getSpy.mockResolvedValueOnce({ data: [mockUser] })
-    const result = await usersService.getUsers()
-    expect(getSpy).toHaveBeenCalledWith('/users')
-    expect(result).toEqual([mockUser])
+  it('getUsers passes query params', async () => {
+    mockGet.mockResolvedValue({ data: [] })
+    await getUsers({ limit: 10, offset: 20 })
+    expect(mockGet).toHaveBeenCalledWith('/api/users', { params: { limit: 10, offset: 20 } })
   })
 
-  it('getUser calls GET /users/:id and returns data', async () => {
-    const result = await usersService.getUser('user-1')
-    expect(getSpy).toHaveBeenCalledWith('/users/user-1')
-    expect(result).toEqual(mockUser)
+  it('getUser calls GET /api/users/:id', async () => {
+    const id = 'abc-123'
+    mockGet.mockResolvedValue({ data: { id } })
+    const result = await getUser(id)
+    expect(mockGet).toHaveBeenCalledWith(`/api/users/${id}`)
+    expect(result.data.id).toBe(id)
   })
 
-  it('createUser calls POST /users and returns data', async () => {
-    const payload = { email: 'jane@example.com', name: 'Jane Doe', role: 'operator' }
-    const result = await usersService.createUser(payload as any)
-    expect(postSpy).toHaveBeenCalledWith('/users', payload)
-    expect(result).toEqual(mockUser)
+  it('createUser calls POST /api/users', async () => {
+    const payload = { email: 'a@b.com', password: 'pass1234' }
+    mockPost.mockResolvedValue({ data: { id: 'new-id' } })
+    await createUser(payload)
+    expect(mockPost).toHaveBeenCalledWith('/api/users', payload)
   })
 
-  it('updateUser calls PATCH /users/:id and returns data', async () => {
-    const changes = { name: 'John Updated' }
-    const result = await usersService.updateUser('user-1', changes)
-    expect(patchSpy).toHaveBeenCalledWith('/users/user-1', changes)
-    expect(result).toEqual(mockUser)
+  it('updateUser calls PUT /api/users/:id', async () => {
+    const id = 'xyz'
+    const payload = { first_name: 'Alice' }
+    mockPut.mockResolvedValue({ data: { updated: true } })
+    await updateUser(id, payload)
+    expect(mockPut).toHaveBeenCalledWith(`/api/users/${id}`, payload)
   })
 
-  it('updateUser with role change calls PATCH /users/:id with role in body', async () => {
-    patchSpy.mockResolvedValueOnce({ data: { ...mockUser, role: 'admin' } })
-    const result = await usersService.updateUser('user-1', { role: 'admin' })
-    expect(patchSpy).toHaveBeenCalledWith('/users/user-1', { role: 'admin' })
-    expect(result.role).toBe('admin')
-  })
-
-  it('deleteUser calls DELETE /users/:id', async () => {
-    await usersService.deleteUser('user-1')
-    expect(deleteSpy).toHaveBeenCalledWith('/users/user-1')
+  it('deleteUser calls DELETE /api/users/:id', async () => {
+    const id = 'del-id'
+    mockDelete.mockResolvedValue({ data: null })
+    await deleteUser(id)
+    expect(mockDelete).toHaveBeenCalledWith(`/api/users/${id}`)
   })
 })

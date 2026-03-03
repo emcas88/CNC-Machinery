@@ -1,45 +1,32 @@
-export enum UserRole {
-  ADMIN = 'admin',
-  DESIGNER = 'designer',
-  PRODUCTION = 'production',
-  OPERATOR = 'operator',
-  VIEWER = 'viewer',
-}
+// frontend/src/types/user.ts
+
+export type UserRole = 'admin' | 'manager' | 'operator' | 'viewer'
 
 export interface User {
   id: string
-  name: string
   email: string
+  first_name?: string
+  last_name?: string
   role: UserRole
-  avatarUrl?: string
-  isActive: boolean
-  lastLogin?: string
-  createdAt: string
-  updatedAt: string
+  is_active: boolean
 }
 
-export interface CreateUser {
-  name: string
+export interface CreateUserPayload {
   email: string
   password: string
-  role: UserRole
-}
-
-export interface UpdateUser {
-  id: string
-  name?: string
-  email?: string
+  first_name?: string
+  last_name?: string
   role?: UserRole
-  isActive?: boolean
 }
 
-export interface LoginRequest {
-  email: string
-  password: string
+export interface UpdateUserPayload {
+  first_name?: string
+  last_name?: string
+  password?: string
+  role?: UserRole
 }
 
-export interface AuthResponse {
-  user: User
-  token: string
-  expiresAt: string
+export interface ListUsersParams {
+  limit?: number
+  offset?: number
 }
