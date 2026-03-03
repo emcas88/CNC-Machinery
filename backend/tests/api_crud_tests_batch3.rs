@@ -68,8 +68,8 @@ mod cutlists_tests {
     #[actix_web::test]
     async fn test_get_cutlist_returns_200() {
         let pool = fake_pool();
-        let app  = cutlist_app!(pool);
-        let id   = Uuid::new_v4();
+        let app = cutlist_app!(pool);
+        let id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
             .uri(&format!("/jobs/{}/cutlist", id))
@@ -77,7 +77,8 @@ mod cutlists_tests {
         let resp = test::call_service(&app, req).await;
 
         assert_eq!(
-            resp.status(), 200,
+            resp.status(),
+            200,
             "GET /jobs/{{job_id}}/cutlist should return 200"
         );
         let body: Value = test::read_body_json(resp).await;
@@ -87,8 +88,8 @@ mod cutlists_tests {
     #[actix_web::test]
     async fn test_get_cutlist_response_has_groups_field() {
         let pool = fake_pool();
-        let app  = cutlist_app!(pool);
-        let id   = Uuid::new_v4();
+        let app = cutlist_app!(pool);
+        let id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
             .uri(&format!("/jobs/{}/cutlist", id))
@@ -96,15 +97,21 @@ mod cutlists_tests {
         let resp = test::call_service(&app, req).await;
         let body: Value = test::read_body_json(resp).await;
 
-        assert!(body.get("groups").is_some(), "Response must include 'groups' field");
-        assert!(body.get("total_parts").is_some(), "Response must include 'total_parts' field");
+        assert!(
+            body.get("groups").is_some(),
+            "Response must include 'groups' field"
+        );
+        assert!(
+            body.get("total_parts").is_some(),
+            "Response must include 'total_parts' field"
+        );
     }
 
     #[actix_web::test]
     async fn test_get_bom_returns_200() {
         let pool = fake_pool();
-        let app  = cutlist_app!(pool);
-        let id   = Uuid::new_v4();
+        let app = cutlist_app!(pool);
+        let id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
             .uri(&format!("/jobs/{}/bom", id))
@@ -112,7 +119,8 @@ mod cutlists_tests {
         let resp = test::call_service(&app, req).await;
 
         assert_eq!(
-            resp.status(), 200,
+            resp.status(),
+            200,
             "GET /jobs/{{job_id}}/bom should return 200"
         );
         let body: Value = test::read_body_json(resp).await;
@@ -122,8 +130,8 @@ mod cutlists_tests {
     #[actix_web::test]
     async fn test_get_bom_response_has_materials_and_hardware() {
         let pool = fake_pool();
-        let app  = cutlist_app!(pool);
-        let id   = Uuid::new_v4();
+        let app = cutlist_app!(pool);
+        let id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
             .uri(&format!("/jobs/{}/bom", id))
@@ -131,15 +139,21 @@ mod cutlists_tests {
         let resp = test::call_service(&app, req).await;
         let body: Value = test::read_body_json(resp).await;
 
-        assert!(body.get("materials").is_some(), "BOM must contain 'materials'");
-        assert!(body.get("hardware").is_some(),  "BOM must contain 'hardware'");
+        assert!(
+            body.get("materials").is_some(),
+            "BOM must contain 'materials'"
+        );
+        assert!(
+            body.get("hardware").is_some(),
+            "BOM must contain 'hardware'"
+        );
     }
 
     #[actix_web::test]
     async fn test_cutlist_uses_valid_job_uuid_in_response() {
         let pool = fake_pool();
-        let app  = cutlist_app!(pool);
-        let id   = Uuid::new_v4();
+        let app = cutlist_app!(pool);
+        let id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
             .uri(&format!("/jobs/{}/cutlist", id))
@@ -148,7 +162,11 @@ mod cutlists_tests {
         let body: Value = test::read_body_json(resp).await;
 
         let returned_id = body["job_id"].as_str().unwrap_or("");
-        assert_eq!(returned_id, id.to_string(), "job_id in response must match URL param");
+        assert_eq!(
+            returned_id,
+            id.to_string(),
+            "job_id in response must match URL param"
+        );
     }
 }
 
@@ -174,7 +192,7 @@ mod optimizer_tests {
     #[actix_web::test]
     async fn test_create_optimization_run_returns_202() {
         let pool = fake_pool();
-        let app  = opt_app!(pool);
+        let app = opt_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::post()
@@ -188,7 +206,11 @@ mod optimizer_tests {
             .to_request();
         let resp = test::call_service(&app, req).await;
 
-        assert_eq!(resp.status(), 202, "POST /jobs/{{id}}/optimize should return 202");
+        assert_eq!(
+            resp.status(),
+            202,
+            "POST /jobs/{{id}}/optimize should return 202"
+        );
         let body: Value = test::read_body_json(resp).await;
         assert_eq!(body["status"], "ok");
     }
@@ -196,7 +218,7 @@ mod optimizer_tests {
     #[actix_web::test]
     async fn test_create_run_response_has_id_and_status() {
         let pool = fake_pool();
-        let app  = opt_app!(pool);
+        let app = opt_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::post()
@@ -210,15 +232,21 @@ mod optimizer_tests {
         let resp = test::call_service(&app, req).await;
         let body: Value = test::read_body_json(resp).await;
 
-        assert!(body["data"]["id"].is_string(), "Response data.id must be a UUID string");
-        assert_eq!(body["data"]["status"], "queued", "New run must start with status 'queued'");
+        assert!(
+            body["data"]["id"].is_string(),
+            "Response data.id must be a UUID string"
+        );
+        assert_eq!(
+            body["data"]["status"], "queued",
+            "New run must start with status 'queued'"
+        );
     }
 
     #[actix_web::test]
     async fn test_get_optimization_run_returns_200_or_404() {
         let pool = fake_pool();
-        let app  = opt_app!(pool);
-        let id   = Uuid::new_v4();
+        let app = opt_app!(pool);
+        let id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
             .uri(&format!("/optimization-runs/{}", id))
@@ -234,8 +262,8 @@ mod optimizer_tests {
 
     #[actix_web::test]
     async fn test_list_optimization_runs_for_job_returns_200() {
-        let pool   = fake_pool();
-        let app    = opt_app!(pool);
+        let pool = fake_pool();
+        let app = opt_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -243,7 +271,11 @@ mod optimizer_tests {
             .to_request();
         let resp = test::call_service(&app, req).await;
 
-        assert_eq!(resp.status(), 200, "GET /jobs/{{id}}/optimization-runs should return 200");
+        assert_eq!(
+            resp.status(),
+            200,
+            "GET /jobs/{{id}}/optimization-runs should return 200"
+        );
         let body: Value = test::read_body_json(resp).await;
         assert_eq!(body["status"], "ok");
         assert!(body["data"].is_array(), "Response data must be an array");
@@ -252,8 +284,8 @@ mod optimizer_tests {
     #[actix_web::test]
     async fn test_update_optimization_run_returns_200_or_404() {
         let pool = fake_pool();
-        let app  = opt_app!(pool);
-        let id   = Uuid::new_v4();
+        let app = opt_app!(pool);
+        let id = Uuid::new_v4();
 
         let req = test::TestRequest::put()
             .uri(&format!("/optimization-runs/{}", id))
@@ -274,8 +306,8 @@ mod optimizer_tests {
     #[actix_web::test]
     async fn test_delete_optimization_run_returns_200_or_404() {
         let pool = fake_pool();
-        let app  = opt_app!(pool);
-        let id   = Uuid::new_v4();
+        let app = opt_app!(pool);
+        let id = Uuid::new_v4();
 
         let req = test::TestRequest::delete()
             .uri(&format!("/optimization-runs/{}", id))
@@ -312,7 +344,7 @@ mod labels_tests {
     #[actix_web::test]
     async fn test_list_label_templates_returns_200() {
         let pool = fake_pool();
-        let app  = labels_app!(pool);
+        let app = labels_app!(pool);
 
         let req = test::TestRequest::get()
             .uri("/label-templates")
@@ -328,8 +360,8 @@ mod labels_tests {
     #[actix_web::test]
     async fn test_get_label_template_returns_200_or_404() {
         let pool = fake_pool();
-        let app  = labels_app!(pool);
-        let id   = Uuid::new_v4();
+        let app = labels_app!(pool);
+        let id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
             .uri(&format!("/label-templates/{}", id))
@@ -346,7 +378,7 @@ mod labels_tests {
     #[actix_web::test]
     async fn test_create_label_template_returns_201() {
         let pool = fake_pool();
-        let app  = labels_app!(pool);
+        let app = labels_app!(pool);
 
         let req = test::TestRequest::post()
             .uri("/label-templates")
@@ -362,17 +394,24 @@ mod labels_tests {
             .to_request();
         let resp = test::call_service(&app, req).await;
 
-        assert_eq!(resp.status(), 201, "POST /label-templates should return 201");
+        assert_eq!(
+            resp.status(),
+            201,
+            "POST /label-templates should return 201"
+        );
         let body: Value = test::read_body_json(resp).await;
         assert_eq!(body["status"], "ok");
-        assert!(body["data"]["id"].is_string(), "Response must include new template id");
+        assert!(
+            body["data"]["id"].is_string(),
+            "Response must include new template id"
+        );
     }
 
     #[actix_web::test]
     async fn test_update_label_template_returns_200_or_404() {
         let pool = fake_pool();
-        let app  = labels_app!(pool);
-        let id   = Uuid::new_v4();
+        let app = labels_app!(pool);
+        let id = Uuid::new_v4();
 
         let req = test::TestRequest::put()
             .uri(&format!("/label-templates/{}", id))
@@ -390,8 +429,8 @@ mod labels_tests {
     #[actix_web::test]
     async fn test_delete_label_template_returns_200_or_404() {
         let pool = fake_pool();
-        let app  = labels_app!(pool);
-        let id   = Uuid::new_v4();
+        let app = labels_app!(pool);
+        let id = Uuid::new_v4();
 
         let req = test::TestRequest::delete()
             .uri(&format!("/label-templates/{}", id))
@@ -407,8 +446,8 @@ mod labels_tests {
 
     #[actix_web::test]
     async fn test_get_job_labels_returns_200() {
-        let pool   = fake_pool();
-        let app    = labels_app!(pool);
+        let pool = fake_pool();
+        let app = labels_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -416,16 +455,23 @@ mod labels_tests {
             .to_request();
         let resp = test::call_service(&app, req).await;
 
-        assert_eq!(resp.status(), 200, "GET /jobs/{{job_id}}/labels should return 200");
+        assert_eq!(
+            resp.status(),
+            200,
+            "GET /jobs/{{job_id}}/labels should return 200"
+        );
         let body: Value = test::read_body_json(resp).await;
         assert_eq!(body["status"], "ok");
-        assert!(body["labels"].is_array(), "Response must include labels array");
+        assert!(
+            body["labels"].is_array(),
+            "Response must include labels array"
+        );
     }
 
     #[actix_web::test]
     async fn test_job_labels_response_has_barcode_data() {
-        let pool   = fake_pool();
-        let app    = labels_app!(pool);
+        let pool = fake_pool();
+        let app = labels_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -468,14 +514,18 @@ mod drawings_tests {
     #[actix_web::test]
     async fn test_list_drawing_templates_returns_200() {
         let pool = fake_pool();
-        let app  = drawings_app!(pool);
+        let app = drawings_app!(pool);
 
         let req = test::TestRequest::get()
             .uri("/drawing-templates")
             .to_request();
         let resp = test::call_service(&app, req).await;
 
-        assert_eq!(resp.status(), 200, "GET /drawing-templates should return 200");
+        assert_eq!(
+            resp.status(),
+            200,
+            "GET /drawing-templates should return 200"
+        );
         let body: Value = test::read_body_json(resp).await;
         assert_eq!(body["status"], "ok");
         assert!(body["data"].is_array());
@@ -484,8 +534,8 @@ mod drawings_tests {
     #[actix_web::test]
     async fn test_get_drawing_template_returns_200_or_404() {
         let pool = fake_pool();
-        let app  = drawings_app!(pool);
-        let id   = Uuid::new_v4();
+        let app = drawings_app!(pool);
+        let id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
             .uri(&format!("/drawing-templates/{}", id))
@@ -502,7 +552,7 @@ mod drawings_tests {
     #[actix_web::test]
     async fn test_create_drawing_template_returns_201() {
         let pool = fake_pool();
-        let app  = drawings_app!(pool);
+        let app = drawings_app!(pool);
 
         let req = test::TestRequest::post()
             .uri("/drawing-templates")
@@ -519,7 +569,11 @@ mod drawings_tests {
             .to_request();
         let resp = test::call_service(&app, req).await;
 
-        assert_eq!(resp.status(), 201, "POST /drawing-templates should return 201");
+        assert_eq!(
+            resp.status(),
+            201,
+            "POST /drawing-templates should return 201"
+        );
         let body: Value = test::read_body_json(resp).await;
         assert_eq!(body["status"], "ok");
         assert!(body["data"]["id"].is_string());
@@ -528,8 +582,8 @@ mod drawings_tests {
     #[actix_web::test]
     async fn test_update_drawing_template_returns_200_or_404() {
         let pool = fake_pool();
-        let app  = drawings_app!(pool);
-        let id   = Uuid::new_v4();
+        let app = drawings_app!(pool);
+        let id = Uuid::new_v4();
 
         let req = test::TestRequest::put()
             .uri(&format!("/drawing-templates/{}", id))
@@ -547,8 +601,8 @@ mod drawings_tests {
     #[actix_web::test]
     async fn test_delete_drawing_template_returns_200_or_404() {
         let pool = fake_pool();
-        let app  = drawings_app!(pool);
-        let id   = Uuid::new_v4();
+        let app = drawings_app!(pool);
+        let id = Uuid::new_v4();
 
         let req = test::TestRequest::delete()
             .uri(&format!("/drawing-templates/{}", id))
@@ -565,7 +619,7 @@ mod drawings_tests {
     #[actix_web::test]
     async fn test_create_drawing_template_missing_fields_returns_400() {
         let pool = fake_pool();
-        let app  = drawings_app!(pool);
+        let app = drawings_app!(pool);
 
         let req = test::TestRequest::post()
             .uri("/drawing-templates")
@@ -578,7 +632,8 @@ mod drawings_tests {
 
         // Actix-web returns 400 when required fields are missing in the body.
         assert_eq!(
-            resp.status(), 400,
+            resp.status(),
+            400,
             "POST /drawing-templates with missing required fields should return 400"
         );
     }
@@ -605,8 +660,8 @@ mod shop_apps_tests {
 
     #[actix_web::test]
     async fn test_shop_cutlist_returns_200() {
-        let pool   = fake_pool();
-        let app    = shop_app!(pool);
+        let pool = fake_pool();
+        let app = shop_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -624,8 +679,8 @@ mod shop_apps_tests {
 
     #[actix_web::test]
     async fn test_shop_cutlist_200_has_parts_array() {
-        let pool   = fake_pool();
-        let app    = shop_app!(pool);
+        let pool = fake_pool();
+        let app = shop_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -636,14 +691,17 @@ mod shop_apps_tests {
         if resp.status() == 200 {
             let body: Value = test::read_body_json(resp).await;
             assert_eq!(body["status"], "ok");
-            assert!(body.get("parts").is_some(), "Response must include 'parts' field");
+            assert!(
+                body.get("parts").is_some(),
+                "Response must include 'parts' field"
+            );
         }
     }
 
     #[actix_web::test]
     async fn test_shop_assembly_returns_200_or_404() {
-        let pool   = fake_pool();
-        let app    = shop_app!(pool);
+        let pool = fake_pool();
+        let app = shop_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -660,8 +718,8 @@ mod shop_apps_tests {
 
     #[actix_web::test]
     async fn test_shop_assembly_200_has_products_array() {
-        let pool   = fake_pool();
-        let app    = shop_app!(pool);
+        let pool = fake_pool();
+        let app = shop_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -672,14 +730,17 @@ mod shop_apps_tests {
         if resp.status() == 200 {
             let body: Value = test::read_body_json(resp).await;
             assert_eq!(body["status"], "ok");
-            assert!(body["products"].is_array(), "Response must include 'products' array");
+            assert!(
+                body["products"].is_array(),
+                "Response must include 'products' array"
+            );
         }
     }
 
     #[actix_web::test]
     async fn test_shop_labels_returns_200_or_404() {
-        let pool   = fake_pool();
-        let app    = shop_app!(pool);
+        let pool = fake_pool();
+        let app = shop_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -696,8 +757,8 @@ mod shop_apps_tests {
 
     #[actix_web::test]
     async fn test_shop_labels_200_has_barcode_data() {
-        let pool   = fake_pool();
-        let app    = shop_app!(pool);
+        let pool = fake_pool();
+        let app = shop_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -720,8 +781,8 @@ mod shop_apps_tests {
 
     #[actix_web::test]
     async fn test_shop_scan_valid_payload_returns_201_or_404() {
-        let pool    = fake_pool();
-        let app     = shop_app!(pool);
+        let pool = fake_pool();
+        let app = shop_app!(pool);
         let part_id = Uuid::new_v4();
 
         let req = test::TestRequest::post()
@@ -744,8 +805,8 @@ mod shop_apps_tests {
 
     #[actix_web::test]
     async fn test_shop_scan_invalid_action_returns_400() {
-        let pool    = fake_pool();
-        let app     = shop_app!(pool);
+        let pool = fake_pool();
+        let app = shop_app!(pool);
         let part_id = Uuid::new_v4();
 
         let req = test::TestRequest::post()
@@ -758,7 +819,8 @@ mod shop_apps_tests {
         let resp = test::call_service(&app, req).await;
 
         assert_eq!(
-            resp.status(), 400,
+            resp.status(),
+            400,
             "POST /shop/scan with invalid action must return 400"
         );
         let body: Value = test::read_body_json(resp).await;
@@ -768,7 +830,7 @@ mod shop_apps_tests {
     #[actix_web::test]
     async fn test_shop_scan_all_valid_actions() {
         let pool = fake_pool();
-        let app  = shop_app!(pool);
+        let app = shop_app!(pool);
 
         for action in &["cut", "edgeband", "drill", "assemble"] {
             let part_id = Uuid::new_v4();
@@ -811,8 +873,8 @@ mod rendering_tests {
 
     #[actix_web::test]
     async fn test_create_render_with_job_id_returns_202() {
-        let pool   = fake_pool();
-        let app    = render_app!(pool);
+        let pool = fake_pool();
+        let app = render_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::post()
@@ -831,8 +893,8 @@ mod rendering_tests {
 
     #[actix_web::test]
     async fn test_create_render_response_has_id() {
-        let pool    = fake_pool();
-        let app     = render_app!(pool);
+        let pool = fake_pool();
+        let app = render_app!(pool);
         let room_id = Uuid::new_v4();
 
         let req = test::TestRequest::post()
@@ -845,14 +907,17 @@ mod rendering_tests {
         let resp = test::call_service(&app, req).await;
         let body: Value = test::read_body_json(resp).await;
 
-        assert!(body["data"]["id"].is_string(), "Response data.id must be a UUID string");
+        assert!(
+            body["data"]["id"].is_string(),
+            "Response data.id must be a UUID string"
+        );
         assert_eq!(body["data"]["render_status"], "queued");
     }
 
     #[actix_web::test]
     async fn test_create_render_invalid_quality_returns_400() {
-        let pool   = fake_pool();
-        let app    = render_app!(pool);
+        let pool = fake_pool();
+        let app = render_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::post()
@@ -865,7 +930,8 @@ mod rendering_tests {
         let resp = test::call_service(&app, req).await;
 
         assert_eq!(
-            resp.status(), 400,
+            resp.status(),
+            400,
             "POST /renders with invalid quality must return 400"
         );
     }
@@ -873,7 +939,7 @@ mod rendering_tests {
     #[actix_web::test]
     async fn test_create_render_no_target_returns_400() {
         let pool = fake_pool();
-        let app  = render_app!(pool);
+        let app = render_app!(pool);
 
         let req = test::TestRequest::post()
             .uri("/renders")
@@ -885,7 +951,8 @@ mod rendering_tests {
         let resp = test::call_service(&app, req).await;
 
         assert_eq!(
-            resp.status(), 400,
+            resp.status(),
+            400,
             "POST /renders with no target must return 400"
         );
     }
@@ -893,8 +960,8 @@ mod rendering_tests {
     #[actix_web::test]
     async fn test_get_render_returns_200_or_404() {
         let pool = fake_pool();
-        let app  = render_app!(pool);
-        let id   = Uuid::new_v4();
+        let app = render_app!(pool);
+        let id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
             .uri(&format!("/renders/{}", id))
@@ -911,11 +978,9 @@ mod rendering_tests {
     #[actix_web::test]
     async fn test_list_renders_returns_200() {
         let pool = fake_pool();
-        let app  = render_app!(pool);
+        let app = render_app!(pool);
 
-        let req = test::TestRequest::get()
-            .uri("/renders")
-            .to_request();
+        let req = test::TestRequest::get().uri("/renders").to_request();
         let resp = test::call_service(&app, req).await;
 
         assert_eq!(resp.status(), 200, "GET /renders should return 200");
@@ -927,22 +992,26 @@ mod rendering_tests {
     #[actix_web::test]
     async fn test_list_renders_with_status_filter() {
         let pool = fake_pool();
-        let app  = render_app!(pool);
+        let app = render_app!(pool);
 
         let req = test::TestRequest::get()
             .uri("/renders?status=queued")
             .to_request();
         let resp = test::call_service(&app, req).await;
 
-        assert_eq!(resp.status(), 200, "GET /renders?status=queued should return 200");
+        assert_eq!(
+            resp.status(),
+            200,
+            "GET /renders?status=queued should return 200"
+        );
         let body: Value = test::read_body_json(resp).await;
         assert_eq!(body["filters"]["status"], "queued");
     }
 
     #[actix_web::test]
     async fn test_list_renders_with_job_id_filter() {
-        let pool   = fake_pool();
-        let app    = render_app!(pool);
+        let pool = fake_pool();
+        let app = render_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -950,13 +1019,17 @@ mod rendering_tests {
             .to_request();
         let resp = test::call_service(&app, req).await;
 
-        assert_eq!(resp.status(), 200, "GET /renders?job_id=... should return 200");
+        assert_eq!(
+            resp.status(),
+            200,
+            "GET /renders?job_id=... should return 200"
+        );
     }
 
     #[actix_web::test]
     async fn test_create_render_with_product_id() {
-        let pool       = fake_pool();
-        let app        = render_app!(pool);
+        let pool = fake_pool();
+        let app = render_app!(pool);
         let product_id = Uuid::new_v4();
 
         let req = test::TestRequest::post()
@@ -968,7 +1041,11 @@ mod rendering_tests {
             .to_request();
         let resp = test::call_service(&app, req).await;
 
-        assert_eq!(resp.status(), 202, "POST /renders with product_id should return 202");
+        assert_eq!(
+            resp.status(),
+            202,
+            "POST /renders with product_id should return 202"
+        );
         let body: Value = test::read_body_json(resp).await;
         assert_eq!(body["data"]["target_type"], "product");
     }
@@ -996,8 +1073,8 @@ mod export_tests {
 
     #[actix_web::test]
     async fn test_export_csv_returns_200() {
-        let pool   = fake_pool();
-        let app    = export_app!(pool);
+        let pool = fake_pool();
+        let app = export_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -1005,13 +1082,17 @@ mod export_tests {
             .to_request();
         let resp = test::call_service(&app, req).await;
 
-        assert_eq!(resp.status(), 200, "GET /export/csv/{{job_id}} should return 200");
+        assert_eq!(
+            resp.status(),
+            200,
+            "GET /export/csv/{{job_id}} should return 200"
+        );
     }
 
     #[actix_web::test]
     async fn test_export_csv_content_type_is_text_csv() {
-        let pool   = fake_pool();
-        let app    = export_app!(pool);
+        let pool = fake_pool();
+        let app = export_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -1033,27 +1114,28 @@ mod export_tests {
 
     #[actix_web::test]
     async fn test_export_csv_body_has_header_row() {
-        let pool   = fake_pool();
-        let app    = export_app!(pool);
+        let pool = fake_pool();
+        let app = export_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
             .uri(&format!("/export/csv/{}", job_id))
             .to_request();
         let resp = test::call_service(&app, req).await;
-        let body  = read_body(resp).await;
-        let text  = std::str::from_utf8(&body).expect("body must be valid UTF-8");
+        let body = read_body(resp).await;
+        let text = std::str::from_utf8(&body).expect("body must be valid UTF-8");
 
         assert!(
             text.starts_with("Room,Product,Part Name"),
-            "CSV must start with header row. Got: {}", &text[..text.len().min(60)]
+            "CSV must start with header row. Got: {}",
+            &text[..text.len().min(60)]
         );
     }
 
     #[actix_web::test]
     async fn test_export_csv_has_content_disposition_attachment() {
-        let pool   = fake_pool();
-        let app    = export_app!(pool);
+        let pool = fake_pool();
+        let app = export_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -1079,8 +1161,8 @@ mod export_tests {
 
     #[actix_web::test]
     async fn test_export_labels_returns_200() {
-        let pool   = fake_pool();
-        let app    = export_app!(pool);
+        let pool = fake_pool();
+        let app = export_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -1088,13 +1170,17 @@ mod export_tests {
             .to_request();
         let resp = test::call_service(&app, req).await;
 
-        assert_eq!(resp.status(), 200, "GET /export/labels/{{job_id}} should return 200");
+        assert_eq!(
+            resp.status(),
+            200,
+            "GET /export/labels/{{job_id}} should return 200"
+        );
     }
 
     #[actix_web::test]
     async fn test_export_labels_content_type_is_json() {
-        let pool   = fake_pool();
-        let app    = export_app!(pool);
+        let pool = fake_pool();
+        let app = export_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -1116,8 +1202,8 @@ mod export_tests {
 
     #[actix_web::test]
     async fn test_export_labels_has_content_disposition_attachment() {
-        let pool   = fake_pool();
-        let app    = export_app!(pool);
+        let pool = fake_pool();
+        let app = export_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -1139,29 +1225,35 @@ mod export_tests {
 
     #[actix_web::test]
     async fn test_export_labels_body_is_valid_json() {
-        let pool   = fake_pool();
-        let app    = export_app!(pool);
+        let pool = fake_pool();
+        let app = export_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
             .uri(&format!("/export/labels/{}", job_id))
             .to_request();
-        let resp  = test::call_service(&app, req).await;
+        let resp = test::call_service(&app, req).await;
         let bytes = read_body(resp).await;
-        let text  = std::str::from_utf8(&bytes).expect("body must be valid UTF-8");
+        let text = std::str::from_utf8(&bytes).expect("body must be valid UTF-8");
 
         let parsed: Result<Value, _> = serde_json::from_str(text);
         assert!(parsed.is_ok(), "Label export body must be valid JSON");
 
         let val = parsed.unwrap();
-        assert!(val.get("labels").is_some(), "JSON must include 'labels' key");
-        assert!(val.get("job_id").is_some(), "JSON must include 'job_id' key");
+        assert!(
+            val.get("labels").is_some(),
+            "JSON must include 'labels' key"
+        );
+        assert!(
+            val.get("job_id").is_some(),
+            "JSON must include 'job_id' key"
+        );
     }
 
     #[actix_web::test]
     async fn test_export_labels_filename_contains_job_id() {
-        let pool   = fake_pool();
-        let app    = export_app!(pool);
+        let pool = fake_pool();
+        let app = export_app!(pool);
         let job_id = Uuid::new_v4();
 
         let req = test::TestRequest::get()
@@ -1188,7 +1280,7 @@ mod export_tests {
 
 mod uuid_validation_tests {
     use super::*;
-    use cnc_backend::api::{cutlists, drawings, labels, optimizer, rendering, export, shop_apps};
+    use cnc_backend::api::{cutlists, drawings, export, labels, optimizer, rendering, shop_apps};
 
     /// When a non-UUID string is passed as a path parameter, Actix-web's
     /// built-in UUID extractor should return 404 (path pattern mismatch) or 400.
@@ -1202,9 +1294,9 @@ mod uuid_validation_tests {
         method: &str,
     ) {
         let req = match method {
-            "GET"    => test::TestRequest::get().uri(uri).to_request(),
+            "GET" => test::TestRequest::get().uri(uri).to_request(),
             "DELETE" => test::TestRequest::delete().uri(uri).to_request(),
-            _        => test::TestRequest::get().uri(uri).to_request(),
+            _ => test::TestRequest::get().uri(uri).to_request(),
         };
         let resp = test::call_service(app, req).await;
         let status = resp.status().as_u16();
@@ -1217,7 +1309,7 @@ mod uuid_validation_tests {
     #[actix_web::test]
     async fn test_invalid_uuid_in_optimization_run_path() {
         let pool = fake_pool();
-        let app  = test::init_service(
+        let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(pool))
                 .configure(optimizer::configure),
@@ -1230,7 +1322,7 @@ mod uuid_validation_tests {
     #[actix_web::test]
     async fn test_invalid_uuid_in_drawing_template_path() {
         let pool = fake_pool();
-        let app  = test::init_service(
+        let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(pool))
                 .configure(drawings::configure),
@@ -1243,7 +1335,7 @@ mod uuid_validation_tests {
     #[actix_web::test]
     async fn test_invalid_uuid_in_label_template_path() {
         let pool = fake_pool();
-        let app  = test::init_service(
+        let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(pool))
                 .configure(labels::configure),
@@ -1256,7 +1348,7 @@ mod uuid_validation_tests {
     #[actix_web::test]
     async fn test_invalid_uuid_in_render_path() {
         let pool = fake_pool();
-        let app  = test::init_service(
+        let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(pool))
                 .configure(rendering::configure),
@@ -1268,7 +1360,7 @@ mod uuid_validation_tests {
     #[actix_web::test]
     async fn test_invalid_uuid_in_export_csv_path() {
         let pool = fake_pool();
-        let app  = test::init_service(
+        let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(pool))
                 .configure(export::configure),

@@ -18,7 +18,7 @@ log = "0.4"
 thiserror = "1"
 validator = { version = "0.18", features = ["derive"] }
 # G-code parsing/validation library (we write our own emission logic)
-gcode = { version = "0.7", features = ["std"] }
+gcode = { version = "0.6", features = ["std"] }
 # Template variable substitution for post-processor templates
 regex = "1"
 

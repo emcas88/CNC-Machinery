@@ -37,10 +37,7 @@ macro_rules! make_app {
         test::init_service(
             App::new()
                 .app_data(web::Data::new($pool))
-                .service(
-                    web::scope("/api")
-                        .configure(cnc_backend::api::configure_routes),
-                ),
+                .service(web::scope("/api").configure(cnc_backend::api::configure_routes)),
         )
         .await
     };
@@ -259,7 +256,11 @@ async fn test_delete_room() {
     let uri = format!("/api/jobs/{}/rooms/{}", job_id, room_id);
     let req = test::TestRequest::delete().uri(&uri).to_request();
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 200, "DELETE /api/jobs/{job_id}/rooms/{room_id}");
+    assert_eq!(
+        resp.status(),
+        200,
+        "DELETE /api/jobs/{job_id}/rooms/{room_id}"
+    );
     let body: Value = test::read_body_json(resp).await;
     assert_eq!(body["status"], "ok");
 }
@@ -316,7 +317,11 @@ async fn test_get_product() {
     let uri = format!("/api/rooms/{}/products/{}", room_id, product_id);
     let req = test::TestRequest::get().uri(&uri).to_request();
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 200, "GET /api/rooms/{room_id}/products/{product_id}");
+    assert_eq!(
+        resp.status(),
+        200,
+        "GET /api/rooms/{room_id}/products/{product_id}"
+    );
     let body: Value = test::read_body_json(resp).await;
     assert_eq!(body["status"], "ok");
 }
@@ -374,7 +379,10 @@ async fn test_product_conform_to_shape() {
     let app = make_app!(pool);
     let room_id = Uuid::new_v4();
     let product_id = Uuid::new_v4();
-    let uri = format!("/api/rooms/{}/products/{}/conform-to-shape", room_id, product_id);
+    let uri = format!(
+        "/api/rooms/{}/products/{}/conform-to-shape",
+        room_id, product_id
+    );
     let req = test::TestRequest::post()
         .uri(&uri)
         .set_json(serde_json::json!({"shape": "polygon"}))
@@ -391,7 +399,10 @@ async fn test_product_save_to_library() {
     let app = make_app!(pool);
     let room_id = Uuid::new_v4();
     let product_id = Uuid::new_v4();
-    let uri = format!("/api/rooms/{}/products/{}/save-to-library", room_id, product_id);
+    let uri = format!(
+        "/api/rooms/{}/products/{}/save-to-library",
+        room_id, product_id
+    );
     let req = test::TestRequest::post()
         .uri(&uri)
         .set_json(serde_json::json!({"library_name": "My Cabinet"}))
@@ -1350,7 +1361,11 @@ async fn test_duplicate_optimization_run() {
     let uri = format!("/api/optimizer/runs/{}/duplicate", id);
     let req = test::TestRequest::post().uri(&uri).to_request();
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 201, "POST /api/optimizer/runs/{id}/duplicate");
+    assert_eq!(
+        resp.status(),
+        201,
+        "POST /api/optimizer/runs/{id}/duplicate"
+    );
     let body: Value = test::read_body_json(resp).await;
     assert_eq!(body["status"], "ok");
 }
@@ -1464,7 +1479,10 @@ async fn test_export_gcode() {
     assert_eq!(resp.status(), 200, "GET /api/gcode/export/{sheet_id}");
     let body = test::read_body(resp).await;
     let text = std::str::from_utf8(&body).expect("body is utf-8");
-    assert!(text.contains("; G-code for sheet"), "Body should contain G-code header");
+    assert!(
+        text.contains("; G-code for sheet"),
+        "Body should contain G-code header"
+    );
 }
 
 // ─── 15. labels ──────────────────────────────────────────────────────────────
@@ -1642,7 +1660,11 @@ async fn test_generate_assembly_sheet() {
         .set_json(serde_json::json!({"product_id": Uuid::new_v4().to_string()}))
         .to_request();
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 200, "POST /api/drawings/generate-assembly-sheet");
+    assert_eq!(
+        resp.status(),
+        200,
+        "POST /api/drawings/generate-assembly-sheet"
+    );
     let body: Value = test::read_body_json(resp).await;
     assert_eq!(body["status"], "ok");
 }
@@ -1656,7 +1678,11 @@ async fn test_generate_part_drawing() {
         .set_json(serde_json::json!({"part_id": Uuid::new_v4().to_string()}))
         .to_request();
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 200, "POST /api/drawings/generate-part-drawing");
+    assert_eq!(
+        resp.status(),
+        200,
+        "POST /api/drawings/generate-part-drawing"
+    );
     let body: Value = test::read_body_json(resp).await;
     assert_eq!(body["status"], "ok");
 }
@@ -1784,7 +1810,11 @@ async fn test_export_cutlist_csv() {
         .set_json(serde_json::json!({}))
         .to_request();
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 200, "POST /api/jobs/{job_id}/cutlist/export-csv");
+    assert_eq!(
+        resp.status(),
+        200,
+        "POST /api/jobs/{job_id}/cutlist/export-csv"
+    );
     let body = test::read_body(resp).await;
     let text = std::str::from_utf8(&body).expect("body is utf-8");
     assert!(text.contains("Part Name"), "CSV should contain header row");
@@ -2052,7 +2082,11 @@ async fn test_mark_part_complete() {
     let uri = format!("/api/shop-floor/parts/{}/complete", part_id);
     let req = test::TestRequest::post().uri(&uri).to_request();
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 200, "POST /api/shop-floor/parts/{part_id}/complete");
+    assert_eq!(
+        resp.status(),
+        200,
+        "POST /api/shop-floor/parts/{part_id}/complete"
+    );
     let body: Value = test::read_body_json(resp).await;
     assert_eq!(body["status"], "ok");
 }
@@ -2065,7 +2099,11 @@ async fn test_get_production_progress() {
     let uri = format!("/api/shop-floor/jobs/{}/progress", job_id);
     let req = test::TestRequest::get().uri(&uri).to_request();
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 200, "GET /api/shop-floor/jobs/{job_id}/progress");
+    assert_eq!(
+        resp.status(),
+        200,
+        "GET /api/shop-floor/jobs/{job_id}/progress"
+    );
     let body: Value = test::read_body_json(resp).await;
     assert_eq!(body["status"], "ok");
 }

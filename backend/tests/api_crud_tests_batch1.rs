@@ -26,8 +26,8 @@ use uuid::Uuid;
 
 /// Acquire a connection pool from the environment.
 async fn test_pool() -> PgPool {
-    let url = std::env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set for integration tests");
+    let url =
+        std::env::var("DATABASE_URL").expect("DATABASE_URL must be set for integration tests");
     PgPool::connect(&url)
         .await
         .expect("Failed to connect to test database")
@@ -48,7 +48,9 @@ mod jobs_tests {
     use super::*;
     use crate::api::jobs;
 
-    fn build_app(pool: PgPool) -> impl actix_web::dev::ServiceFactory<
+    fn build_app(
+        pool: PgPool,
+    ) -> impl actix_web::dev::ServiceFactory<
         actix_web::dev::ServiceRequest,
         Config = (),
         Response = actix_web::dev::ServiceResponse,
@@ -67,7 +69,10 @@ mod jobs_tests {
         let mut tx = begin_tx(&pool).await;
 
         // Ensure table is empty inside this transaction
-        sqlx::query!("DELETE FROM jobs").execute(&mut *tx).await.unwrap();
+        sqlx::query!("DELETE FROM jobs")
+            .execute(&mut *tx)
+            .await
+            .unwrap();
 
         let app = test::init_service(
             App::new()
@@ -205,16 +210,13 @@ mod jobs_tests {
         let pool = test_pool().await;
         let app = test::init_service(
             App::new()
-                .app_data(
-                    web::JsonConfig::default()
-                        .error_handler(|err, _req| {
-                            actix_web::error::InternalError::from_response(
-                                err,
-                                HttpResponse::BadRequest().finish(),
-                            )
-                            .into()
-                        }),
-                )
+                .app_data(web::JsonConfig::default().error_handler(|err, _req| {
+                    actix_web::error::InternalError::from_response(
+                        err,
+                        HttpResponse::BadRequest().finish(),
+                    )
+                    .into()
+                }))
                 .app_data(web::Data::new(pool))
                 .configure(jobs::configure),
         )
@@ -222,7 +224,7 @@ mod jobs_tests {
 
         let req = test::TestRequest::post()
             .uri("/jobs")
-            .set_json(json!({ "client_name": "Dave" }))  // missing `name`
+            .set_json(json!({ "client_name": "Dave" })) // missing `name`
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_client_error());
@@ -543,15 +545,13 @@ mod rooms_tests {
         let job_id = Uuid::new_v4();
         let app = test::init_service(
             App::new()
-                .app_data(
-                    web::JsonConfig::default().error_handler(|err, _req| {
-                        actix_web::error::InternalError::from_response(
-                            err,
-                            HttpResponse::BadRequest().finish(),
-                        )
-                        .into()
-                    }),
-                )
+                .app_data(web::JsonConfig::default().error_handler(|err, _req| {
+                    actix_web::error::InternalError::from_response(
+                        err,
+                        HttpResponse::BadRequest().finish(),
+                    )
+                    .into()
+                }))
                 .app_data(web::Data::new(pool))
                 .configure(rooms::configure),
         )
@@ -615,7 +615,11 @@ mod rooms_tests {
         .await;
 
         let req = test::TestRequest::put()
-            .uri(&format!("/jobs/{}/rooms/{}", Uuid::new_v4(), Uuid::new_v4()))
+            .uri(&format!(
+                "/jobs/{}/rooms/{}",
+                Uuid::new_v4(),
+                Uuid::new_v4()
+            ))
             .set_json(json!({ "name": "Ghost Room" }))
             .to_request();
         let resp = test::call_service(&app, req).await;
@@ -668,7 +672,11 @@ mod rooms_tests {
         .await;
 
         let req = test::TestRequest::delete()
-            .uri(&format!("/jobs/{}/rooms/{}", Uuid::new_v4(), Uuid::new_v4()))
+            .uri(&format!(
+                "/jobs/{}/rooms/{}",
+                Uuid::new_v4(),
+                Uuid::new_v4()
+            ))
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), 404);
@@ -812,7 +820,11 @@ mod products_tests {
         .await;
 
         let req = test::TestRequest::get()
-            .uri(&format!("/rooms/{}/products/{}", Uuid::new_v4(), Uuid::new_v4()))
+            .uri(&format!(
+                "/rooms/{}/products/{}",
+                Uuid::new_v4(),
+                Uuid::new_v4()
+            ))
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), 404);
@@ -858,15 +870,13 @@ mod products_tests {
         let room_id = Uuid::new_v4();
         let app = test::init_service(
             App::new()
-                .app_data(
-                    web::JsonConfig::default().error_handler(|err, _req| {
-                        actix_web::error::InternalError::from_response(
-                            err,
-                            HttpResponse::BadRequest().finish(),
-                        )
-                        .into()
-                    }),
-                )
+                .app_data(web::JsonConfig::default().error_handler(|err, _req| {
+                    actix_web::error::InternalError::from_response(
+                        err,
+                        HttpResponse::BadRequest().finish(),
+                    )
+                    .into()
+                }))
                 .app_data(web::Data::new(pool))
                 .configure(products::configure),
         )
@@ -930,7 +940,11 @@ mod products_tests {
         .await;
 
         let req = test::TestRequest::put()
-            .uri(&format!("/rooms/{}/products/{}", Uuid::new_v4(), Uuid::new_v4()))
+            .uri(&format!(
+                "/rooms/{}/products/{}",
+                Uuid::new_v4(),
+                Uuid::new_v4()
+            ))
             .set_json(json!({ "name": "Ghost" }))
             .to_request();
         let resp = test::call_service(&app, req).await;
@@ -983,7 +997,11 @@ mod products_tests {
         .await;
 
         let req = test::TestRequest::delete()
-            .uri(&format!("/rooms/{}/products/{}", Uuid::new_v4(), Uuid::new_v4()))
+            .uri(&format!(
+                "/rooms/{}/products/{}",
+                Uuid::new_v4(),
+                Uuid::new_v4()
+            ))
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), 404);
@@ -1008,19 +1026,27 @@ mod parts_tests {
              VALUES ($1, 'J', 'C', 'draft', NOW(), NOW())",
             job_id
         )
-        .execute(pool).await.unwrap();
+        .execute(pool)
+        .await
+        .unwrap();
         sqlx::query!(
             "INSERT INTO rooms (id, job_id, name, created_at, updated_at)
              VALUES ($1, $2, 'R', NOW(), NOW())",
-            room_id, job_id
+            room_id,
+            job_id
         )
-        .execute(pool).await.unwrap();
+        .execute(pool)
+        .await
+        .unwrap();
         sqlx::query!(
             r#"INSERT INTO products (id, room_id, name, product_type, created_at, updated_at)
                VALUES ($1, $2, 'P', 'base'::product_type, NOW(), NOW())"#,
-            product_id, room_id
+            product_id,
+            room_id
         )
-        .execute(pool).await.unwrap();
+        .execute(pool)
+        .await
+        .unwrap();
         product_id
     }
 
@@ -1126,7 +1152,11 @@ mod parts_tests {
         .await;
 
         let req = test::TestRequest::get()
-            .uri(&format!("/products/{}/parts/{}", Uuid::new_v4(), Uuid::new_v4()))
+            .uri(&format!(
+                "/products/{}/parts/{}",
+                Uuid::new_v4(),
+                Uuid::new_v4()
+            ))
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), 404);
@@ -1173,15 +1203,13 @@ mod parts_tests {
         let product_id = Uuid::new_v4();
         let app = test::init_service(
             App::new()
-                .app_data(
-                    web::JsonConfig::default().error_handler(|err, _req| {
-                        actix_web::error::InternalError::from_response(
-                            err,
-                            HttpResponse::BadRequest().finish(),
-                        )
-                        .into()
-                    }),
-                )
+                .app_data(web::JsonConfig::default().error_handler(|err, _req| {
+                    actix_web::error::InternalError::from_response(
+                        err,
+                        HttpResponse::BadRequest().finish(),
+                    )
+                    .into()
+                }))
                 .app_data(web::Data::new(pool))
                 .configure(parts::configure),
         )
@@ -1243,7 +1271,11 @@ mod parts_tests {
         .await;
 
         let req = test::TestRequest::put()
-            .uri(&format!("/products/{}/parts/{}", Uuid::new_v4(), Uuid::new_v4()))
+            .uri(&format!(
+                "/products/{}/parts/{}",
+                Uuid::new_v4(),
+                Uuid::new_v4()
+            ))
             .set_json(json!({ "name": "Ghost" }))
             .to_request();
         let resp = test::call_service(&app, req).await;
@@ -1293,7 +1325,11 @@ mod parts_tests {
         .await;
 
         let req = test::TestRequest::delete()
-            .uri(&format!("/products/{}/parts/{}", Uuid::new_v4(), Uuid::new_v4()))
+            .uri(&format!(
+                "/products/{}/parts/{}",
+                Uuid::new_v4(),
+                Uuid::new_v4()
+            ))
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), 404);
@@ -1318,17 +1354,28 @@ mod operations_tests {
             "INSERT INTO jobs (id, name, client_name, status, created_at, updated_at)
              VALUES ($1, 'J', 'C', 'draft', NOW(), NOW())",
             job_id
-        ).execute(pool).await.unwrap();
+        )
+        .execute(pool)
+        .await
+        .unwrap();
         sqlx::query!(
             "INSERT INTO rooms (id, job_id, name, created_at, updated_at)
              VALUES ($1, $2, 'R', NOW(), NOW())",
-            room_id, job_id
-        ).execute(pool).await.unwrap();
+            room_id,
+            job_id
+        )
+        .execute(pool)
+        .await
+        .unwrap();
         sqlx::query!(
             r#"INSERT INTO products (id, room_id, name, product_type, created_at, updated_at)
                VALUES ($1, $2, 'P', 'base'::product_type, NOW(), NOW())"#,
-            product_id, room_id
-        ).execute(pool).await.unwrap();
+            product_id,
+            room_id
+        )
+        .execute(pool)
+        .await
+        .unwrap();
         sqlx::query!(
             "INSERT INTO parts (id, product_id, name, part_type, width_mm, height_mm, thickness_mm, quantity, created_at, updated_at)
              VALUES ($1, $2, 'Pt', 'panel', 600, 720, 18, 1, NOW(), NOW())",
@@ -1348,7 +1395,8 @@ mod operations_tests {
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(operations::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::get()
             .uri(&format!("/parts/{part_id}/operations"))
@@ -1377,7 +1425,8 @@ mod operations_tests {
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(operations::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::get()
             .uri(&format!("/parts/{part_id}/operations"))
@@ -1406,7 +1455,8 @@ mod operations_tests {
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(operations::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::get()
             .uri(&format!("/parts/{part_id}/operations/{op_id}"))
@@ -1428,10 +1478,15 @@ mod operations_tests {
             App::new()
                 .app_data(web::Data::new(pool))
                 .configure(operations::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::get()
-            .uri(&format!("/parts/{}/operations/{}", Uuid::new_v4(), Uuid::new_v4()))
+            .uri(&format!(
+                "/parts/{}/operations/{}",
+                Uuid::new_v4(),
+                Uuid::new_v4()
+            ))
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), 404);
@@ -1448,7 +1503,8 @@ mod operations_tests {
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(operations::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::post()
             .uri(&format!("/parts/{part_id}/operations"))
@@ -1477,18 +1533,17 @@ mod operations_tests {
         let part_id = Uuid::new_v4();
         let app = test::init_service(
             App::new()
-                .app_data(
-                    web::JsonConfig::default().error_handler(|err, _req| {
-                        actix_web::error::InternalError::from_response(
-                            err,
-                            HttpResponse::BadRequest().finish(),
-                        )
-                        .into()
-                    }),
-                )
+                .app_data(web::JsonConfig::default().error_handler(|err, _req| {
+                    actix_web::error::InternalError::from_response(
+                        err,
+                        HttpResponse::BadRequest().finish(),
+                    )
+                    .into()
+                }))
                 .app_data(web::Data::new(pool))
                 .configure(operations::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::post()
             .uri(&format!("/parts/{part_id}/operations"))
@@ -1516,7 +1571,8 @@ mod operations_tests {
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(operations::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::put()
             .uri(&format!("/parts/{part_id}/operations/{op_id}"))
@@ -1539,10 +1595,15 @@ mod operations_tests {
             App::new()
                 .app_data(web::Data::new(pool))
                 .configure(operations::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::put()
-            .uri(&format!("/parts/{}/operations/{}", Uuid::new_v4(), Uuid::new_v4()))
+            .uri(&format!(
+                "/parts/{}/operations/{}",
+                Uuid::new_v4(),
+                Uuid::new_v4()
+            ))
             .set_json(json!({ "status": "complete" }))
             .to_request();
         let resp = test::call_service(&app, req).await;
@@ -1567,7 +1628,8 @@ mod operations_tests {
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(operations::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::delete()
             .uri(&format!("/parts/{part_id}/operations/{op_id}"))
@@ -1586,10 +1648,15 @@ mod operations_tests {
             App::new()
                 .app_data(web::Data::new(pool))
                 .configure(operations::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::delete()
-            .uri(&format!("/parts/{}/operations/{}", Uuid::new_v4(), Uuid::new_v4()))
+            .uri(&format!(
+                "/parts/{}/operations/{}",
+                Uuid::new_v4(),
+                Uuid::new_v4()
+            ))
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), 404);
@@ -1610,13 +1677,17 @@ mod materials_tests {
     async fn test_list_materials_empty() {
         let pool = test_pool().await;
         let mut tx = begin_tx(&pool).await;
-        sqlx::query!("DELETE FROM materials").execute(&mut *tx).await.unwrap();
+        sqlx::query!("DELETE FROM materials")
+            .execute(&mut *tx)
+            .await
+            .unwrap();
 
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(materials::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::get().uri("/materials").to_request();
         let resp: Value = test::call_and_read_body_json(&app, req).await;
@@ -1641,7 +1712,8 @@ mod materials_tests {
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(materials::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::get().uri("/materials").to_request();
         let resp: Value = test::call_and_read_body_json(&app, req).await;
@@ -1667,7 +1739,8 @@ mod materials_tests {
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(materials::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::get()
             .uri(&format!("/materials/{id}"))
@@ -1689,7 +1762,8 @@ mod materials_tests {
             App::new()
                 .app_data(web::Data::new(pool))
                 .configure(materials::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::get()
             .uri(&format!("/materials/{}", Uuid::new_v4()))
@@ -1708,7 +1782,8 @@ mod materials_tests {
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(materials::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::post()
             .uri("/materials")
@@ -1734,18 +1809,17 @@ mod materials_tests {
         let pool = test_pool().await;
         let app = test::init_service(
             App::new()
-                .app_data(
-                    web::JsonConfig::default().error_handler(|err, _req| {
-                        actix_web::error::InternalError::from_response(
-                            err,
-                            HttpResponse::BadRequest().finish(),
-                        )
-                        .into()
-                    }),
-                )
+                .app_data(web::JsonConfig::default().error_handler(|err, _req| {
+                    actix_web::error::InternalError::from_response(
+                        err,
+                        HttpResponse::BadRequest().finish(),
+                    )
+                    .into()
+                }))
                 .app_data(web::Data::new(pool))
                 .configure(materials::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::post()
             .uri("/materials")
@@ -1772,7 +1846,8 @@ mod materials_tests {
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(materials::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::put()
             .uri(&format!("/materials/{id}"))
@@ -1795,7 +1870,8 @@ mod materials_tests {
             App::new()
                 .app_data(web::Data::new(pool))
                 .configure(materials::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::put()
             .uri(&format!("/materials/{}", Uuid::new_v4()))
@@ -1822,7 +1898,8 @@ mod materials_tests {
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(materials::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::delete()
             .uri(&format!("/materials/{id}"))
@@ -1841,7 +1918,8 @@ mod materials_tests {
             App::new()
                 .app_data(web::Data::new(pool))
                 .configure(materials::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::delete()
             .uri(&format!("/materials/{}", Uuid::new_v4()))
@@ -1865,13 +1943,17 @@ mod hardware_tests {
     async fn test_list_hardware_empty() {
         let pool = test_pool().await;
         let mut tx = begin_tx(&pool).await;
-        sqlx::query!("DELETE FROM hardware").execute(&mut *tx).await.unwrap();
+        sqlx::query!("DELETE FROM hardware")
+            .execute(&mut *tx)
+            .await
+            .unwrap();
 
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(hardware::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::get().uri("/hardware").to_request();
         let resp: Value = test::call_and_read_body_json(&app, req).await;
@@ -1890,13 +1972,17 @@ mod hardware_tests {
             "INSERT INTO hardware (id, name, sku, hardware_type, created_at, updated_at)
              VALUES (gen_random_uuid(), 'Hinge Blum', 'HNG-B', 'hinge', NOW(), NOW()),
                     (gen_random_uuid(), 'Drawer Runner', 'DR-500', 'runner', NOW(), NOW())"
-        ).execute(&mut *tx).await.unwrap();
+        )
+        .execute(&mut *tx)
+        .await
+        .unwrap();
 
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(hardware::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::get().uri("/hardware").to_request();
         let resp: Value = test::call_and_read_body_json(&app, req).await;
@@ -1916,13 +2002,17 @@ mod hardware_tests {
             "INSERT INTO hardware (id, name, sku, hardware_type, created_at, updated_at)
              VALUES ($1, 'Soft-close Hinge', 'SCH-100', 'hinge', NOW(), NOW())",
             id
-        ).execute(&mut *tx).await.unwrap();
+        )
+        .execute(&mut *tx)
+        .await
+        .unwrap();
 
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(hardware::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::get()
             .uri(&format!("/hardware/{id}"))
@@ -1944,7 +2034,8 @@ mod hardware_tests {
             App::new()
                 .app_data(web::Data::new(pool))
                 .configure(hardware::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::get()
             .uri(&format!("/hardware/{}", Uuid::new_v4()))
@@ -1963,7 +2054,8 @@ mod hardware_tests {
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(hardware::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::post()
             .uri("/hardware")
@@ -1989,18 +2081,17 @@ mod hardware_tests {
         let pool = test_pool().await;
         let app = test::init_service(
             App::new()
-                .app_data(
-                    web::JsonConfig::default().error_handler(|err, _req| {
-                        actix_web::error::InternalError::from_response(
-                            err,
-                            HttpResponse::BadRequest().finish(),
-                        )
-                        .into()
-                    }),
-                )
+                .app_data(web::JsonConfig::default().error_handler(|err, _req| {
+                    actix_web::error::InternalError::from_response(
+                        err,
+                        HttpResponse::BadRequest().finish(),
+                    )
+                    .into()
+                }))
                 .app_data(web::Data::new(pool))
                 .configure(hardware::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::post()
             .uri("/hardware")
@@ -2021,13 +2112,17 @@ mod hardware_tests {
             "INSERT INTO hardware (id, name, sku, hardware_type, created_at, updated_at)
              VALUES ($1, 'Old Hinge', 'OHG', 'hinge', NOW(), NOW())",
             id
-        ).execute(&mut *tx).await.unwrap();
+        )
+        .execute(&mut *tx)
+        .await
+        .unwrap();
 
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(hardware::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::put()
             .uri(&format!("/hardware/{id}"))
@@ -2050,7 +2145,8 @@ mod hardware_tests {
             App::new()
                 .app_data(web::Data::new(pool))
                 .configure(hardware::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::put()
             .uri(&format!("/hardware/{}", Uuid::new_v4()))
@@ -2071,13 +2167,17 @@ mod hardware_tests {
             "INSERT INTO hardware (id, name, sku, hardware_type, created_at, updated_at)
              VALUES ($1, 'Doomed Hinge', 'DOOM', 'hinge', NOW(), NOW())",
             id
-        ).execute(&mut *tx).await.unwrap();
+        )
+        .execute(&mut *tx)
+        .await
+        .unwrap();
 
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(hardware::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::delete()
             .uri(&format!("/hardware/{id}"))
@@ -2096,7 +2196,8 @@ mod hardware_tests {
             App::new()
                 .app_data(web::Data::new(pool))
                 .configure(hardware::configure),
-        ).await;
+        )
+        .await;
 
         let req = test::TestRequest::delete()
             .uri(&format!("/hardware/{}", Uuid::new_v4()))

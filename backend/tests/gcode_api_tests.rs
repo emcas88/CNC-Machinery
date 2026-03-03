@@ -106,14 +106,22 @@ fn test_config_dto_empty_equals_default() {
 #[test]
 /// safe_z override is applied.
 fn test_config_dto_safe_z_override() {
-    let cfg = GCodeConfigDto { safe_z: Some(25.0), ..Default::default() }.into_config();
+    let cfg = GCodeConfigDto {
+        safe_z: Some(25.0),
+        ..Default::default()
+    }
+    .into_config();
     assert_eq!(cfg.safe_z, 25.0);
 }
 
 #[test]
 /// clearance_z override is applied.
 fn test_config_dto_clearance_z_override() {
-    let cfg = GCodeConfigDto { clearance_z: Some(3.0), ..Default::default() }.into_config();
+    let cfg = GCodeConfigDto {
+        clearance_z: Some(3.0),
+        ..Default::default()
+    }
+    .into_config();
     assert_eq!(cfg.clearance_z, 3.0);
 }
 
@@ -142,21 +150,33 @@ fn test_config_dto_stepover_override() {
 #[test]
 /// lead_in_radius override is applied.
 fn test_config_dto_lead_in_radius_override() {
-    let cfg = GCodeConfigDto { lead_in_radius: Some(3.0), ..Default::default() }.into_config();
+    let cfg = GCodeConfigDto {
+        lead_in_radius: Some(3.0),
+        ..Default::default()
+    }
+    .into_config();
     assert_eq!(cfg.lead_in_radius, 3.0);
 }
 
 #[test]
 /// tab_width override is applied.
 fn test_config_dto_tab_width_override() {
-    let cfg = GCodeConfigDto { tab_width: Some(12.0), ..Default::default() }.into_config();
+    let cfg = GCodeConfigDto {
+        tab_width: Some(12.0),
+        ..Default::default()
+    }
+    .into_config();
     assert_eq!(cfg.tab_width, 12.0);
 }
 
 #[test]
 /// tab_height override is applied.
 fn test_config_dto_tab_height_override() {
-    let cfg = GCodeConfigDto { tab_height: Some(5.0), ..Default::default() }.into_config();
+    let cfg = GCodeConfigDto {
+        tab_height: Some(5.0),
+        ..Default::default()
+    }
+    .into_config();
     assert_eq!(cfg.tab_height, 5.0);
 }
 
@@ -406,8 +426,7 @@ fn test_api_error_not_found_display() {
 #[test]
 /// ApiError::GeneratorError display wraps GCodeError message.
 fn test_api_error_generator_error_display() {
-    let err =
-        ApiError::GeneratorError(GCodeError::UnsupportedOperation("lasercut".into()));
+    let err = ApiError::GeneratorError(GCodeError::UnsupportedOperation("lasercut".into()));
     assert!(err.to_string().contains("lasercut"));
 }
 
@@ -420,9 +439,7 @@ fn test_api_error_generator_error_display() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Inline mock handler for POST /gcode/generate that accepts a SheetGCodeInput.
-async fn mock_generate_handler(
-    body: web::Json<SheetGCodeInput>,
-) -> Result<HttpResponse, ApiError> {
+async fn mock_generate_handler(body: web::Json<SheetGCodeInput>) -> Result<HttpResponse, ApiError> {
     let gen = GCodeGenerator::default();
     let output = gen.generate(&body)?;
     let blocks: Vec<GCodeBlockDto> = output
@@ -447,18 +464,14 @@ async fn mock_generate_handler(
 }
 
 /// Mock handler for POST /gcode/safety-check.
-async fn mock_safety_check_handler(
-    body: web::Json<SheetGCodeInput>,
-) -> HttpResponse {
+async fn mock_safety_check_handler(body: web::Json<SheetGCodeInput>) -> HttpResponse {
     let gen = GCodeGenerator::default();
     let result = gen.safety_check(&body);
     HttpResponse::Ok().json(result)
 }
 
 /// Mock handler for POST /gcode/simulate.
-async fn mock_simulate_handler(
-    body: web::Json<SheetGCodeInput>,
-) -> Result<HttpResponse, ApiError> {
+async fn mock_simulate_handler(body: web::Json<SheetGCodeInput>) -> Result<HttpResponse, ApiError> {
     let gen = GCodeGenerator::default();
     let sim = gen.simulate(&body)?;
     Ok(HttpResponse::Ok().json(sim))
@@ -510,9 +523,10 @@ async fn test_http_generate_safety_violation_returns_500() {
 #[actix_web::test]
 /// POST /gcode/safety-check with valid input returns 200 and passed=true.
 async fn test_http_safety_check_passes() {
-    let app = test::init_service(
-        App::new().route("/gcode/safety-check", web::post().to(mock_safety_check_handler)),
-    )
+    let app = test::init_service(App::new().route(
+        "/gcode/safety-check",
+        web::post().to(mock_safety_check_handler),
+    ))
     .await;
 
     let payload = minimal_sheet_input();
@@ -532,9 +546,10 @@ async fn test_http_safety_check_passes() {
 #[actix_web::test]
 /// POST /gcode/safety-check with out-of-bounds part returns passed=false.
 async fn test_http_safety_check_violation() {
-    let app = test::init_service(
-        App::new().route("/gcode/safety-check", web::post().to(mock_safety_check_handler)),
-    )
+    let app = test::init_service(App::new().route(
+        "/gcode/safety-check",
+        web::post().to(mock_safety_check_handler),
+    ))
     .await;
 
     let mut payload = minimal_sheet_input();
@@ -605,9 +620,7 @@ async fn test_http_wrong_method_returns_405() {
     )
     .await;
 
-    let req = test::TestRequest::get()
-        .uri("/gcode/generate")
-        .to_request();
+    let req = test::TestRequest::get().uri("/gcode/generate").to_request();
 
     let resp = test::call_service(&app, req).await;
     assert_eq!(resp.status(), StatusCode::METHOD_NOT_ALLOWED);
@@ -691,7 +704,10 @@ async fn test_http_generate_warnings_forwarded() {
 
     let resp = test::call_service(&app, req).await;
     let body: GenerateResponse = test::read_body_json(resp).await;
-    assert!(!body.warnings.is_empty(), "deep drill should produce at least one warning");
+    assert!(
+        !body.warnings.is_empty(),
+        "deep drill should produce at least one warning"
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -707,7 +723,10 @@ async fn test_configure_routes_smoke_test() {
         App::new()
             .route("/gcode/generate", web::post().to(mock_generate_handler))
             .route("/gcode/simulate", web::post().to(mock_simulate_handler))
-            .route("/gcode/safety-check", web::post().to(mock_safety_check_handler)),
+            .route(
+                "/gcode/safety-check",
+                web::post().to(mock_safety_check_handler),
+            ),
     )
     .await;
 

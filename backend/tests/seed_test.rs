@@ -54,8 +54,7 @@ fn seed_sql_path() -> std::path::PathBuf {
 }
 
 fn load_seed_sql() -> String {
-    std::fs::read_to_string(seed_sql_path())
-        .expect("Failed to read seed.sql")
+    std::fs::read_to_string(seed_sql_path()).expect("Failed to read seed.sql")
 }
 
 /// Naive split on `;` after stripping block comments and line comments.
@@ -98,13 +97,10 @@ fn rough_split(sql: &str) -> Vec<String> {
 
 /// Extract all UUID literals from a string (basic pattern match).
 fn extract_uuids(sql: &str) -> Vec<String> {
-    let re = regex_lite::Regex::new(
-        r"'([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})'",
-    )
-    .unwrap();
-    re.captures_iter(sql)
-        .map(|c| c[1].to_string())
-        .collect()
+    let re =
+        regex_lite::Regex::new(r"'([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})'")
+            .unwrap();
+    re.captures_iter(sql).map(|c| c[1].to_string()).collect()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -147,7 +143,9 @@ fn sql_has_at_least_15_material_inserts() {
     let upper = content.to_ascii_uppercase();
     // Count VALUE groups inside the materials INSERT block
     // Simple heuristic: count distinct UUIDs in the materials block
-    let mat_start = upper.find("INSERT INTO MATERIALS").expect("No materials INSERT");
+    let mat_start = upper
+        .find("INSERT INTO MATERIALS")
+        .expect("No materials INSERT");
     let mat_end = upper[mat_start..]
         .find("ON CONFLICT")
         .map(|i| mat_start + i)
@@ -164,7 +162,9 @@ fn sql_has_at_least_15_material_inserts() {
 fn sql_has_at_least_20_hardware_inserts() {
     let content = load_seed_sql();
     let upper = content.to_ascii_uppercase();
-    let hw_start = upper.find("INSERT INTO HARDWARE").expect("No hardware INSERT");
+    let hw_start = upper
+        .find("INSERT INTO HARDWARE")
+        .expect("No hardware INSERT");
     let hw_end = upper[hw_start..]
         .find("ON CONFLICT")
         .map(|i| hw_start + i)
@@ -181,7 +181,9 @@ fn sql_has_at_least_20_hardware_inserts() {
 fn sql_has_at_least_5_machine_inserts() {
     let content = load_seed_sql();
     let upper = content.to_ascii_uppercase();
-    let start = upper.find("INSERT INTO MACHINES").expect("No machines INSERT");
+    let start = upper
+        .find("INSERT INTO MACHINES")
+        .expect("No machines INSERT");
     let end = upper[start..]
         .find("ON CONFLICT")
         .map(|i| start + i)
@@ -215,7 +217,9 @@ fn sql_has_at_least_15_tool_inserts() {
 fn sql_has_at_least_3_post_processor_inserts() {
     let content = load_seed_sql();
     let upper = content.to_ascii_uppercase();
-    let start = upper.find("INSERT INTO POST_PROCESSORS").expect("No post_processors INSERT");
+    let start = upper
+        .find("INSERT INTO POST_PROCESSORS")
+        .expect("No post_processors INSERT");
     let end = upper[start..]
         .find("ON CONFLICT")
         .map(|i| start + i)
@@ -251,7 +255,9 @@ fn sql_has_exactly_4_construction_methods() {
 fn sql_has_at_least_5_texture_inserts() {
     let content = load_seed_sql();
     let upper = content.to_ascii_uppercase();
-    let start = upper.find("INSERT INTO TEXTURES (").expect("No textures INSERT");
+    let start = upper
+        .find("INSERT INTO TEXTURES (")
+        .expect("No textures INSERT");
     let end = upper[start..]
         .find("ON CONFLICT")
         .map(|i| start + i)
@@ -271,21 +277,38 @@ fn sql_has_a_job_3_rooms_8_products() {
 
     // Jobs
     let j_start = upper.find("INSERT INTO JOBS").expect("No jobs INSERT");
-    let j_end = upper[j_start..].find("ON CONFLICT").map(|i| j_start + i).unwrap_or(j_start + 200);
+    let j_end = upper[j_start..]
+        .find("ON CONFLICT")
+        .map(|i| j_start + i)
+        .unwrap_or(j_start + 200);
     let j_uuids = extract_uuids(&content[j_start..j_end]).len();
     assert!(j_uuids >= 1, "Expected at least 1 job");
 
     // Rooms
     let r_start = upper.find("INSERT INTO ROOMS").expect("No rooms INSERT");
-    let r_end = upper[r_start..].find("ON CONFLICT").map(|i| r_start + i).unwrap_or(r_start + 500);
+    let r_end = upper[r_start..]
+        .find("ON CONFLICT")
+        .map(|i| r_start + i)
+        .unwrap_or(r_start + 500);
     let r_uuids = extract_uuids(&content[r_start..r_end]).len();
-    assert!(r_uuids >= 3, "Expected at least 3 rooms (found {r_uuids} UUIDs)");
+    assert!(
+        r_uuids >= 3,
+        "Expected at least 3 rooms (found {r_uuids} UUIDs)"
+    );
 
     // Products
-    let p_start = upper.find("INSERT INTO PRODUCTS").expect("No products INSERT");
-    let p_end = upper[p_start..].find("ON CONFLICT").map(|i| p_start + i).unwrap_or(p_start + 2000);
+    let p_start = upper
+        .find("INSERT INTO PRODUCTS")
+        .expect("No products INSERT");
+    let p_end = upper[p_start..]
+        .find("ON CONFLICT")
+        .map(|i| p_start + i)
+        .unwrap_or(p_start + 2000);
     let p_uuids = extract_uuids(&content[p_start..p_end]).len();
-    assert!(p_uuids >= 8, "Expected at least 8 products (found {p_uuids} UUIDs)");
+    assert!(
+        p_uuids >= 8,
+        "Expected at least 8 products (found {p_uuids} UUIDs)"
+    );
 }
 
 #[test]
@@ -293,9 +316,12 @@ fn sql_has_at_least_30_parts() {
     let content = load_seed_sql();
     let upper = content.to_ascii_uppercase();
     let start = upper.find("INSERT INTO PARTS").expect("No parts INSERT");
-    let end = upper[start..].find("ON CONFLICT").map(|i| start + i).unwrap_or(start + 10000);
+    let end = upper[start..]
+        .find("ON CONFLICT")
+        .map(|i| start + i)
+        .unwrap_or(start + 10000);
     let block = &content[start..end];
-    // Each part row starts with ('pt... 
+    // Each part row starts with ('pt...
     let count = block.matches("'pt").count();
     assert!(
         count >= 30,
@@ -307,8 +333,13 @@ fn sql_has_at_least_30_parts() {
 fn sql_has_at_least_50_operations() {
     let content = load_seed_sql();
     let upper = content.to_ascii_uppercase();
-    let start = upper.find("INSERT INTO OPERATIONS").expect("No operations INSERT");
-    let end = upper[start..].find("ON CONFLICT").map(|i| start + i).unwrap_or(start + 20000);
+    let start = upper
+        .find("INSERT INTO OPERATIONS")
+        .expect("No operations INSERT");
+    let end = upper[start..]
+        .find("ON CONFLICT")
+        .map(|i| start + i)
+        .unwrap_or(start + 20000);
     let block = &content[start..end];
     let count = block.matches("'op").count();
     assert!(
@@ -335,10 +366,7 @@ fn sql_all_inserts_have_on_conflict() {
     let content = load_seed_sql();
     let upper = content.to_ascii_uppercase();
     // Find each INSERT INTO block and make sure it has ON CONFLICT
-    let insert_positions: Vec<usize> = upper
-        .match_indices("INSERT INTO")
-        .map(|(i, _)| i)
-        .collect();
+    let insert_positions: Vec<usize> = upper.match_indices("INSERT INTO").map(|(i, _)| i).collect();
 
     for pos in insert_positions {
         // The ON CONFLICT clause must appear before the next INSERT INTO or end of file
@@ -419,7 +447,10 @@ fn material_sheet_dimensions_are_realistic() {
     let content = load_seed_sql();
     let upper = content.to_ascii_uppercase();
     let start = upper.find("INSERT INTO MATERIALS").unwrap();
-    let end = upper[start..].find("ON CONFLICT").map(|i| start + i).unwrap();
+    let end = upper[start..]
+        .find("ON CONFLICT")
+        .map(|i| start + i)
+        .unwrap();
     let block = &content[start..end];
 
     // Check that every numeric that looks like a width/length is reasonable
@@ -460,7 +491,10 @@ fn tool_rpms_are_in_realistic_range() {
     let content = load_seed_sql();
     let upper = content.to_ascii_uppercase();
     let start = upper.find("INSERT INTO TOOLS").unwrap();
-    let end = upper[start..].find("ON CONFLICT").map(|i| start + i).unwrap();
+    let end = upper[start..]
+        .find("ON CONFLICT")
+        .map(|i| start + i)
+        .unwrap();
     let block = &content[start..end];
 
     for line in block.lines() {
@@ -500,7 +534,10 @@ fn tool_feed_rates_are_positive() {
     let content = load_seed_sql();
     let upper = content.to_ascii_uppercase();
     let start = upper.find("INSERT INTO TOOLS").unwrap();
-    let end = upper[start..].find("ON CONFLICT").map(|i| start + i).unwrap();
+    let end = upper[start..]
+        .find("ON CONFLICT")
+        .map(|i| start + i)
+        .unwrap();
     let block = &content[start..end];
 
     // Collect all numbers from the block; none should be 0 or negative
@@ -529,7 +566,10 @@ fn material_costs_are_positive_and_plausible() {
     let content = load_seed_sql();
     let upper = content.to_ascii_uppercase();
     let start = upper.find("INSERT INTO MATERIALS").unwrap();
-    let end = upper[start..].find("ON CONFLICT").map(|i| start + i).unwrap();
+    let end = upper[start..]
+        .find("ON CONFLICT")
+        .map(|i| start + i)
+        .unwrap();
     let block = &content[start..end];
 
     for line in block.lines() {
@@ -563,16 +603,19 @@ fn quote_total_matches_rough_calculation() {
     // Quick sanity: total = (material + hardware + labor) * (1 + markup/100)
     // From seed: material=1683, hardware=1854.50, labor=7800, markup=22%
     // Costs derived from the line items in seed.sql
-    let material: f64 = 1683.00;   // BB18 + BB6 sheets
-    let hardware: f64 = 1900.30;   // hinges + slides + handles + fasteners + delivery
-    let labor: f64 = 7696.00;      // design + cnc + assembly
+    let material: f64 = 1683.00; // BB18 + BB6 sheets
+    let hardware: f64 = 1900.30; // hinges + slides + handles + fasteners + delivery
+    let labor: f64 = 7696.00; // design + cnc + assembly
     let markup: f64 = 22.0;
     let expected_total = (material + hardware + labor) * (1.0 + markup / 100.0);
 
     let content = load_seed_sql();
     let upper = content.to_ascii_uppercase();
     let start = upper.find("INSERT INTO QUOTES").expect("No quotes INSERT");
-    let end = upper[start..].find("ON CONFLICT").map(|i| start + i).unwrap();
+    let end = upper[start..]
+        .find("ON CONFLICT")
+        .map(|i| start + i)
+        .unwrap();
     let block = &content[start..end];
 
     // Find the total – it appears as the 6th numeric field in the VALUES row
@@ -595,7 +638,10 @@ fn part_dimensions_are_realistic_for_cabinet_parts() {
     let content = load_seed_sql();
     let upper = content.to_ascii_uppercase();
     let start = upper.find("INSERT INTO PARTS").expect("No parts INSERT");
-    let end = upper[start..].find("ON CONFLICT").map(|i| start + i).unwrap();
+    let end = upper[start..]
+        .find("ON CONFLICT")
+        .map(|i| start + i)
+        .unwrap();
     let block = &content[start..end];
 
     let mut checked = 0;
@@ -658,13 +704,15 @@ fn extract_defined_ids(sql: &str, table: &str) -> HashSet<String> {
         Some(s) => s,
         None => return HashSet::new(),
     };
-    let end = upper[start..].find("ON CONFLICT").map(|i| start + i).unwrap_or(sql.len());
+    let end = upper[start..]
+        .find("ON CONFLICT")
+        .map(|i| start + i)
+        .unwrap_or(sql.len());
     let block = &sql[start..end];
 
-    let re = regex_lite::Regex::new(
-        r"'([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})'",
-    )
-    .unwrap();
+    let re =
+        regex_lite::Regex::new(r"'([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})'")
+            .unwrap();
 
     let mut ids = HashSet::new();
     for line in block.lines() {
@@ -687,13 +735,15 @@ fn material_ids_referenced_in_parts_exist() {
 
     let upper = sql.to_ascii_uppercase();
     let parts_start = upper.find("INSERT INTO PARTS").unwrap();
-    let parts_end = upper[parts_start..].find("ON CONFLICT").map(|i| parts_start + i).unwrap();
+    let parts_end = upper[parts_start..]
+        .find("ON CONFLICT")
+        .map(|i| parts_start + i)
+        .unwrap();
     let parts_block = &sql[parts_start..parts_end];
 
-    let re = regex_lite::Regex::new(
-        r"'([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})'",
-    )
-    .unwrap();
+    let re =
+        regex_lite::Regex::new(r"'([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})'")
+            .unwrap();
 
     // The material_id is the 7th UUID-looking field in each parts row
     // (id, product_id, …, material_id, texture_id, …)
@@ -718,7 +768,10 @@ fn product_room_ids_reference_defined_rooms() {
 
     let upper = sql.to_ascii_uppercase();
     let start = upper.find("INSERT INTO PRODUCTS").unwrap();
-    let end = upper[start..].find("ON CONFLICT").map(|i| start + i).unwrap();
+    let end = upper[start..]
+        .find("ON CONFLICT")
+        .map(|i| start + i)
+        .unwrap();
     let block = &sql[start..end];
 
     let re = regex_lite::Regex::new(
@@ -742,7 +795,10 @@ fn parts_reference_defined_products() {
 
     let upper = sql.to_ascii_uppercase();
     let start = upper.find("INSERT INTO PARTS").unwrap();
-    let end = upper[start..].find("ON CONFLICT").map(|i| start + i).unwrap();
+    let end = upper[start..]
+        .find("ON CONFLICT")
+        .map(|i| start + i)
+        .unwrap();
     let block = &sql[start..end];
 
     let re = regex_lite::Regex::new(
@@ -766,7 +822,10 @@ fn operations_reference_defined_parts() {
 
     let upper = sql.to_ascii_uppercase();
     let start = upper.find("INSERT INTO OPERATIONS").unwrap();
-    let end = upper[start..].find("ON CONFLICT").map(|i| start + i).unwrap();
+    let end = upper[start..]
+        .find("ON CONFLICT")
+        .map(|i| start + i)
+        .unwrap();
     let block = &sql[start..end];
 
     let re = regex_lite::Regex::new(
@@ -790,7 +849,10 @@ fn operations_reference_defined_tools() {
 
     let upper = sql.to_ascii_uppercase();
     let start = upper.find("INSERT INTO OPERATIONS").unwrap();
-    let end = upper[start..].find("ON CONFLICT").map(|i| start + i).unwrap();
+    let end = upper[start..]
+        .find("ON CONFLICT")
+        .map(|i| start + i)
+        .unwrap();
     let block = &sql[start..end];
 
     let re = regex_lite::Regex::new(
@@ -814,7 +876,10 @@ fn machines_reference_defined_post_processors() {
 
     let upper = sql.to_ascii_uppercase();
     let start = upper.find("INSERT INTO MACHINES").unwrap();
-    let end = upper[start..].find("ON CONFLICT").map(|i| start + i).unwrap();
+    let end = upper[start..]
+        .find("ON CONFLICT")
+        .map(|i| start + i)
+        .unwrap();
     let block = &sql[start..end];
 
     let re = regex_lite::Regex::new(
@@ -940,20 +1005,20 @@ mod integration {
             .expect("Seed failed");
 
         let expectations: &[(&str, i64)] = &[
-            ("texture_groups",        10),
-            ("textures",              10),
-            ("materials",             15),
-            ("construction_methods",   4),
-            ("post_processors",        3),
-            ("machines",               5),
-            ("tools",                 15),
-            ("hardware",              20),
-            ("jobs",                   1),
-            ("rooms",                  3),
-            ("products",               8),
-            ("parts",                 30),
-            ("operations",            50),
-            ("quotes",                 1),
+            ("texture_groups", 10),
+            ("textures", 10),
+            ("materials", 15),
+            ("construction_methods", 4),
+            ("post_processors", 3),
+            ("machines", 5),
+            ("tools", 15),
+            ("hardware", 20),
+            ("jobs", 1),
+            ("rooms", 3),
+            ("products", 8),
+            ("parts", 30),
+            ("operations", 50),
+            ("quotes", 1),
         ];
 
         for (table, min) in expectations {
@@ -981,7 +1046,7 @@ mod integration {
         // Verify there are no orphaned parts (parts whose product_id does not exist)
         let orphaned_parts: i64 = sqlx::query_scalar(
             "SELECT COUNT(*) FROM parts p
-             WHERE NOT EXISTS (SELECT 1 FROM products pr WHERE pr.id = p.product_id)"
+             WHERE NOT EXISTS (SELECT 1 FROM products pr WHERE pr.id = p.product_id)",
         )
         .fetch_one(&pool)
         .await
@@ -995,21 +1060,18 @@ mod integration {
         // Verify there are no orphaned operations
         let orphaned_ops: i64 = sqlx::query_scalar(
             "SELECT COUNT(*) FROM operations o
-             WHERE NOT EXISTS (SELECT 1 FROM parts p WHERE p.id = o.part_id)"
+             WHERE NOT EXISTS (SELECT 1 FROM parts p WHERE p.id = o.part_id)",
         )
         .fetch_one(&pool)
         .await
         .unwrap();
 
-        assert_eq!(
-            orphaned_ops, 0,
-            "Found {orphaned_ops} orphaned operations"
-        );
+        assert_eq!(orphaned_ops, 0, "Found {orphaned_ops} orphaned operations");
 
         // Verify all parts have valid material references
         let invalid_material_refs: i64 = sqlx::query_scalar(
             "SELECT COUNT(*) FROM parts p
-             WHERE NOT EXISTS (SELECT 1 FROM materials m WHERE m.id = p.material_id)"
+             WHERE NOT EXISTS (SELECT 1 FROM materials m WHERE m.id = p.material_id)",
         )
         .fetch_one(&pool)
         .await
@@ -1036,7 +1098,7 @@ mod integration {
 
         let row = sqlx::query(
             "SELECT material_cost, hardware_cost, labor_cost, markup_percentage, total
-             FROM quotes WHERE quote_number = 'Q-2026-0001'"
+             FROM quotes WHERE quote_number = 'Q-2026-0001'",
         )
         .fetch_one(&pool)
         .await
@@ -1044,9 +1106,9 @@ mod integration {
 
         let material: f64 = row.try_get("material_cost").unwrap();
         let hardware: f64 = row.try_get("hardware_cost").unwrap();
-        let labor:    f64 = row.try_get("labor_cost").unwrap();
-        let markup:   f64 = row.try_get("markup_percentage").unwrap();
-        let total:    f64 = row.try_get("total").unwrap();
+        let labor: f64 = row.try_get("labor_cost").unwrap();
+        let markup: f64 = row.try_get("markup_percentage").unwrap();
+        let total: f64 = row.try_get("total").unwrap();
 
         let expected = (material + hardware + labor) * (1.0 + markup / 100.0);
         let diff = (total - expected).abs();
@@ -1106,7 +1168,7 @@ mod integration {
             "SELECT COUNT(*) FROM parts
              WHERE length < 50 OR length > 3000
                 OR width  < 50 OR width  > 1500
-                OR thickness < 6 OR thickness > 25"
+                OR thickness < 6 OR thickness > 25",
         )
         .fetch_one(&pool)
         .await
@@ -1167,7 +1229,11 @@ mod regex_lite {
     impl<'t> std::ops::Index<usize> for Captures<'t> {
         type Output = str;
         fn index(&self, i: usize) -> &str {
-            if i == 0 { self.full } else { &self.groups[i - 1] }
+            if i == 0 {
+                self.full
+            } else {
+                &self.groups[i - 1]
+            }
         }
     }
 
@@ -1176,7 +1242,9 @@ mod regex_lite {
         /// - `'([0-9a-f]{8}-...)'`  – UUID capture
         /// - `'(prefix[0-9a-f...])'` – prefixed UUID capture
         pub fn new(pattern: &str) -> Result<Self, String> {
-            Ok(Regex { pattern: pattern.to_string() })
+            Ok(Regex {
+                pattern: pattern.to_string(),
+            })
         }
 
         /// Find the first match.
@@ -1219,11 +1287,17 @@ mod regex_lite {
     fn is_uuid_like(s: &str) -> bool {
         // Accept xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (8-4-4-4-12)
         let parts: Vec<&str> = s.split('-').collect();
-        if parts.len() != 5 { return false; }
+        if parts.len() != 5 {
+            return false;
+        }
         let lens = [8, 4, 4, 4, 12];
         for (part, &expected_len) in parts.iter().zip(lens.iter()) {
-            if part.len() != expected_len { return false; }
-            if !part.chars().all(|c| c.is_ascii_hexdigit()) { return false; }
+            if part.len() != expected_len {
+                return false;
+            }
+            if !part.chars().all(|c| c.is_ascii_hexdigit()) {
+                return false;
+            }
         }
         true
     }
@@ -1233,7 +1307,9 @@ mod regex_lite {
     }
 
     impl<'t> Match<'t> {
-        pub fn as_str(&self) -> &'t str { self.s }
+        pub fn as_str(&self) -> &'t str {
+            self.s
+        }
     }
 
     pub struct CaptureIter<'t> {
@@ -1244,22 +1320,31 @@ mod regex_lite {
     impl<'t> Iterator for CaptureIter<'t> {
         type Item = OwnedCaptures;
         fn next(&mut self) -> Option<Self::Item> {
-            if self.pos >= self.matches.len() { return None; }
+            if self.pos >= self.matches.len() {
+                return None;
+            }
             let (full, group) = self.matches[self.pos].clone();
             self.pos += 1;
-            Some(OwnedCaptures { full, groups: vec![group] })
+            Some(OwnedCaptures {
+                full,
+                groups: vec![group],
+            })
         }
     }
 
     pub struct OwnedCaptures {
-        pub full: &'static str,  // Note: lifetime erased; full text owned
+        pub full: &'static str, // Note: lifetime erased; full text owned
         groups: Vec<String>,
     }
 
     impl std::ops::Index<usize> for OwnedCaptures {
         type Output = str;
         fn index(&self, i: usize) -> &str {
-            if i == 0 { "" } else { &self.groups[i - 1] }
+            if i == 0 {
+                ""
+            } else {
+                &self.groups[i - 1]
+            }
         }
     }
 
@@ -1272,7 +1357,11 @@ mod regex_lite {
     impl std::ops::Index<usize> for OwnedCapturesFull {
         type Output = str;
         fn index(&self, i: usize) -> &str {
-            if i == 0 { &self.full } else { &self.groups[i - 1] }
+            if i == 0 {
+                &self.full
+            } else {
+                &self.groups[i - 1]
+            }
         }
     }
 }

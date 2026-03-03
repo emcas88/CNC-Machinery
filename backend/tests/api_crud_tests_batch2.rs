@@ -42,7 +42,9 @@ mod tools_tests {
     use super::*;
     use crate::api::tools;
 
-    fn app(pool: PgPool) -> impl actix_web::dev::Service<
+    fn app(
+        pool: PgPool,
+    ) -> impl actix_web::dev::Service<
         actix_http::Request,
         Response = actix_web::dev::ServiceResponse,
         Error = actix_web::Error,
@@ -347,11 +349,7 @@ mod tools_tests {
                 .set_json(&payload)
                 .to_request();
             let resp = test::call_service(&app, req).await;
-            assert_eq!(
-                resp.status(),
-                201,
-                "Expected 201 for tool_type={variant}"
-            );
+            assert_eq!(resp.status(), 201, "Expected 201 for tool_type={variant}");
         }
         // Cleanup
         sqlx::query!("DELETE FROM tools WHERE name LIKE 'Enum test %'")
@@ -1063,7 +1061,8 @@ mod textures_tests {
         let now = chrono::Utc::now();
         sqlx::query!(
             "INSERT INTO texture_groups (id, name, created_at) VALUES ($1, 'Old Group', $2)",
-            id, now
+            id,
+            now
         )
         .execute(&pool)
         .await
@@ -1156,7 +1155,9 @@ mod post_processors_tests {
                 .configure(post_processors::configure),
         )
         .await;
-        let req = test::TestRequest::get().uri("/post-processors").to_request();
+        let req = test::TestRequest::get()
+            .uri("/post-processors")
+            .to_request();
         assert_eq!(test::call_service(&app, req).await.status(), 200);
     }
 
@@ -1381,7 +1382,9 @@ mod post_processors_tests {
                 .configure(post_processors::configure),
         )
         .await;
-        let req = test::TestRequest::get().uri("/post-processors").to_request();
+        let req = test::TestRequest::get()
+            .uri("/post-processors")
+            .to_request();
         let body: Value = test::call_and_read_body_json(&app, req).await;
         assert!(body.is_array());
     }
@@ -1456,7 +1459,10 @@ mod quotes_tests {
             .to_request();
         let body: Value = test::call_and_read_body_json(&app, req).await;
         let total = body["total"].as_f64().unwrap();
-        assert!((total - 990.0).abs() < 0.01, "Expected total ~990.0, got {total}");
+        assert!(
+            (total - 990.0).abs() < 0.01,
+            "Expected total ~990.0, got {total}"
+        );
     }
 
     #[actix_web::test]
@@ -1537,7 +1543,10 @@ mod quotes_tests {
             .to_request();
         let body: Value = test::call_and_read_body_json(&app, req).await;
         let total = body["total"].as_f64().unwrap();
-        assert!((total - 420.0).abs() < 0.01, "Expected total ~420.0, got {total}");
+        assert!(
+            (total - 420.0).abs() < 0.01,
+            "Expected total ~420.0, got {total}"
+        );
         sqlx::query!("DELETE FROM quotes WHERE id = $1", id)
             .execute(&pool)
             .await
@@ -1625,7 +1634,10 @@ mod quotes_tests {
             .to_request();
         let body: Value = test::call_and_read_body_json(&app, req).await;
         let total = body["total"].as_f64().unwrap();
-        assert!((total - 600.0).abs() < 0.01, "Expected 600.0 with 0% markup, got {total}");
+        assert!(
+            (total - 600.0).abs() < 0.01,
+            "Expected 600.0 with 0% markup, got {total}"
+        );
     }
 }
 

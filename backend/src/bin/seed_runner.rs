@@ -96,7 +96,7 @@ struct Args {
 const RESET_ORDER: &[&str] = &[
     "atc_tool_sets",
     "machine_template_rules",
-    "optimization_runs",   // also drops nested_sheets via CASCADE
+    "optimization_runs", // also drops nested_sheets via CASCADE
     "remnants",
     "quotes",
     "annotation_layers",
@@ -135,9 +135,7 @@ async fn main() -> Result<()> {
         .database_url
         .clone()
         .or_else(|| std::env::var("DATABASE_URL").ok())
-        .unwrap_or_else(|| {
-            "postgres://postgres:postgres@localhost:5432/cnc_db".to_string()
-        });
+        .unwrap_or_else(|| "postgres://postgres:postgres@localhost:5432/cnc_db".to_string());
 
     if !args.quiet {
         banner();
@@ -151,7 +149,11 @@ async fn main() -> Result<()> {
             "SQL file:".dimmed(),
             sql_path.display().to_string().cyan()
         );
-        println!("{} {}", "Database:".dimmed(), redact_password(&db_url).cyan());
+        println!(
+            "{} {}",
+            "Database:".dimmed(),
+            redact_password(&db_url).cyan()
+        );
         println!();
     }
 
@@ -180,10 +182,7 @@ async fn main() -> Result<()> {
     if args.dry_run {
         run_dry(&pool, &statements, args.quiet).await?;
         if !args.quiet {
-            println!(
-                "\n{} Dry-run complete – no changes committed.",
-                "✔".green()
-            );
+            println!("\n{} Dry-run complete – no changes committed.", "✔".green());
         }
         return Ok(());
     }
@@ -348,7 +347,7 @@ async fn run_dry(pool: &PgPool, statements: &[String], quiet: bool) -> Result<()
 struct SeedStats {
     total_statements: usize,
     executed: usize,
-    skipped: usize,  // empty / comment-only lines
+    skipped: usize, // empty / comment-only lines
     rows_affected: u64,
 }
 
@@ -384,17 +383,14 @@ async fn run_seed(pool: &PgPool, statements: &[String], quiet: bool) -> Result<S
             continue;
         }
 
-        let result = sqlx::query(trimmed)
-            .execute(pool)
-            .await
-            .with_context(|| {
-                format!(
-                    "Statement {}/{} failed:\n  {}…",
-                    i + 1,
-                    statements.len(),
-                    &trimmed[..trimmed.len().min(120)]
-                )
-            })?;
+        let result = sqlx::query(trimmed).execute(pool).await.with_context(|| {
+            format!(
+                "Statement {}/{} failed:\n  {}…",
+                i + 1,
+                statements.len(),
+                &trimmed[..trimmed.len().min(120)]
+            )
+        })?;
 
         stats.rows_affected += result.rows_affected();
         stats.executed += 1;
@@ -610,7 +606,16 @@ fn is_comment_only(s: &str) -> bool {
 /// Produce a short human-readable label for a statement (used in the progress bar).
 fn statement_label(stmt: &str) -> String {
     let upper = stmt.to_ascii_uppercase();
-    for keyword in &["INSERT INTO", "UPDATE", "DELETE FROM", "TRUNCATE", "CREATE", "DROP", "BEGIN", "COMMIT"] {
+    for keyword in &[
+        "INSERT INTO",
+        "UPDATE",
+        "DELETE FROM",
+        "TRUNCATE",
+        "CREATE",
+        "DROP",
+        "BEGIN",
+        "COMMIT",
+    ] {
         if upper.starts_with(keyword) {
             // Try to grab the table name that follows the keyword
             let rest = stmt[keyword.len()..].trim();
@@ -634,7 +639,10 @@ fn resolve_sql_path(path: &PathBuf) -> Result<PathBuf> {
 
     // Try next to the binary
     if let Ok(exe) = std::env::current_exe() {
-        let candidate = exe.parent().unwrap_or_else(|| std::path::Path::new(".")).join(path);
+        let candidate = exe
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new("."))
+            .join(path);
         if candidate.exists() {
             return Ok(candidate);
         }
@@ -672,11 +680,9 @@ fn banner() {
 }
 
 fn progress_style() -> ProgressStyle {
-    ProgressStyle::with_template(
-        "{spinner:.green} [{bar:40.cyan/blue}] {pos}/{len} {msg}",
-    )
-    .unwrap()
-    .progress_chars("█░")
+    ProgressStyle::with_template("{spinner:.green} [{bar:40.cyan/blue}] {pos}/{len} {msg}")
+        .unwrap()
+        .progress_chars("█░")
 }
 
 fn print_summary(stats: &SeedStats, elapsed: Duration) {
@@ -791,8 +797,7 @@ mod unit_tests {
 
     #[test]
     fn test_split_dollar_quoted() {
-        let sql =
-            "CREATE FUNCTION f() RETURNS void AS $$BEGIN; END;$$ LANGUAGE plpgsql; SELECT 1;";
+        let sql = "CREATE FUNCTION f() RETURNS void AS $$BEGIN; END;$$ LANGUAGE plpgsql; SELECT 1;";
         let stmts = split_sql_statements(sql);
         // Should produce 2 statements – function CREATE + SELECT
         assert_eq!(stmts.len(), 2, "got {:#?}", stmts);

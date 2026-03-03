@@ -67,9 +67,7 @@ async fn main() -> std::io::Result<()> {
             // Health check (not under /api prefix configured by modules)
             .service(health_check)
             // Mount all API modules under /api prefix.
-            .service(
-                web::scope("/api").configure(api::configure_routes),
-            )
+            .service(web::scope("/api").configure(api::configure_routes))
     })
     .bind((host.as_str(), port))?
     .run()

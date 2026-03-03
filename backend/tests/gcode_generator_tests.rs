@@ -111,7 +111,9 @@ fn make_sheet_with_params(
 
 /// Generate G-code for the given sheet and panic on failure.
 fn gen(sheet: &SheetGCodeInput) -> GCodeOutput {
-    GCodeGenerator::default().generate(sheet).expect("generate should succeed")
+    GCodeGenerator::default()
+        .generate(sheet)
+        .expect("generate should succeed")
 }
 
 /// Assert that `haystack` contains `needle` (provides a useful message on failure).
@@ -678,10 +680,7 @@ fn test_simulator_skips_comments_and_blanks() {
 #[test]
 /// total_distance_mm = rapid_distance_mm + cut_distance_mm.
 fn test_simulator_total_distance_is_sum() {
-    let lines = vec![
-        "G0 X50 Y0".to_string(),
-        "G1 X100 Y0 F6000".to_string(),
-    ];
+    let lines = vec!["G0 X50 Y0".to_string(), "G1 X100 Y0 F6000".to_string()];
     let sim = ToolpathSimulator::simulate(&lines, 10_000.0);
     let expected = sim.rapid_distance_mm + sim.cut_distance_mm;
     assert!((sim.total_distance_mm - expected).abs() < 0.001);
@@ -792,7 +791,10 @@ fn test_pp_date_substitution() {
     let sheet = make_pp_sheet("D:{DATE}");
     let out = gen(&sheet);
     // Date format is YYYY-MM-DD – check it contains a dash (won't contain literal {DATE}).
-    assert!(!out.raw.contains("{DATE}"), "DATE variable must be substituted");
+    assert!(
+        !out.raw.contains("{DATE}"),
+        "DATE variable must be substituted"
+    );
 }
 
 #[test]
@@ -800,7 +802,10 @@ fn test_pp_date_substitution() {
 fn test_pp_time_substitution() {
     let sheet = make_pp_sheet("T:{TIME}");
     let out = gen(&sheet);
-    assert!(!out.raw.contains("{TIME}"), "TIME variable must be substituted");
+    assert!(
+        !out.raw.contains("{TIME}"),
+        "TIME variable must be substituted"
+    );
 }
 
 #[test]
@@ -826,7 +831,10 @@ fn test_pp_multiple_occurrences_of_same_var() {
     let out = gen(&sheet);
     // Both occurrences of {MACHINE} → "TestRouter"
     let count = out.raw.matches("TestRouter").count();
-    assert!(count >= 2, "variable should be replaced at every occurrence");
+    assert!(
+        count >= 2,
+        "variable should be replaced at every occurrence"
+    );
 }
 
 #[test]
@@ -914,13 +922,18 @@ fn test_preamble_contains_g17() {
 /// Generated program ends with M30.
 fn test_program_ends_with_m30() {
     let out = gen(&make_sheet("drill", 5.0, None, None));
-    let last_nc = out.raw.lines()
+    let last_nc = out
+        .raw
+        .lines()
         .filter(|l| !l.trim().is_empty() && !l.starts_with(';'))
         .last()
         .unwrap_or("");
     // M30 should appear somewhere near the end
     assert_contains(&out.raw, "M30");
-    assert!(last_nc.contains("M30"), "M30 should be the last non-comment NC line");
+    assert!(
+        last_nc.contains("M30"),
+        "M30 should be the last non-comment NC line"
+    );
 }
 
 #[test]
@@ -962,7 +975,9 @@ fn test_no_line_numbers_when_increment_zero() {
     });
     let out = gen.generate(&sheet).unwrap();
     // After the header (which uses increment=0 always) no N-prefixed lines
-    let nc_lines: Vec<&str> = out.raw.lines()
+    let nc_lines: Vec<&str> = out
+        .raw
+        .lines()
         .filter(|l| !l.starts_with(';') && !l.trim().is_empty())
         .collect();
     assert!(!nc_lines.iter().any(|l| l.starts_with('N')));
@@ -1053,7 +1068,9 @@ fn test_planner_tool_grouping_single_group() {
     let sheet = make_sheet("drill", 5.0, None, None);
     let out = gen(&sheet);
     // With one tool there should be exactly 1 tool-change block
-    let tool_change_blocks: Vec<_> = out.blocks.iter()
+    let tool_change_blocks: Vec<_> = out
+        .blocks
+        .iter()
         .filter(|b| b.label.starts_with("Tool Change"))
         .collect();
     assert_eq!(tool_change_blocks.len(), 1);
@@ -1078,13 +1095,21 @@ fn test_planner_two_tool_groups_ordering() {
         parameters: serde_json::json!({}),
     });
     let out = gen(&sheet);
-    let tc_labels: Vec<&str> = out.blocks.iter()
+    let tc_labels: Vec<&str> = out
+        .blocks
+        .iter()
         .filter(|b| b.label.starts_with("Tool Change"))
         .map(|b| b.label.as_str())
         .collect();
     assert_eq!(tc_labels.len(), 2);
-    assert!(tc_labels[0].contains("T1"), "tool 1 (index 0) should be first");
-    assert!(tc_labels[1].contains("T2"), "tool 2 (index 1) should be second");
+    assert!(
+        tc_labels[0].contains("T1"),
+        "tool 1 (index 0) should be first"
+    );
+    assert!(
+        tc_labels[1].contains("T2"),
+        "tool 2 (index 1) should be second"
+    );
 }
 
 #[test]
@@ -1199,7 +1224,10 @@ fn test_route_multipass_warning() {
     // depth=12, max=6 → 2 passes
     let sheet = make_sheet("route", 12.0, None, None);
     let out = gen(&sheet);
-    assert!(out.warnings.iter().any(|w| w.contains("Route") && w.contains("2 passes")));
+    assert!(out
+        .warnings
+        .iter()
+        .any(|w| w.contains("Route") && w.contains("2 passes")));
 }
 
 #[test]
@@ -1224,7 +1252,9 @@ fn test_dado_single_pass_single_plunge() {
     let out = gen(&sheet);
     assert_contains(&out.raw, "Dado");
     // Count plunge (G1 Z-) occurrences – should be exactly one for single pass+side
-    let plunges = out.raw.lines()
+    let plunges = out
+        .raw
+        .lines()
         .filter(|l| l.contains("G1 Z-") || l.contains("G01 Z-"))
         .count();
     assert_eq!(plunges, 1);
@@ -1237,7 +1267,9 @@ fn test_dado_wide_multiple_side_passes() {
     let sheet = make_sheet("dado", 6.0, Some(36.0), Some(100.0));
     let out = gen(&sheet);
     // Multiple side passes means multiple plunge events
-    let plunges = out.raw.lines()
+    let plunges = out
+        .raw
+        .lines()
         .filter(|l| (l.contains("G1 Z-") || l.contains("G01 Z-")))
         .count();
     assert!(plunges > 1, "should have multiple plunges for wide dado");
@@ -1249,7 +1281,10 @@ fn test_dado_deep_emits_warning() {
     // depth=12, max=6 → 2 depth passes
     let sheet = make_sheet("dado", 12.0, Some(12.0), Some(100.0));
     let out = gen(&sheet);
-    assert!(out.warnings.iter().any(|w| w.contains("Dado") && w.contains("depth passes")));
+    assert!(out
+        .warnings
+        .iter()
+        .any(|w| w.contains("Dado") && w.contains("depth passes")));
 }
 
 #[test]
@@ -1272,10 +1307,15 @@ fn test_tenon_generates_rectangle() {
     let out = gen(&sheet);
     assert_contains(&out.raw, "Tenon");
     // Four cut_xy moves per pass → should see multiple G1 X Y lines
-    let cut_moves: Vec<&str> = out.raw.lines()
+    let cut_moves: Vec<&str> = out
+        .raw
+        .lines()
         .filter(|l| l.contains("G1 X") && l.contains(" Y"))
         .collect();
-    assert!(!cut_moves.is_empty(), "should have cut moves for tenon perimeter");
+    assert!(
+        !cut_moves.is_empty(),
+        "should have cut moves for tenon perimeter"
+    );
 }
 
 #[test]
@@ -1300,7 +1340,9 @@ fn test_tenon_multipass() {
     // depth=12, max=6 → 2 passes
     let sheet = make_sheet("tenon", 12.0, Some(40.0), Some(30.0));
     let out = gen(&sheet);
-    let pass_comments = out.raw.lines()
+    let pass_comments = out
+        .raw
+        .lines()
         .filter(|l| l.starts_with("; ") && l.contains("Tenon pass"))
         .count();
     assert_eq!(pass_comments, 2);
@@ -1325,7 +1367,9 @@ fn test_pocket_large_multiple_stepover_rows() {
     let sheet = make_sheet("pocket", 10.0, Some(120.0), Some(100.0));
     let out = gen(&sheet);
     // With stepover=0.6×12=7.2mm and pocket_height=100 → many rows
-    let cut_lines = out.raw.lines()
+    let cut_lines = out
+        .raw
+        .lines()
         .filter(|l| l.contains("G1 X") && l.contains(" Y"))
         .count();
     assert!(cut_lines > 5, "large pocket should have many cut moves");
@@ -1337,7 +1381,10 @@ fn test_pocket_smaller_than_tool_skipped() {
     // pocket 5×5mm with 12mm tool → too small
     let sheet = make_sheet("pocket", 5.0, Some(5.0), Some(5.0));
     let out = gen(&sheet);
-    assert!(out.warnings.iter().any(|w| w.contains("smaller than tool diameter")));
+    assert!(out
+        .warnings
+        .iter()
+        .any(|w| w.contains("smaller than tool diameter")));
 }
 
 #[test]
@@ -1362,7 +1409,9 @@ fn test_pocket_multipass_depth() {
     // depth=12, max=6 → 2 depth passes
     let sheet = make_sheet("pocket", 12.0, Some(60.0), Some(50.0));
     let out = gen(&sheet);
-    let depth_comments = out.raw.lines()
+    let depth_comments = out
+        .raw
+        .lines()
         .filter(|l| l.starts_with("; ") && l.contains("Depth pass"))
         .count();
     assert_eq!(depth_comments, 2);
@@ -1373,7 +1422,9 @@ fn test_pocket_multipass_depth() {
 fn test_pocket_finish_pass_per_depth() {
     let sheet = make_sheet("pocket", 12.0, Some(60.0), Some(50.0));
     let out = gen(&sheet);
-    let finish_count = out.raw.lines()
+    let finish_count = out
+        .raw
+        .lines()
         .filter(|l| l.contains("finish pass"))
         .count();
     assert_eq!(finish_count, 2, "one finish pass comment per depth level");
@@ -1398,7 +1449,10 @@ fn test_profile_generates_lead_out_arc() {
     let out = gen(&sheet);
     // Two G3 arcs: lead-in and lead-out
     let arc_count = out.raw.lines().filter(|l| l.contains("G3 ")).count();
-    assert!(arc_count >= 2, "expected at least 2 arc moves (lead-in + lead-out)");
+    assert!(
+        arc_count >= 2,
+        "expected at least 2 arc moves (lead-in + lead-out)"
+    );
 }
 
 #[test]
@@ -1422,7 +1476,9 @@ fn test_profile_no_height_warning() {
 fn test_profile_multipass() {
     let sheet = make_sheet("profile", 12.0, Some(100.0), Some(80.0));
     let out = gen(&sheet);
-    let pass_comments = out.raw.lines()
+    let pass_comments = out
+        .raw
+        .lines()
         .filter(|l| l.starts_with("; ") && l.contains("Profile pass"))
         .count();
     assert_eq!(pass_comments, 2);
@@ -1516,7 +1572,11 @@ fn test_integration_single_part_multiple_operations() {
         parameters: serde_json::json!({}),
     });
     let out = gen(&sheet);
-    let op_blocks = out.blocks.iter().filter(|b| b.operation_id.is_some()).count();
+    let op_blocks = out
+        .blocks
+        .iter()
+        .filter(|b| b.operation_id.is_some())
+        .count();
     assert_eq!(op_blocks, 2);
 }
 
@@ -1546,7 +1606,11 @@ fn test_integration_multiple_parts() {
         }],
     });
     let out = gen(&sheet);
-    let op_blocks = out.blocks.iter().filter(|b| b.operation_id.is_some()).count();
+    let op_blocks = out
+        .blocks
+        .iter()
+        .filter(|b| b.operation_id.is_some())
+        .count();
     assert_eq!(op_blocks, 2, "two ops across two parts");
 }
 
@@ -1578,12 +1642,12 @@ fn test_integration_all_operation_types() {
     }
     let out = gen(&sheet);
     // All operation types should appear in some form
-    assert_contains(&out.raw, "G81");     // drill
-    assert_contains(&out.raw, "Dado");    // dado
-    assert_contains(&out.raw, "Tenon");   // tenon
-    assert_contains(&out.raw, "Pocket");  // pocket
+    assert_contains(&out.raw, "G81"); // drill
+    assert_contains(&out.raw, "Dado"); // dado
+    assert_contains(&out.raw, "Tenon"); // tenon
+    assert_contains(&out.raw, "Pocket"); // pocket
     assert_contains(&out.raw, "Profile"); // profile
-    assert_contains(&out.raw, "Cutout");  // cutout
+    assert_contains(&out.raw, "Cutout"); // cutout
 }
 
 #[test]
@@ -1634,7 +1698,9 @@ fn test_block_ids_are_set_correctly() {
     let part_id = sheet.parts[0].part_id;
     let op_id = sheet.parts[0].operations[0].id;
     let out = gen(&sheet);
-    let op_block = out.blocks.iter()
+    let op_block = out
+        .blocks
+        .iter()
         .find(|b| b.operation_id.is_some())
         .expect("should have at least one operation block");
     assert_eq!(op_block.part_id, Some(part_id));
@@ -1651,7 +1717,9 @@ fn test_spoilboard_resurface_header_comment() {
     let gen = GCodeGenerator::default();
     let machine = make_machine();
     let tool = make_tool(50.0, 8_000.0, 2_000.0, 1.0);
-    let out = gen.generate_spoilboard_resurface(&machine, &tool, 0.5).unwrap();
+    let out = gen
+        .generate_spoilboard_resurface(&machine, &tool, 0.5)
+        .unwrap();
     assert_contains(&out.raw, "Spoilboard Resurfacing");
 }
 
@@ -1661,7 +1729,9 @@ fn test_spoilboard_resurface_ends_with_m30() {
     let gen = GCodeGenerator::default();
     let machine = make_machine();
     let tool = make_tool(50.0, 8_000.0, 2_000.0, 1.0);
-    let out = gen.generate_spoilboard_resurface(&machine, &tool, 0.5).unwrap();
+    let out = gen
+        .generate_spoilboard_resurface(&machine, &tool, 0.5)
+        .unwrap();
     assert_contains(&out.raw, "M30");
 }
 
@@ -1671,7 +1741,9 @@ fn test_spoilboard_resurface_plunge_depth() {
     let gen = GCodeGenerator::default();
     let machine = make_machine();
     let tool = make_tool(50.0, 8_000.0, 2_000.0, 0.5);
-    let out = gen.generate_spoilboard_resurface(&machine, &tool, 0.5).unwrap();
+    let out = gen
+        .generate_spoilboard_resurface(&machine, &tool, 0.5)
+        .unwrap();
     assert_contains(&out.raw, "Z-0.5");
 }
 
@@ -1681,7 +1753,9 @@ fn test_spoilboard_resurface_uses_feed_rate() {
     let gen = GCodeGenerator::default();
     let machine = make_machine();
     let tool = make_tool(50.0, 8_000.0, 2_000.0, 0.5);
-    let out = gen.generate_spoilboard_resurface(&machine, &tool, 0.5).unwrap();
+    let out = gen
+        .generate_spoilboard_resurface(&machine, &tool, 0.5)
+        .unwrap();
     assert_contains(&out.raw, "F8000");
 }
 
@@ -1691,12 +1765,15 @@ fn test_spoilboard_resurface_multiple_passes() {
     let gen = GCodeGenerator::default();
     let machine = make_machine();
     let tool = make_tool(50.0, 8_000.0, 2_000.0, 0.5);
-    let out = gen.generate_spoilboard_resurface(&machine, &tool, 0.5).unwrap();
+    let out = gen
+        .generate_spoilboard_resurface(&machine, &tool, 0.5)
+        .unwrap();
     // With 1250mm spoilboard, 50mm tool, 85% stepover=42.5mm → many passes
-    let pass_comments = out.raw.lines()
-        .filter(|l| l.starts_with("; Pass "))
-        .count();
-    assert!(pass_comments > 5, "should have many passes for large spoilboard");
+    let pass_comments = out.raw.lines().filter(|l| l.starts_with("; Pass ")).count();
+    assert!(
+        pass_comments > 5,
+        "should have many passes for large spoilboard"
+    );
 }
 
 #[test]
@@ -1705,7 +1782,9 @@ fn test_spoilboard_resurface_distance_positive() {
     let gen = GCodeGenerator::default();
     let machine = make_machine();
     let tool = make_tool(50.0, 8_000.0, 2_000.0, 0.5);
-    let out = gen.generate_spoilboard_resurface(&machine, &tool, 0.5).unwrap();
+    let out = gen
+        .generate_spoilboard_resurface(&machine, &tool, 0.5)
+        .unwrap();
     assert!(out.total_distance_mm > 0.0);
 }
 
@@ -1715,7 +1794,9 @@ fn test_spoilboard_resurface_alternating_direction() {
     let gen = GCodeGenerator::default();
     let machine = make_machine();
     let tool = make_tool(50.0, 8_000.0, 2_000.0, 0.5);
-    let out = gen.generate_spoilboard_resurface(&machine, &tool, 0.5).unwrap();
+    let out = gen
+        .generate_spoilboard_resurface(&machine, &tool, 0.5)
+        .unwrap();
     // One pass starts at Y=0, next at Y=spoilboard_length → different Y values should appear
     assert!(out.raw.contains("Y0") || out.raw.contains("Y2500"));
 }
@@ -1726,7 +1807,9 @@ fn test_spoilboard_resurface_zero_tool_changes() {
     let gen = GCodeGenerator::default();
     let machine = make_machine();
     let tool = make_tool(50.0, 8_000.0, 2_000.0, 0.5);
-    let out = gen.generate_spoilboard_resurface(&machine, &tool, 0.5).unwrap();
+    let out = gen
+        .generate_spoilboard_resurface(&machine, &tool, 0.5)
+        .unwrap();
     assert_eq!(out.tool_changes, 0);
 }
 
@@ -1749,9 +1832,7 @@ fn test_edge_very_deep_operation_many_passes() {
     sheet.material_thickness = 100.0; // big material so depth check passes
     let out = gen(&sheet);
     // depth=18, max=6 → 3 depth passes
-    let depth_comments = out.raw.lines()
-        .filter(|l| l.contains("Depth pass"))
-        .count();
+    let depth_comments = out.raw.lines().filter(|l| l.contains("Depth pass")).count();
     assert_eq!(depth_comments, 3);
 }
 
@@ -1817,7 +1898,11 @@ fn test_edge_inter_part_safe_travel() {
         });
     }
     let out = gen(&sheet);
-    let op_blocks = out.blocks.iter().filter(|b| b.operation_id.is_some()).count();
+    let op_blocks = out
+        .blocks
+        .iter()
+        .filter(|b| b.operation_id.is_some())
+        .count();
     assert_eq!(op_blocks, 4);
 }
 
@@ -1826,7 +1911,9 @@ fn test_edge_inter_part_safe_travel() {
 fn test_raw_string_is_all_lines_joined() {
     let sheet = make_sheet("drill", 5.0, None, None);
     let out = gen(&sheet);
-    let reconstructed: String = out.blocks.iter()
+    let reconstructed: String = out
+        .blocks
+        .iter()
         .flat_map(|b| b.lines.iter())
         .cloned()
         .collect::<Vec<_>>()
@@ -1926,7 +2013,10 @@ fn test_api_error_generator_error_status() {
     use actix_web::ResponseError;
     let err = ApiError::GeneratorError(GCodeError::InvalidGeometry("bad geom".into()));
     let resp = err.error_response();
-    assert_eq!(resp.status(), actix_web::http::StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(
+        resp.status(),
+        actix_web::http::StatusCode::INTERNAL_SERVER_ERROR
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
