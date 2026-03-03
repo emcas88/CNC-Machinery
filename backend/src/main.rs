@@ -1,75 +1,51 @@
-use actix_cors::Cors;
-use actix_web::{get, middleware, web, App, HttpResponse, HttpServer, Responder};
-use dotenv::dotenv;
-use sqlx::postgres::PgPoolOptions;
+use axum::Router;
+use std::net::SocketAddr;
+use tower_http::cors::{CorsLayer, Any};
+use tracing_subscriber;
 
-use cnc_backend::{api, config};
+mod api;
+mod auth;
+mod db;
+mod errors;
+mod models;
+mod middleware;
+mod services;
 
-/// Health check endpoint.
-#[get("/api/health")]
-async fn health_check() -> impl Responder {
-    HttpResponse::Ok().json(serde_json::json!({
-        "status": "ok",
-        "service": "cnc-backend",
-        "version": env!("CARGO_PKG_VERSION")
-    }))
-}
+pub use auth::AuthenticatedUser;
 
 #[tokio::main]
-async fn main() -> std::io::Result<()> {
-    // Load .env file for local development.
-    dotenv().ok();
+async fn main() {
+    tracing_subscriber::fmt::init();
 
-    // Initialize logger (controlled by RUST_LOG env var).
-    env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
+    let database_url = std::env::var("DATABASE_URL")
+        .unwrap_or_else(|_| {
+            eprintln!("ERROR: DATABASE_URL environment variable not set");
+            std::process::exit(1);
+        });
 
-    // Load configuration from environment.
-    let config = config::AppConfig::from_env();
-
-    log::info!(
-        "Starting CNC Machinery backend on {}:{}",
-        config.server_host,
-        config.server_port
-    );
-
-    // Connect to PostgreSQL and run pending migrations.
-    let pool = PgPoolOptions::new()
-        .max_connections(10)
-        .connect(&config.database_url)
+    let pool = sqlx::PgPool::connect(&database_url)
         .await
-        .expect("Failed to connect to PostgreSQL");
+        .unwrap_or_else(|e| {
+            eprintln!("ERROR: Failed to connect to database: {}", e);
+            std::process::exit(1);
+        });
 
-    log::info!("Database connection established");
+    let auth_config = auth::AuthConfig::from_env_or_exit();
 
-    sqlx::migrate!("../migrations")
-        .run(&pool)
-        .await
-        .expect("Failed to run database migrations");
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
 
-    log::info!("Migrations applied successfully");
+    let app = Router::new()
+        .nest("/api", api::router(pool.clone()))
+        .nest("/api", auth::auth_api::router(pool.clone(), auth_config.clone()))
+        .layer(cors)
+        .layer(middleware::AuditMiddlewareLayer::new(pool.clone()))
+        .with_state(pool);
 
-    let pool = web::Data::new(pool);
-    let host = config.server_host.clone();
-    let port = config.server_port;
-
-    HttpServer::new(move || {
-        // Allow all origins for development. Restrict in production.
-        let cors = Cors::default()
-            .allow_any_origin()
-            .allow_any_method()
-            .allow_any_header()
-            .max_age(3600);
-
-        App::new()
-            .wrap(cors)
-            .wrap(middleware::Logger::default())
-            .app_data(pool.clone())
-            // Health check (not under /api prefix configured by modules)
-            .service(health_check)
-            // Mount all API modules under /api prefix.
-            .service(web::scope("/api").configure(api::configure_routes))
-    })
-    .bind((host.as_str(), port))?
-    .run()
-    .await
+    let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
+    tracing::info!("Listening on {}", addr);
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }

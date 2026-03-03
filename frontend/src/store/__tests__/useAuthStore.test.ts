@@ -1,118 +1,160 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { useAuthStore } from '@/store/useAuthStore'
-import type { User } from '@/types'
-import { UserRole } from '@/types'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { renderHook, act } from '@testing-library/react'
+import { useAuthStore } from '../useAuthStore'
+import { api } from '@/services/api'
 
-const mockUser: User = {
-  id: 'user-1',
-  name: 'Alice Smith',
-  email: 'alice@example.com',
-  role: UserRole.DESIGNER,
-  isActive: true,
-  createdAt: '2026-01-01T00:00:00Z',
-  updatedAt: '2026-01-01T00:00:00Z',
+vi.mock('@/services/api', () => ({
+  api: {
+    post: vi.fn(),
+    get: vi.fn(),
+  },
+}))
+
+const mockApi = api as {
+  post: ReturnType<typeof vi.fn>
+  get: ReturnType<typeof vi.fn>
 }
-
-const mockToken = 'eyJhbGciOiJIUzI1NiJ9.dGVzdA.signature'
 
 describe('useAuthStore', () => {
   beforeEach(() => {
-    useAuthStore.setState({
-      currentUser: null,
-      token: null,
-      isAuthenticated: false,
-    })
-    // Reset localStorage mock
-    window.localStorage.clear()
-    ;(window.localStorage.getItem as ReturnType<typeof vi.fn>).mockClear()
-    ;(window.localStorage.setItem as ReturnType<typeof vi.fn>).mockClear()
-    ;(window.localStorage.removeItem as ReturnType<typeof vi.fn>).mockClear()
+    vi.clearAllMocks()
+    localStorage.clear()
+    // Reset store
+    useAuthStore.setState({ user: null, isAuthenticated: false })
   })
 
-  describe('initial state', () => {
-    it('has null currentUser', () => {
-      expect(useAuthStore.getState().currentUser).toBeNull()
-    })
-
-    it('has null token', () => {
-      expect(useAuthStore.getState().token).toBeNull()
-    })
-
-    it('has isAuthenticated as false', () => {
-      expect(useAuthStore.getState().isAuthenticated).toBe(false)
-    })
+  it('initial state is unauthenticated', () => {
+    const { result } = renderHook(() => useAuthStore())
+    expect(result.current.user).toBeNull()
+    expect(result.current.isAuthenticated).toBe(false)
   })
 
-  describe('login', () => {
-    it('sets currentUser', () => {
-      useAuthStore.getState().login(mockUser, mockToken)
-      expect(useAuthStore.getState().currentUser).toEqual(mockUser)
+  it('login stores tokens and sets user', async () => {
+    const tokens = { access_token: 'access123', refresh_token: 'refresh456', token_type: 'Bearer' }
+    const user = { id: '1', email: 'test@example.com', role: 'Operator' }
+    mockApi.post.mockResolvedValueOnce({ data: tokens })
+    mockApi.get.mockResolvedValueOnce({ data: user })
+
+    const { result } = renderHook(() => useAuthStore())
+    await act(async () => {
+      await result.current.login('test@example.com', 'password')
     })
 
-    it('sets token', () => {
-      useAuthStore.getState().login(mockUser, mockToken)
-      expect(useAuthStore.getState().token).toBe(mockToken)
-    })
-
-    it('sets isAuthenticated to true', () => {
-      useAuthStore.getState().login(mockUser, mockToken)
-      expect(useAuthStore.getState().isAuthenticated).toBe(true)
-    })
-
-    it('stores token in localStorage', () => {
-      useAuthStore.getState().login(mockUser, mockToken)
-      expect(window.localStorage.setItem).toHaveBeenCalledWith('auth_token', mockToken)
-    })
+    expect(localStorage.getItem('access_token')).toBe('access123')
+    expect(localStorage.getItem('refresh_token')).toBe('refresh456')
+    expect(result.current.user).toEqual(user)
+    expect(result.current.isAuthenticated).toBe(true)
   })
 
-  describe('logout', () => {
-    it('clears currentUser', () => {
-      useAuthStore.getState().login(mockUser, mockToken)
-      useAuthStore.getState().logout()
-      expect(useAuthStore.getState().currentUser).toBeNull()
+  it('register stores tokens and sets user', async () => {
+    const tokens = { access_token: 'access789', refresh_token: 'refresh012', token_type: 'Bearer' }
+    const user = { id: '2', email: 'new@example.com', role: 'Operator' }
+    mockApi.post.mockResolvedValueOnce({ data: tokens })
+    mockApi.get.mockResolvedValueOnce({ data: user })
+
+    const { result } = renderHook(() => useAuthStore())
+    await act(async () => {
+      await result.current.register({
+        email: 'new@example.com',
+        password: 'pass',
+        first_name: 'New',
+        last_name: 'User',
+        username: 'newuser',
+      })
     })
 
-    it('clears token', () => {
-      useAuthStore.getState().login(mockUser, mockToken)
-      useAuthStore.getState().logout()
-      expect(useAuthStore.getState().token).toBeNull()
-    })
-
-    it('sets isAuthenticated to false', () => {
-      useAuthStore.getState().login(mockUser, mockToken)
-      useAuthStore.getState().logout()
-      expect(useAuthStore.getState().isAuthenticated).toBe(false)
-    })
-
-    it('removes token from localStorage', () => {
-      useAuthStore.getState().login(mockUser, mockToken)
-      useAuthStore.getState().logout()
-      expect(window.localStorage.removeItem).toHaveBeenCalledWith('auth_token')
-    })
+    expect(localStorage.getItem('access_token')).toBe('access789')
+    expect(result.current.isAuthenticated).toBe(true)
   })
 
-  describe('updateUser', () => {
-    it('merges partial changes into currentUser', () => {
-      useAuthStore.getState().login(mockUser, mockToken)
-      useAuthStore.getState().updateUser({ name: 'Alice Updated' })
-      expect(useAuthStore.getState().currentUser?.name).toBe('Alice Updated')
+  it('logout clears tokens and resets state', async () => {
+    localStorage.setItem('access_token', 'token')
+    localStorage.setItem('refresh_token', 'refresh')
+    useAuthStore.setState({ user: { id: '1' } as never, isAuthenticated: true })
+
+    const { result } = renderHook(() => useAuthStore())
+    act(() => {
+      result.current.logout()
     })
 
-    it('preserves unchanged fields', () => {
-      useAuthStore.getState().login(mockUser, mockToken)
-      useAuthStore.getState().updateUser({ name: 'Bob' })
-      expect(useAuthStore.getState().currentUser?.email).toBe('alice@example.com')
+    expect(localStorage.getItem('access_token')).toBeNull()
+    expect(localStorage.getItem('refresh_token')).toBeNull()
+    expect(result.current.user).toBeNull()
+    expect(result.current.isAuthenticated).toBe(false)
+  })
+
+  it('initAuth fetches user when token exists', async () => {
+    localStorage.setItem('access_token', 'existing-token')
+    const user = { id: '1', email: 'existing@example.com', role: 'Admin' }
+    mockApi.get.mockResolvedValueOnce({ data: user })
+
+    const { result } = renderHook(() => useAuthStore())
+    await act(async () => {
+      await result.current.initAuth()
     })
 
-    it('can update role', () => {
-      useAuthStore.getState().login(mockUser, mockToken)
-      useAuthStore.getState().updateUser({ role: UserRole.ADMIN })
-      expect(useAuthStore.getState().currentUser?.role).toBe(UserRole.ADMIN)
+    expect(result.current.user).toEqual(user)
+    expect(result.current.isAuthenticated).toBe(true)
+  })
+
+  it('initAuth does nothing when no token', async () => {
+    const { result } = renderHook(() => useAuthStore())
+    await act(async () => {
+      await result.current.initAuth()
+    })
+    expect(mockApi.get).not.toHaveBeenCalled()
+    expect(result.current.isAuthenticated).toBe(false)
+  })
+
+  it('initAuth clears tokens on error', async () => {
+    localStorage.setItem('access_token', 'bad-token')
+    mockApi.get.mockRejectedValueOnce(new Error('Unauthorized'))
+
+    const { result } = renderHook(() => useAuthStore())
+    await act(async () => {
+      await result.current.initAuth()
     })
 
-    it('stays null when currentUser is null', () => {
-      useAuthStore.getState().updateUser({ name: 'Ghost' })
-      expect(useAuthStore.getState().currentUser).toBeNull()
+    expect(localStorage.getItem('access_token')).toBeNull()
+    expect(result.current.isAuthenticated).toBe(false)
+  })
+
+  it('loginWithTokens stores tokens and fetches user', async () => {
+    const tokens = { access_token: 'new-access', refresh_token: 'new-refresh', token_type: 'Bearer' }
+    const user = { id: '3', email: 'token@example.com', role: 'Manager' }
+    mockApi.get.mockResolvedValueOnce({ data: user })
+
+    const { result } = renderHook(() => useAuthStore())
+    await act(async () => {
+      await result.current.loginWithTokens(tokens)
     })
+
+    expect(localStorage.getItem('access_token')).toBe('new-access')
+    expect(localStorage.getItem('refresh_token')).toBe('new-refresh')
+    expect(result.current.user).toEqual(user)
+    expect(result.current.isAuthenticated).toBe(true)
+  })
+
+  it('login calls correct endpoint', async () => {
+    mockApi.post.mockResolvedValueOnce({ data: { access_token: 'a', refresh_token: 'r', token_type: 'Bearer' } })
+    mockApi.get.mockResolvedValueOnce({ data: { id: '1' } })
+
+    const { result } = renderHook(() => useAuthStore())
+    await act(async () => {
+      await result.current.login('u@e.com', 'pass')
+    })
+    expect(mockApi.post).toHaveBeenCalledWith('/auth/login', { email: 'u@e.com', password: 'pass' })
+  })
+
+  it('register calls correct endpoint', async () => {
+    mockApi.post.mockResolvedValueOnce({ data: { access_token: 'a', refresh_token: 'r', token_type: 'Bearer' } })
+    mockApi.get.mockResolvedValueOnce({ data: { id: '2' } })
+
+    const { result } = renderHook(() => useAuthStore())
+    const regData = { email: 'r@e.com', password: 'p', first_name: 'F', last_name: 'L', username: 'fl' }
+    await act(async () => {
+      await result.current.register(regData)
+    })
+    expect(mockApi.post).toHaveBeenCalledWith('/auth/register', regData)
   })
 })

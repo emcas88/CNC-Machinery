@@ -1,33 +1,60 @@
 import { create } from 'zustand'
-import type { User } from '@/types'
+import { api } from '@/services/api'
+import type { User, TokenPair, RegisterRequest } from '@/types'
 
 interface AuthState {
-  currentUser: User | null
-  token: string | null
+  user: User | null
   isAuthenticated: boolean
-
-  login: (user: User, token: string) => void
+  login: (email: string, password: string) => Promise<void>
+  register: (data: RegisterRequest) => Promise<void>
   logout: () => void
-  updateUser: (data: Partial<User>) => void
+  initAuth: () => Promise<void>
+  loginWithTokens: (tokens: TokenPair) => Promise<void>
 }
 
-export const useAuthStore = create<AuthState>()((set) => ({
-  currentUser: null,
-  token: null,
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
   isAuthenticated: false,
 
-  login: (user, token) => {
-    localStorage.setItem('auth_token', token)
-    set({ currentUser: user, token, isAuthenticated: true })
+  login: async (email: string, password: string) => {
+    const { data } = await api.post<TokenPair>('/auth/login', { email, password })
+    localStorage.setItem('access_token', data.access_token)
+    localStorage.setItem('refresh_token', data.refresh_token)
+    const { data: user } = await api.get<User>('/auth/me')
+    set({ user, isAuthenticated: true })
+  },
+
+  register: async (formData: RegisterRequest) => {
+    const { data } = await api.post<TokenPair>('/auth/register', formData)
+    localStorage.setItem('access_token', data.access_token)
+    localStorage.setItem('refresh_token', data.refresh_token)
+    const { data: user } = await api.get<User>('/auth/me')
+    set({ user, isAuthenticated: true })
   },
 
   logout: () => {
-    localStorage.removeItem('auth_token')
-    set({ currentUser: null, token: null, isAuthenticated: false })
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    set({ user: null, isAuthenticated: false })
   },
 
-  updateUser: (data) =>
-    set((state) => ({
-      currentUser: state.currentUser ? { ...state.currentUser, ...data } : null,
-    })),
+  initAuth: async () => {
+    const token = localStorage.getItem('access_token')
+    if (!token) return
+    try {
+      const { data: user } = await api.get<User>('/auth/me')
+      set({ user, isAuthenticated: true })
+    } catch {
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      set({ user: null, isAuthenticated: false })
+    }
+  },
+
+  loginWithTokens: async (tokens: TokenPair) => {
+    localStorage.setItem('access_token', tokens.access_token)
+    localStorage.setItem('refresh_token', tokens.refresh_token)
+    const { data: user } = await api.get<User>('/auth/me')
+    set({ user, isAuthenticated: true })
+  },
 }))

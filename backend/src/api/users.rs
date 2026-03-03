@@ -1,292 +1,234 @@
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use axum::{
+    extract::{Json, Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+    routing::{delete, get, patch, post},
+    Router,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::models::user::{CreateUser, UpdateUser, UserRole};
+use crate::auth::AuthenticatedUser;
 
-// ---------------------------------------------------------------------------
-// Configure routes
-// ---------------------------------------------------------------------------
-
-pub fn configure(cfg: &mut web::ServiceConfig) {
-    cfg.service(
-        web::scope("/users")
-            .service(list_users)
-            .service(get_user)
-            .service(create_user)
-            .service(update_user)
-            .service(delete_user),
-    );
-}
-
-// ---------------------------------------------------------------------------
-// Public user view — password_hash is intentionally excluded.
-// ---------------------------------------------------------------------------
-
-/// A safe projection of the `users` table that never exposes password_hash.
-#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
-pub struct PublicUser {
+#[derive(Debug, Serialize)]
+pub struct UserRow {
     pub id: Uuid,
     pub email: String,
-    pub name: String,
-    pub role: UserRole,
-    pub preferences: Option<serde_json::Value>,
+    pub username: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub role: String,
+    pub is_active: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-// ---------------------------------------------------------------------------
-// GET /users
-// ---------------------------------------------------------------------------
+#[derive(Debug, Deserialize)]
+pub struct UpdateUserRequest {
+    pub email: Option<String>,
+    pub username: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub role: Option<String>,
+    pub is_active: Option<bool>,
+}
 
-#[get("")]
-pub async fn list_users(pool: web::Data<PgPool>) -> impl Responder {
-    let result = sqlx::query_as!(
-        PublicUser,
-        r#"
-        SELECT
-            id,
-            email,
-            name,
-            role AS "role: UserRole",
-            preferences,
-            created_at,
-            updated_at
-        FROM users
-        ORDER BY name ASC
-        "#
+#[derive(Debug, Deserialize)]
+pub struct ChangePasswordRequest {
+    pub current_password: String,
+    pub new_password: String,
+}
+
+pub fn router(pool: PgPool) -> Router {
+    Router::new()
+        .route("/", get(list_users))
+        .route("/:id", get(get_user))
+        .route("/:id", patch(update_user))
+        .route("/:id", delete(delete_user))
+        .route("/change-password", post(change_password))
+        .with_state(pool)
+}
+
+async fn list_users(
+    _auth: AuthenticatedUser,
+    State(pool): State<PgPool>,
+) -> impl IntoResponse {
+    let rows = sqlx::query_as!(
+        UserRow,
+        "SELECT id, email, username, first_name, last_name, role, is_active, created_at, updated_at FROM users ORDER BY created_at DESC"
     )
-    .fetch_all(pool.get_ref())
+    .fetch_all(&pool)
     .await;
 
-    match result {
-        Ok(users) => HttpResponse::Ok().json(users),
+    match rows {
+        Ok(users) => (StatusCode::OK, Json(users)).into_response(),
         Err(e) => {
-            log::error!("list_users DB error: {e}");
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "Failed to retrieve users"
-            }))
+            tracing::error!("Failed to fetch users: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": "Database error" }))).into_response()
         }
     }
 }
 
-// ---------------------------------------------------------------------------
-// GET /users/{id}
-// ---------------------------------------------------------------------------
-
-#[get("/{id}")]
-pub async fn get_user(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Responder {
-    let id = path.into_inner();
-
-    let result = sqlx::query_as!(
-        PublicUser,
-        r#"
-        SELECT
-            id,
-            email,
-            name,
-            role AS "role: UserRole",
-            preferences,
-            created_at,
-            updated_at
-        FROM users
-        WHERE id = $1
-        "#,
+async fn get_user(
+    _auth: AuthenticatedUser,
+    State(pool): State<PgPool>,
+    Path(id): Path<Uuid>,
+) -> impl IntoResponse {
+    let row = sqlx::query_as!(
+        UserRow,
+        "SELECT id, email, username, first_name, last_name, role, is_active, created_at, updated_at FROM users WHERE id = $1",
         id
     )
-    .fetch_optional(pool.get_ref())
+    .fetch_optional(&pool)
     .await;
 
-    match result {
-        Ok(Some(user)) => HttpResponse::Ok().json(user),
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
-            "error": "User not found",
-            "id": id
-        })),
+    match row {
+        Ok(Some(user)) => (StatusCode::OK, Json(user)).into_response(),
+        Ok(None) => (StatusCode::NOT_FOUND, Json(serde_json::json!({ "error": "User not found" }))).into_response(),
         Err(e) => {
-            log::error!("get_user DB error: {e}");
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "Failed to retrieve user"
-            }))
+            tracing::error!("Failed to fetch user: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": "Database error" }))).into_response()
         }
     }
 }
 
-// ---------------------------------------------------------------------------
-// POST /users
-// ---------------------------------------------------------------------------
-
-#[post("")]
-pub async fn create_user(
-    pool: web::Data<PgPool>,
-    body: web::Json<CreateUser>,
-) -> impl Responder {
-    // NOTE: The caller must hash the password before passing `password_hash`.
-    // This handler does not perform hashing — that belongs in an auth service.
-    let id = Uuid::new_v4();
-    let now = chrono::Utc::now();
-
-    let result = sqlx::query_as!(
-        PublicUser,
-        r#"
-        INSERT INTO users (
-            id, email, name, password_hash, role, preferences,
-            created_at, updated_at
-        )
-        VALUES (
-            $1, $2, $3, $4,
-            $5::text::user_role,
-            $6, $7, $8
-        )
-        RETURNING
-            id,
-            email,
-            name,
-            role AS "role: UserRole",
-            preferences,
-            created_at,
-            updated_at
-        "#,
-        id,
-        body.email,
-        body.name,
-        body.password_hash,
-        body.role.to_string(),
-        body.preferences,
-        now,
-        now
-    )
-    .fetch_one(pool.get_ref())
-    .await;
-
-    match result {
-        Ok(user) => HttpResponse::Created().json(user),
-        Err(sqlx::Error::Database(db_err)) if db_err.constraint() == Some("users_email_key") => {
-            HttpResponse::Conflict().json(serde_json::json!({
-                "error": "A user with that email address already exists"
-            }))
-        }
-        Err(e) => {
-            log::error!("create_user DB error: {e}");
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "Failed to create user"
-            }))
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// PUT /users/{id}
-// ---------------------------------------------------------------------------
-
-#[put("/{id}")]
-pub async fn update_user(
-    pool: web::Data<PgPool>,
-    path: web::Path<Uuid>,
-    body: web::Json<UpdateUser>,
-) -> impl Responder {
-    let id = path.into_inner();
-    let now = chrono::Utc::now();
-
-    let exists = sqlx::query_scalar!(
-        "SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)",
+async fn update_user(
+    _auth: AuthenticatedUser,
+    State(pool): State<PgPool>,
+    Path(id): Path<Uuid>,
+    Json(req): Json<UpdateUserRequest>,
+) -> impl IntoResponse {
+    // Build dynamic update using individual fields
+    let row = sqlx::query!(
+        "SELECT id, email, username, first_name, last_name, role, is_active, created_at, updated_at FROM users WHERE id = $1",
         id
     )
-    .fetch_one(pool.get_ref())
+    .fetch_optional(&pool)
     .await;
 
-    match exists {
-        Ok(Some(false)) | Ok(None) => {
-            return HttpResponse::NotFound().json(serde_json::json!({
-                "error": "User not found",
-                "id": id
-            }))
-        }
+    match row {
+        Ok(None) => return (StatusCode::NOT_FOUND, Json(serde_json::json!({ "error": "User not found" }))).into_response(),
         Err(e) => {
-            log::error!("update_user existence check error: {e}");
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "Failed to update user"
-            }));
+            tracing::error!("DB error: {}", e);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": "Database error" }))).into_response();
         }
-        _ => {}
-    }
+        Ok(Some(existing)) => {
+            let new_email = req.email.unwrap_or(existing.email);
+            let new_username = req.username.unwrap_or(existing.username);
+            let new_first = req.first_name.unwrap_or(existing.first_name);
+            let new_last = req.last_name.unwrap_or(existing.last_name);
+            let new_role = req.role.unwrap_or(existing.role);
+            let new_active = req.is_active.unwrap_or(existing.is_active);
 
-    // password_hash update is allowed (caller provides a new pre-hashed value);
-    // it is never reflected back in the response.
-    let result = sqlx::query_as!(
-        PublicUser,
-        r#"
-        UPDATE users SET
-            email         = COALESCE($2, email),
-            name          = COALESCE($3, name),
-            password_hash = COALESCE($4, password_hash),
-            role          = COALESCE($5::text::user_role, role),
-            preferences   = COALESCE($6, preferences),
-            updated_at    = $7
-        WHERE id = $1
-        RETURNING
-            id,
-            email,
-            name,
-            role AS "role: UserRole",
-            preferences,
-            created_at,
-            updated_at
-        "#,
-        id,
-        body.email,
-        body.name,
-        body.password_hash,
-        body.role.as_ref().map(|r| r.to_string()),
-        body.preferences,
-        now
-    )
-    .fetch_one(pool.get_ref())
-    .await;
+            let update_result = sqlx::query!(
+                "UPDATE users SET email=$1, username=$2, first_name=$3, last_name=$4, role=$5, is_active=$6, updated_at=NOW() WHERE id=$7",
+                new_email, new_username, new_first, new_last, new_role, new_active, id
+            )
+            .execute(&pool)
+            .await;
 
-    match result {
-        Ok(user) => HttpResponse::Ok().json(user),
-        Err(sqlx::Error::Database(db_err)) if db_err.constraint() == Some("users_email_key") => {
-            HttpResponse::Conflict().json(serde_json::json!({
-                "error": "A user with that email address already exists"
-            }))
-        }
-        Err(e) => {
-            log::error!("update_user DB error: {e}");
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "Failed to update user"
-            }))
+            match update_result {
+                Ok(_) => {
+                    // Re-fetch updated user
+                    let updated = sqlx::query_as!(
+                        UserRow,
+                        "SELECT id, email, username, first_name, last_name, role, is_active, created_at, updated_at FROM users WHERE id = $1",
+                        id
+                    )
+                    .fetch_one(&pool)
+                    .await;
+
+                    match updated {
+                        Ok(u) => (StatusCode::OK, Json(u)).into_response(),
+                        Err(e) => {
+                            tracing::error!("Failed to re-fetch user: {}", e);
+                            (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": "Database error" }))).into_response()
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::error!("Failed to update user: {}", e);
+                    (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": "Database error" }))).into_response()
+                }
+            }
         }
     }
 }
 
-// ---------------------------------------------------------------------------
-// DELETE /users/{id}
-// ---------------------------------------------------------------------------
-
-#[delete("/{id}")]
-pub async fn delete_user(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Responder {
-    let id = path.into_inner();
-
-    let result = sqlx::query!(
-        "DELETE FROM users WHERE id = $1 RETURNING id",
-        id
-    )
-    .fetch_optional(pool.get_ref())
-    .await;
+async fn delete_user(
+    _auth: AuthenticatedUser,
+    State(pool): State<PgPool>,
+    Path(id): Path<Uuid>,
+) -> impl IntoResponse {
+    let result = sqlx::query!("DELETE FROM users WHERE id = $1", id)
+        .execute(&pool)
+        .await;
 
     match result {
-        Ok(Some(_)) => HttpResponse::NoContent().finish(),
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
-            "error": "User not found",
-            "id": id
-        })),
+        Ok(r) if r.rows_affected() == 0 => {
+            (StatusCode::NOT_FOUND, Json(serde_json::json!({ "error": "User not found" }))).into_response()
+        }
+        Ok(_) => (StatusCode::NO_CONTENT).into_response(),
         Err(e) => {
-            log::error!("delete_user DB error: {e}");
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "Failed to delete user"
-            }))
+            tracing::error!("Failed to delete user: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": "Database error" }))).into_response()
+        }
+    }
+}
+
+async fn change_password(
+    auth: AuthenticatedUser,
+    State(pool): State<PgPool>,
+    Json(req): Json<ChangePasswordRequest>,
+) -> impl IntoResponse {
+    let row = sqlx::query!(
+        "SELECT password_hash FROM users WHERE id = $1",
+        auth.user_id
+    )
+    .fetch_optional(&pool)
+    .await;
+
+    match row {
+        Ok(Some(user)) => {
+            match crate::auth::password::verify(&req.current_password, &user.password_hash) {
+                Ok(true) => {
+                    if let Err(e) = crate::auth::password::validate_strength(&req.new_password) {
+                        return (StatusCode::UNPROCESSABLE_ENTITY, Json(serde_json::json!({ "error": e }))).into_response();
+                    }
+                    match crate::auth::password::hash(&req.new_password) {
+                        Ok(new_hash) => {
+                            let res = sqlx::query!(
+                                "UPDATE users SET password_hash=$1, updated_at=NOW() WHERE id=$2",
+                                new_hash, auth.user_id
+                            )
+                            .execute(&pool)
+                            .await;
+                            match res {
+                                Ok(_) => (StatusCode::OK, Json(serde_json::json!({ "message": "Password updated" }))).into_response(),
+                                Err(e) => {
+                                    tracing::error!("Failed to update password: {}", e);
+                                    (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": "Database error" }))).into_response()
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            tracing::error!("Password hash failed: {}", e);
+                            (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": "Internal error" }))).into_response()
+                        }
+                    }
+                }
+                Ok(false) => (StatusCode::UNAUTHORIZED, Json(serde_json::json!({ "error": "Current password is incorrect" }))).into_response(),
+                Err(e) => {
+                    tracing::error!("Verify error: {}", e);
+                    (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": "Internal error" }))).into_response()
+                }
+            }
+        }
+        Ok(None) => (StatusCode::NOT_FOUND, Json(serde_json::json!({ "error": "User not found" }))).into_response(),
+        Err(e) => {
+            tracing::error!("DB error: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": "Database error" }))).into_response()
         }
     }
 }

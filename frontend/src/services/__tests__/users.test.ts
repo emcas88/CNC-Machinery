@@ -1,68 +1,90 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import api from '@/services/api'
-import { usersService } from '@/services/users'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { usersService } from '../users'
+import { api } from '../api'
 
-const mockUser = {
-  id: 'user-1',
-  email: 'john@example.com',
-  name: 'John Doe',
-  role: 'operator',
-  isActive: true,
-  createdAt: '2026-01-01T00:00:00Z',
-  updatedAt: '2026-01-01T00:00:00Z',
+vi.mock('../api', () => ({
+  api: {
+    get: vi.fn(),
+    post: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+  },
+}))
+
+const mockApi = api as {
+  get: ReturnType<typeof vi.fn>
+  post: ReturnType<typeof vi.fn>
+  patch: ReturnType<typeof vi.fn>
+  delete: ReturnType<typeof vi.fn>
 }
 
-describe('usersService', () => {
-  let getSpy: ReturnType<typeof vi.spyOn>
-  let postSpy: ReturnType<typeof vi.spyOn>
-  let patchSpy: ReturnType<typeof vi.spyOn>
-  let deleteSpy: ReturnType<typeof vi.spyOn>
-
+describe('Users Service', () => {
   beforeEach(() => {
-    getSpy = vi.spyOn(api, 'get').mockResolvedValue({ data: mockUser })
-    postSpy = vi.spyOn(api, 'post').mockResolvedValue({ data: mockUser })
-    patchSpy = vi.spyOn(api, 'patch').mockResolvedValue({ data: mockUser })
-    deleteSpy = vi.spyOn(api, 'delete').mockResolvedValue({ data: { status: 'ok' } })
+    vi.clearAllMocks()
+    localStorage.clear()
   })
 
-  afterEach(() => vi.restoreAllMocks())
-
-  it('getUsers calls GET /users and returns data', async () => {
-    getSpy.mockResolvedValueOnce({ data: [mockUser] })
-    const result = await usersService.getUsers()
-    expect(getSpy).toHaveBeenCalledWith('/users')
-    expect(result).toEqual([mockUser])
+  it('getAll calls GET /users', async () => {
+    mockApi.get.mockResolvedValueOnce({ data: [] })
+    const result = await usersService.getAll()
+    expect(mockApi.get).toHaveBeenCalledWith('/users')
+    expect(result).toEqual([])
   })
 
-  it('getUser calls GET /users/:id and returns data', async () => {
-    const result = await usersService.getUser('user-1')
-    expect(getSpy).toHaveBeenCalledWith('/users/user-1')
-    expect(result).toEqual(mockUser)
+  it('getById calls GET /users/:id', async () => {
+    const user = { id: '1', email: 'test@example.com' }
+    mockApi.get.mockResolvedValueOnce({ data: user })
+    const result = await usersService.getById('1')
+    expect(mockApi.get).toHaveBeenCalledWith('/users/1')
+    expect(result).toEqual(user)
   })
 
-  it('createUser calls POST /users and returns data', async () => {
-    const payload = { email: 'jane@example.com', name: 'Jane Doe', role: 'operator' }
-    const result = await usersService.createUser(payload as any)
-    expect(postSpy).toHaveBeenCalledWith('/users', payload)
-    expect(result).toEqual(mockUser)
+  it('update calls PATCH /users/:id', async () => {
+    const updated = { id: '1', email: 'updated@example.com' }
+    mockApi.patch.mockResolvedValueOnce({ data: updated })
+    const result = await usersService.update('1', { email: 'updated@example.com' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/users/1', { email: 'updated@example.com' })
+    expect(result).toEqual(updated)
   })
 
-  it('updateUser calls PATCH /users/:id and returns data', async () => {
-    const changes = { name: 'John Updated' }
-    const result = await usersService.updateUser('user-1', changes)
-    expect(patchSpy).toHaveBeenCalledWith('/users/user-1', changes)
-    expect(result).toEqual(mockUser)
+  it('delete calls DELETE /users/:id', async () => {
+    mockApi.delete.mockResolvedValueOnce({ data: null })
+    await usersService.delete('1')
+    expect(mockApi.delete).toHaveBeenCalledWith('/users/1')
   })
 
-  it('updateUser with role change calls PATCH /users/:id with role in body', async () => {
-    patchSpy.mockResolvedValueOnce({ data: { ...mockUser, role: 'admin' } })
-    const result = await usersService.updateUser('user-1', { role: 'admin' })
-    expect(patchSpy).toHaveBeenCalledWith('/users/user-1', { role: 'admin' })
-    expect(result.role).toBe('admin')
+  it('getProfile calls GET /auth/me', async () => {
+    const profile = { id: '1', email: 'me@example.com', role: 'Operator' }
+    mockApi.get.mockResolvedValueOnce({ data: profile })
+    const result = await usersService.getProfile()
+    expect(mockApi.get).toHaveBeenCalledWith('/auth/me')
+    expect(result).toEqual(profile)
   })
 
-  it('deleteUser calls DELETE /users/:id', async () => {
-    await usersService.deleteUser('user-1')
-    expect(deleteSpy).toHaveBeenCalledWith('/users/user-1')
+  it('changePassword uses snake_case fields', async () => {
+    mockApi.post.mockResolvedValueOnce({ data: { message: 'ok' } })
+    await usersService.changePassword({ current_password: 'old', new_password: 'new' })
+    expect(mockApi.post).toHaveBeenCalledWith('/users/change-password', {
+      current_password: 'old',
+      new_password: 'new',
+    })
+  })
+
+  it('logout removes access_token from localStorage', () => {
+    localStorage.setItem('access_token', 'token')
+    usersService.logout()
+    expect(localStorage.getItem('access_token')).toBeNull()
+  })
+
+  it('logout removes refresh_token from localStorage', () => {
+    localStorage.setItem('refresh_token', 'refresh')
+    usersService.logout()
+    expect(localStorage.getItem('refresh_token')).toBeNull()
+  })
+
+  it('logout does not call API', async () => {
+    usersService.logout()
+    expect(mockApi.post).not.toHaveBeenCalled()
+    expect(mockApi.get).not.toHaveBeenCalled()
   })
 })

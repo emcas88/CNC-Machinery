@@ -1,2 +1,2 @@
 pub mod audit;
-pub use audit::AuditMiddleware;
+pub use audit::AuditMiddlewareLayer;
