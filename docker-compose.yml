@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   db:
@@ -24,8 +22,8 @@ services:
   # Rust Backend (Actix-web)
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: cnc-backend
     restart: unless-stopped
     environment:

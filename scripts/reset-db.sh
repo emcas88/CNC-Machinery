@@ -4,7 +4,7 @@ set -euo pipefail
 # CNC Machinery - Reset database script
 # Drops and recreates the database, then re-runs all migrations
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}')" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 cd "$ROOT_DIR"
@@ -16,8 +16,8 @@ if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
   exit 0
 fi
 
-docker compose exec db psql -U postgres -c "DROP DATABASE IF EXISTS cnc_machinery;"
-docker compose exec db psql -U postgres -c "CREATE DATABASE cnc_machinery;"
+docker compose exec db psql -U cnc_user -c "DROP DATABASE IF EXISTS cnc_machinery;"
+docker compose exec db psql -U cnc_user -c "CREATE DATABASE cnc_machinery;"
 
 echo "Database reset. Running migrations..."
 bash "$SCRIPT_DIR/migrate.sh"

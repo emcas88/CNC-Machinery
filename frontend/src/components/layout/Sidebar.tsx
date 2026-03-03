@@ -104,7 +104,7 @@ const navGroups: NavGroup[] = [
 ]
 
 export function Sidebar() {
-  const { sidebarOpen, setSidebarOpen } = useAppStore()
+  const { sidebarOpen, toggleSidebar } = useAppStore()
 
   return (
     <aside
@@ -119,7 +119,7 @@ export function Sidebar() {
           <span className="text-sm font-bold text-cyan-400 truncate">CNC Cabinet</span>
         )}
         <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
+          onClick={toggleSidebar}
           className="p-1 text-gray-400 hover:text-gray-100 transition-colors ml-auto"
           title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
         >

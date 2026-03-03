@@ -38,8 +38,8 @@ const pageTitles: Record<string, string> = {
 }
 
 export function Header() {
-  const { notifications, currentUser } = useAppStore()
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const { currentJob } = useAppStore()
+  const unreadCount = 0
 
   // Derive page title from current path
   const path = window.location.pathname
@@ -81,7 +81,7 @@ export function Header() {
       <button className="flex items-center gap-2 text-sm text-gray-300 hover:text-gray-100 transition-colors">
         <UserCircleIcon className="w-6 h-6 text-gray-400" />
         <span className="hidden lg:inline truncate max-w-[120px]">
-          {currentUser?.name ?? 'User'}
+          User
         </span>
       </button>
     </header>
