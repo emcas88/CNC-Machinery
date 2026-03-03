@@ -1,191 +1,273 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import Register from '../Register'
-import { useAuthStore } from '@/store/useAuthStore'
+import { Register } from '../Register'
 
-vi.mock('@/store/useAuthStore')
+/* ------------------------------------------------------------------ */
+/* Mocks                                                               */
+/* ------------------------------------------------------------------ */
 
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom')
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-  }
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
+  return { ...actual, useNavigate: () => mockNavigate }
 })
 
-describe('Register Page', () => {
-  const mockRegister = vi.fn()
+const mockLoginWithTokens = vi.fn()
+const mockAuthState = {
+  isAuthenticated: false,
+  isLoading: false,
+  loginWithTokens: mockLoginWithTokens,
+}
 
+vi.mock('@/store/useAuthStore', () => ({
+  useAuthStore: Object.assign(
+    (selector?: (s: typeof mockAuthState) => unknown) =>
+      selector ? selector(mockAuthState) : mockAuthState,
+    { getState: () => mockAuthState },
+  ),
+}))
+
+const mockRegister = vi.fn()
+vi.mock('@/services/users', () => ({
+  usersService: { register: (...args: unknown[]) => mockRegister(...args) },
+}))
+
+vi.mock('@/types', () => ({
+  UserRole: {
+    ADMIN: 'admin',
+    DESIGNER: 'designer',
+    PRODUCTION: 'production',
+    OPERATOR: 'operator',
+    VIEWER: 'viewer',
+  },
+}))
+
+/* ------------------------------------------------------------------ */
+/* Helpers                                                             */
+/* ------------------------------------------------------------------ */
+
+function renderRegister() {
+  return render(
+    <MemoryRouter initialEntries={['/register']}>
+      <Register />
+    </MemoryRouter>,
+  )
+}
+
+async function fillForm(
+  user: ReturnType<typeof userEvent.setup>,
+  overrides: Partial<Record<'name' | 'email' | 'password' | 'confirm', string>> = {},
+) {
+  const vals = {
+    name: 'John Doe',
+    email: 'john@example.com',
+    password: 'StrongPass1',
+    confirm: 'StrongPass1',
+    ...overrides,
+  }
+  await user.type(screen.getByLabelText(/full name/i), vals.name)
+  await user.type(screen.getByLabelText(/^email$/i), vals.email)
+  await user.type(screen.getByLabelText(/^password$/i), vals.password)
+  await user.type(screen.getByLabelText(/confirm password/i), vals.confirm)
+}
+
+/* ------------------------------------------------------------------ */
+/* Tests                                                               */
+/* ------------------------------------------------------------------ */
+
+describe('Register page', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ;(useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-      register: mockRegister,
-    })
+    mockAuthState.isAuthenticated = false
   })
 
-  const fillForm = (overrides: Record<string, string> = {}) => {
-    const defaults = {
-      first_name: 'John',
-      last_name: 'Doe',
-      username: 'johndoe',
-      email: 'john@example.com',
-      password: 'SecurePass1!',
-      confirmPassword: 'SecurePass1!',
-    }
-    const values = { ...defaults, ...overrides }
-
-    fireEvent.change(screen.getByLabelText(/first name/i), {
-      target: { value: values.first_name },
-    })
-    fireEvent.change(screen.getByLabelText(/last name/i), {
-      target: { value: values.last_name },
-    })
-    fireEvent.change(screen.getByLabelText(/username/i), {
-      target: { value: values.username },
-    })
-    fireEvent.change(screen.getByLabelText(/email address/i), {
-      target: { value: values.email },
-    })
-    fireEvent.change(screen.getByLabelText(/^password$/i), {
-      target: { value: values.password },
-    })
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: values.confirmPassword },
-    })
-  }
-
-  it('renders registration form', () => {
-    render(
-      <MemoryRouter>
-        <Register />
-      </MemoryRouter>
-    )
-    expect(screen.getByText('CNC Machinery')).toBeInTheDocument()
-    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/last name/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/email address/i)).toBeInTheDocument()
+  // 1
+  it('renders all form fields', () => {
+    renderRegister()
+    expect(screen.getByLabelText(/full name/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/role/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument()
   })
 
-  it('submits with valid data', async () => {
-    mockRegister.mockResolvedValueOnce(undefined)
-    render(
-      <MemoryRouter>
-        <Register />
-      </MemoryRouter>
-    )
-    fillForm()
-    fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+  // 2
+  it('validates that name is required', async () => {
+    const user = userEvent.setup()
+    renderRegister()
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Name is required')
+  })
+
+  // 3
+  it('validates that email is required', async () => {
+    const user = userEvent.setup()
+    renderRegister()
+    await user.type(screen.getByLabelText(/full name/i), 'John')
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Email is required')
+  })
+
+  // 4
+  it('validates password minimum length', async () => {
+    const user = userEvent.setup()
+    renderRegister()
+    await user.type(screen.getByLabelText(/full name/i), 'John')
+    await user.type(screen.getByLabelText(/^email$/i), 'j@e.com')
+    await user.type(screen.getByLabelText(/^password$/i), 'Ab1')
+    await user.type(screen.getByLabelText(/confirm password/i), 'Ab1')
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+    expect(screen.getByRole('alert')).toHaveTextContent('at least 8 characters')
+  })
+
+  // 5
+  it('validates password must have uppercase letter', async () => {
+    const user = userEvent.setup()
+    renderRegister()
+    await user.type(screen.getByLabelText(/full name/i), 'John')
+    await user.type(screen.getByLabelText(/^email$/i), 'j@e.com')
+    await user.type(screen.getByLabelText(/^password$/i), 'lowercase1')
+    await user.type(screen.getByLabelText(/confirm password/i), 'lowercase1')
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+    expect(screen.getByRole('alert')).toHaveTextContent('uppercase letter')
+  })
+
+  // 6
+  it('validates password must have lowercase letter', async () => {
+    const user = userEvent.setup()
+    renderRegister()
+    await user.type(screen.getByLabelText(/full name/i), 'John')
+    await user.type(screen.getByLabelText(/^email$/i), 'j@e.com')
+    await user.type(screen.getByLabelText(/^password$/i), 'UPPERCASE1')
+    await user.type(screen.getByLabelText(/confirm password/i), 'UPPERCASE1')
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+    expect(screen.getByRole('alert')).toHaveTextContent('lowercase letter')
+  })
+
+  // 7
+  it('validates password must have a digit', async () => {
+    const user = userEvent.setup()
+    renderRegister()
+    await user.type(screen.getByLabelText(/full name/i), 'John')
+    await user.type(screen.getByLabelText(/^email$/i), 'j@e.com')
+    await user.type(screen.getByLabelText(/^password$/i), 'NoDigitHere')
+    await user.type(screen.getByLabelText(/confirm password/i), 'NoDigitHere')
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+    expect(screen.getByRole('alert')).toHaveTextContent('digit')
+  })
+
+  // 8
+  it('validates passwords must match', async () => {
+    const user = userEvent.setup()
+    renderRegister()
+    await fillForm(user, { confirm: 'DifferentPass1' })
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Passwords do not match')
+  })
+
+  // 9
+  it('calls usersService.register with correct data on valid form', async () => {
+    const tokens = { access_token: 'tok', refresh_token: 'ref', token_type: 'Bearer', expires_in: 3600 }
+    mockRegister.mockResolvedValueOnce(tokens)
+    mockLoginWithTokens.mockResolvedValueOnce(undefined)
+
+    const user = userEvent.setup()
+    renderRegister()
+    await fillForm(user)
+    await user.click(screen.getByRole('button', { name: /create account/i }))
 
     await waitFor(() => {
       expect(mockRegister).toHaveBeenCalledWith({
+        name: 'John Doe',
         email: 'john@example.com',
-        password: 'SecurePass1!',
-        first_name: 'John',
-        last_name: 'Doe',
-        username: 'johndoe',
+        password: 'StrongPass1',
+        role: 'operator',
       })
-      expect(mockNavigate).toHaveBeenCalledWith('/')
     })
   })
 
-  it('validates password mismatch', async () => {
-    render(
-      <MemoryRouter>
-        <Register />
-      </MemoryRouter>
-    )
-    fillForm({ confirmPassword: 'DifferentPass1!' })
-    fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+  // 10
+  it('redirects to /dashboard on successful registration', async () => {
+    const tokens = { access_token: 'tok', refresh_token: 'ref', token_type: 'Bearer', expires_in: 3600 }
+    mockRegister.mockResolvedValueOnce(tokens)
+    mockLoginWithTokens.mockResolvedValueOnce(undefined)
+
+    const user = userEvent.setup()
+    renderRegister()
+    await fillForm(user)
+    await user.click(screen.getByRole('button', { name: /create account/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument()
-    })
-    expect(mockRegister).not.toHaveBeenCalled()
-  })
-
-  it('validates short password', async () => {
-    render(
-      <MemoryRouter>
-        <Register />
-      </MemoryRouter>
-    )
-    fillForm({ password: 'short', confirmPassword: 'short' })
-    fireEvent.click(screen.getByRole('button', { name: /create account/i }))
-
-    await waitFor(() => {
-      expect(screen.getByText(/at least 8 characters/i)).toBeInTheDocument()
+      expect(mockLoginWithTokens).toHaveBeenCalledWith(tokens)
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true })
     })
   })
 
-  it('validates required fields', async () => {
-    render(
-      <MemoryRouter>
-        <Register />
-      </MemoryRouter>
-    )
-    fillForm({ first_name: '' })
-    fireEvent.click(screen.getByRole('button', { name: /create account/i }))
-
-    await waitFor(() => {
-      expect(screen.getByText(/first name is required/i)).toBeInTheDocument()
-    })
-  })
-
-  it('shows error on failed registration', async () => {
+  // 11
+  it('shows error on registration failure', async () => {
     mockRegister.mockRejectedValueOnce(new Error('Email already exists'))
-    render(
-      <MemoryRouter>
-        <Register />
-      </MemoryRouter>
-    )
-    fillForm()
-    fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+    const user = userEvent.setup()
+    renderRegister()
+    await fillForm(user)
+    await user.click(screen.getByRole('button', { name: /create account/i }))
 
     await waitFor(() => {
-      expect(screen.getByText('Email already exists')).toBeInTheDocument()
+      expect(screen.getByRole('alert')).toHaveTextContent('Email already exists')
     })
   })
 
-  it('shows loading state', async () => {
-    mockRegister.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
-    render(
-      <MemoryRouter>
-        <Register />
-      </MemoryRouter>
-    )
-    fillForm()
-    fireEvent.click(screen.getByRole('button', { name: /create account/i }))
-    expect(screen.getByText('Creating account...')).toBeInTheDocument()
+  // 12
+  it('has a link to the login page', () => {
+    renderRegister()
+    const link = screen.getByRole('link', { name: /sign in/i })
+    expect(link).toHaveAttribute('href', '/login')
   })
 
-  it('has link to login page', () => {
-    render(
-      <MemoryRouter>
-        <Register />
-      </MemoryRouter>
-    )
-    expect(screen.getByText(/sign in here/i)).toBeInTheDocument()
+  // 13
+  it('redirects to /dashboard if already authenticated', () => {
+    mockAuthState.isAuthenticated = true
+    renderRegister()
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true })
   })
 
-  it('clears field error on change', async () => {
-    render(
-      <MemoryRouter>
-        <Register />
-      </MemoryRouter>
-    )
-    fillForm({ first_name: '' })
-    fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+  // 14
+  it('shows password strength indicator as user types', async () => {
+    const user = userEvent.setup()
+    renderRegister()
+
+    const pwInput = screen.getByLabelText(/^password$/i)
+    await user.type(pwInput, 'a')
+    expect(screen.getByTestId('password-strength')).toHaveTextContent('Weak')
+
+    await user.clear(pwInput)
+    await user.type(pwInput, 'abcdefgh')
+    expect(screen.getByTestId('password-strength')).toHaveTextContent('Fair')
+
+    await user.clear(pwInput)
+    await user.type(pwInput, 'Abcdefgh')
+    expect(screen.getByTestId('password-strength')).toHaveTextContent('Good')
+
+    await user.clear(pwInput)
+    await user.type(pwInput, 'Abcdefg1')
+    expect(screen.getByTestId('password-strength')).toHaveTextContent('Strong')
+  })
+
+  // 15
+  it('shows loading state while submitting', async () => {
+    mockRegister.mockReturnValueOnce(new Promise(() => {}))
+
+    const user = userEvent.setup()
+    renderRegister()
+    await fillForm(user)
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+
     await waitFor(() => {
-      expect(screen.getByText(/first name is required/i)).toBeInTheDocument()
+      expect(screen.getByRole('button')).toHaveTextContent(/creating account/i)
+      expect(screen.getByRole('button')).toBeDisabled()
     })
-    fireEvent.change(screen.getByLabelText(/first name/i), {
-      target: { value: 'Jane' },
-    })
-    expect(screen.queryByText(/first name is required/i)).not.toBeInTheDocument()
   })
 })

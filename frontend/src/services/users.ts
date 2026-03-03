@@ -1,23 +1,40 @@
-import { api } from './api'
-import type { User, UserProfile } from '@/types'
+import api from './api'
+import type { User, CreateUser, UpdateUser, LoginRequest, AuthResponse, RegisterRequest, UserProfile } from '@/types'
 
 export const usersService = {
-  getAll: () => api.get<User[]>('/users').then(r => r.data),
+  getUsers: () =>
+    api.get<User[]>('/users').then((r) => r.data),
 
-  getById: (id: string) => api.get<User>(`/users/${id}`).then(r => r.data),
+  getUser: (id: string) =>
+    api.get<User>(`/users/${id}`).then((r) => r.data),
 
-  update: (id: string, data: Partial<User>) =>
-    api.patch<User>(`/users/${id}`, data).then(r => r.data),
+  createUser: (data: CreateUser) =>
+    api.post<User>('/users', data).then((r) => r.data),
 
-  delete: (id: string) => api.delete(`/users/${id}`),
+  updateUser: (id: string, data: Partial<UpdateUser>) =>
+    api.patch<User>(`/users/${id}`, data).then((r) => r.data),
 
-  getProfile: () => api.get<UserProfile>('/auth/me').then(r => r.data),
+  deleteUser: (id: string) =>
+    api.delete(`/users/${id}`).then((r) => r.data),
 
-  changePassword: (data: { current_password: string; new_password: string }) =>
-    api.post('/users/change-password', data).then(r => r.data),
+  login: (data: LoginRequest) =>
+    api.post<AuthResponse>('/auth/login', data).then((r) => r.data),
+
+  register: (data: RegisterRequest) =>
+    api.post<AuthResponse>('/auth/register', data).then((r) => r.data),
 
   logout: () => {
-    localStorage.removeItem('access_token')
+    localStorage.removeItem('auth_token')
     localStorage.removeItem('refresh_token')
+    return Promise.resolve()
   },
+
+  me: () =>
+    api.get<UserProfile>('/auth/me').then((r) => r.data),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.post('/auth/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    }).then((r) => r.data),
 }
