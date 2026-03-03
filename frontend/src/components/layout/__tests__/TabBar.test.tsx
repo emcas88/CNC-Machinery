@@ -74,7 +74,7 @@ describe('TabBar', () => {
     const tabsWithIcon = [
       { id: 'home', label: 'Home', icon: <span data-testid="home-icon">🏠</span> },
     ]
-    render(<TabBar tabsWithIcon={tabsWithIcon} activeTab="home" onChange={vi.fn()} />)
+    render(<TabBar tabs={tabsWithIcon} activeTab="home" onChange={vi.fn()} />)
     expect(screen.getByTestId('home-icon')).toBeInTheDocument()
   })
 })

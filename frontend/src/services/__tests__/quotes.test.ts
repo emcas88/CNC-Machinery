@@ -32,7 +32,7 @@ describe('quotesService', () => {
   it('getQuotes calls GET /jobs/:jobId/quotes and returns data', async () => {
     getSpy.mockResolvedValueOnce({ data: [mockQuote] })
     const result = await quotesService.getQuotes('job-1')
-    expect(getSpy).toHaveBeenCalledWith('/jobs/job-1/quotes', { params: undefined })
+    expect(getSpy).toHaveBeenCalledWith('/jobs/job-1/quotes')
     expect(result).toEqual([mockQuote])
   })
 
@@ -42,10 +42,10 @@ describe('quotesService', () => {
     expect(result).toEqual(mockQuote)
   })
 
-  it('createQuote calls POST /jobs/:jobId/quotes and returns data', async () => {
-    const payload = { validUntil: '2026-06-01T00:00:00Z' }
-    const result = await quotesService.createQuote('job-1', payload as any)
-    expect(postSpy).toHaveBeenCalledWith('/jobs/job-1/quotes', payload)
+  it('createQuote calls POST /quotes with body and returns data', async () => {
+    const payload = { jobId: 'job-1', validUntil: '2026-06-01T00:00:00Z' }
+    const result = await quotesService.createQuote(payload as any)
+    expect(postSpy).toHaveBeenCalledWith('/quotes', payload)
     expect(result).toEqual(mockQuote)
   })
 
@@ -61,10 +61,10 @@ describe('quotesService', () => {
     expect(deleteSpy).toHaveBeenCalledWith('/quotes/quote-1')
   })
 
-  it('sendQuote calls POST /quotes/:id/send and returns data', async () => {
+  it('sendQuote calls POST /quotes/:id/send with email and returns data', async () => {
     postSpy.mockResolvedValueOnce({ data: { ...mockQuote, status: 'sent' } })
-    const result = await quotesService.sendQuote('quote-1')
-    expect(postSpy).toHaveBeenCalledWith('/quotes/quote-1/send', {})
+    const result = await quotesService.sendQuote('quote-1', 'client@example.com')
+    expect(postSpy).toHaveBeenCalledWith('/quotes/quote-1/send', { email: 'client@example.com' })
     expect(result.status).toBe('sent')
   })
 })

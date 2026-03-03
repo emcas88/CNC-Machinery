@@ -37,8 +37,8 @@ describe('texturesService', () => {
 
   it('getTextures passes params', async () => {
     getSpy.mockResolvedValueOnce({ data: [mockTexture] })
-    await texturesService.getTextures({ type: 'wood' })
-    expect(getSpy).toHaveBeenCalledWith('/textures', { params: { type: 'wood' } })
+    await texturesService.getTextures({ groupId: 'group-1' })
+    expect(getSpy).toHaveBeenCalledWith('/textures', { params: { groupId: 'group-1' } })
   })
 
   it('getTexture calls GET /textures/:id and returns data', async () => {

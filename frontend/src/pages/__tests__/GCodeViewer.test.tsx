@@ -31,8 +31,8 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 
 // ── Mock the gcode service module ────────────────────────────────────────────
-vi.mock('../services/gcode', async () => {
-  const actual = await vi.importActual<typeof import('../services/gcode')>('../services/gcode');
+vi.mock('@/services/gcode', async () => {
+  const actual = await vi.importActual<typeof import('@/services/gcode')>('@/services/gcode');
   return {
     ...actual,
     default: {
@@ -45,8 +45,8 @@ vi.mock('../services/gcode', async () => {
   };
 });
 
-import gcodeService from '../services/gcode';
-import GCodeViewer from '../GCodeViewer';
+import gcodeService from '@/services/gcode';
+import GCodeViewer from '@/pages/GCodeViewer';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fixtures
@@ -98,6 +98,10 @@ function makeSafetyFail() {
 }
 
 beforeEach(() => {
+  // JSDOM div elements don't have scrollTo; polyfill for tests that click block nav
+  if (typeof Element !== 'undefined' && !Element.prototype.scrollTo) {
+    Element.prototype.scrollTo = vi.fn();
+  }
   vi.clearAllMocks();
   // Default: generate returns a pending promise (not yet resolved)
   (gcodeService.generate as ReturnType<typeof vi.fn>).mockResolvedValue(makeGenerateResponse());
@@ -434,10 +438,13 @@ describe('Tab navigation', () => {
 
   it('clicking G-code tab returns to viewer', async () => {
     renderViewer({ sheetId: SHEET_ID });
-    // Go to simulate tab then back
+    await waitFor(() => expect(gcodeService.generate).toHaveBeenCalled());
+    // Go to simulate tab then back to G-code
     fireEvent.click(screen.getByRole('button', { name: /^Simulate$/i }));
     fireEvent.click(screen.getByRole('button', { name: /^G-code$/i }));
-    expect(screen.getByRole('button', { name: /^generate$/i })).toBeTruthy();
+    // Viewer has Generate button (not "Generate Resurfacing Program")
+    const generateBtns = screen.getAllByRole('button', { name: /generate/i });
+    expect(generateBtns.some((b) => b.textContent === 'Generate')).toBeTruthy();
   });
 });
 
@@ -705,8 +712,9 @@ describe('Toolbar inline stats', () => {
   it('shows tool change count in toolbar after generate', async () => {
     renderViewer({ sheetId: SHEET_ID });
     await waitFor(() => expect(gcodeService.generate).toHaveBeenCalled());
-    // "1 tool change" should appear somewhere in the toolbar
-    expect(screen.getByText(/tool change/i)).toBeTruthy();
+    // "1 tool change" or "tool changes" should appear somewhere in the toolbar
+    const toolChangeEls = screen.getAllByText(/tool change/i);
+    expect(toolChangeEls.length).toBeGreaterThan(0);
   });
 
   it('pluralises "tool changes" for multiple tool changes', async () => {
@@ -715,6 +723,7 @@ describe('Toolbar inline stats', () => {
     );
     renderViewer({ sheetId: SHEET_ID });
     await waitFor(() => expect(gcodeService.generate).toHaveBeenCalled());
-    expect(screen.getByText(/tool changes/i)).toBeTruthy();
+    const toolChangeEls = screen.getAllByText(/tool changes/i);
+    expect(toolChangeEls.length).toBeGreaterThan(0);
   });
 });

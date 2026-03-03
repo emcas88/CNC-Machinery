@@ -1,6 +1,18 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@/test/test-utils'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@/test/test-utils'
 import { ThreeDViewer } from '@/pages/ThreeDViewer'
+
+vi.mock('@react-three/fiber', () => ({
+  Canvas: ({ children }: any) => <div data-testid="r3f-canvas">{children}</div>,
+  useThree: () => ({ camera: { position: { set: vi.fn() }, lookAt: vi.fn() } }),
+}))
+vi.mock('@react-three/drei', () => ({
+  OrbitControls: () => null,
+  Grid: () => null,
+  Environment: () => null,
+  Html: ({ children }: any) => <div>{children}</div>,
+  Edges: () => null,
+}))
 
 describe('ThreeDViewer', () => {
   it('renders without crashing', () => {
@@ -8,41 +20,54 @@ describe('ThreeDViewer', () => {
     expect(document.body).toBeInTheDocument()
   })
 
-  it('renders the "3D Viewer" heading', () => {
+  it('renders the view angle buttons (Front, Back, Left, Right, Top, Iso)', () => {
     render(<ThreeDViewer />)
-    expect(screen.getByText('3D Viewer')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Front$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Back$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Left$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Right$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Top$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Iso$/i })).toBeInTheDocument()
   })
 
-  it('renders the view angle buttons (Front, Top, Side, Iso)', () => {
+  it('renders the R3F Canvas mock', () => {
     render(<ThreeDViewer />)
-    expect(screen.getByRole('button', { name: /front/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /top/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /side/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /iso/i })).toBeInTheDocument()
+    expect(screen.getByTestId('r3f-canvas')).toBeInTheDocument()
   })
 
-  it('renders the Render Mode selector buttons (Solid, Wireframe, X-Ray)', () => {
+  it('renders the Scene Objects panel with cabinet names', () => {
     render(<ThreeDViewer />)
-    expect(screen.getByRole('button', { name: /solid/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /wireframe/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /x-ray/i })).toBeInTheDocument()
+    expect(screen.getByText('Scene Objects')).toBeInTheDocument()
+    expect(screen.getByText('Base Cabinet B1')).toBeInTheDocument()
+    expect(screen.getByText('Base Cabinet B2')).toBeInTheDocument()
+    expect(screen.getByText('Upper Cabinet L1')).toBeInTheDocument()
+    expect(screen.getByText('Upper Cabinet L2')).toBeInTheDocument()
+    expect(screen.getByText('Tall Pantry T1')).toBeInTheDocument()
   })
 
-  it('renders the 3D canvas placeholder area', () => {
+  it('renders Wireframe, Shadows, Show Dimensions checkboxes', () => {
     render(<ThreeDViewer />)
-    expect(screen.getByText(/3D Canvas/i)).toBeInTheDocument()
+    expect(screen.getByText('Wireframe')).toBeInTheDocument()
+    expect(screen.getByText('Shadows')).toBeInTheDocument()
+    expect(screen.getByText('Show Dimensions')).toBeInTheDocument()
   })
 
-  it('renders the Parts panel with part list items', () => {
+  it('renders Render Settings section', () => {
     render(<ThreeDViewer />)
-    expect(screen.getByText('Parts')).toBeInTheDocument()
-    expect(screen.getByText(/LHS Side/)).toBeInTheDocument()
-    expect(screen.getByText(/RHS Side/)).toBeInTheDocument()
+    expect(screen.getByText('Render Settings')).toBeInTheDocument()
   })
 
-  it('renders the Export GLTF and Export OBJ buttons', () => {
+  it('renders Orbit/Pan/Zoom info bar', () => {
     render(<ThreeDViewer />)
-    expect(screen.getByRole('button', { name: /export gltf/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /export obj/i })).toBeInTheDocument()
+    expect(screen.getByText(/Orbit: Left drag/)).toBeInTheDocument()
+    expect(screen.getByText(/Pan: Right drag/)).toBeInTheDocument()
+    expect(screen.getByText(/Zoom: Scroll/)).toBeInTheDocument()
+  })
+
+  it('selecting a cabinet in Scene Objects shows Properties panel', () => {
+    render(<ThreeDViewer />)
+    fireEvent.click(screen.getByText('Base Cabinet B1'))
+    expect(screen.getByText('Properties')).toBeInTheDocument()
+    expect(screen.getByText('Base Cabinet B1')).toBeInTheDocument()
   })
 })

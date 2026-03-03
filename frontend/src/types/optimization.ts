@@ -5,34 +5,48 @@ export enum OptimizationQuality {
   MAXIMUM = 'maximum',
 }
 
-export interface OptimizationRun {
-  id: string
-  jobId: string
-  name: string
-  quality: OptimizationQuality
-  status: 'pending' | 'running' | 'completed' | 'failed'
-  progress: number
-  materialId?: string
-  sheetCount: number
-  totalArea: number
-  usedArea: number
-  wasteArea: number
-  yieldPercent: number
-  settings: OptimizationSettings
-  sheets: NestedSheet[]
-  createdAt: string
-  completedAt?: string
+export enum OptimizationStatus {
+  PENDING = 'pending',
+  RUNNING = 'running',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
 }
 
 export interface OptimizationSettings {
-  quality: OptimizationQuality
-  partSpacing: number
-  sheetEdgeMargin: number
-  respectGrain: boolean
+  algorithm: string
+  kerf: number
+  grainDirection: string
   allowRotation: boolean
-  groupByMaterial: boolean
-  groupByThickness: boolean
+  prioritizeWaste: boolean
+  sheetPriority: string
+  quality?: OptimizationQuality
+  partSpacing?: number
+  sheetEdgeMargin?: number
+  respectGrain?: boolean
+  groupByMaterial?: boolean
+  groupByThickness?: boolean
   maxSheets?: number
+}
+
+export interface OptimizationRun {
+  id: string
+  jobId: string
+  name?: string
+  status: OptimizationStatus | 'pending' | 'running' | 'completed' | 'failed'
+  efficiency: number
+  totalSheets: number
+  wastePercent: number
+  progress?: number
+  materialId?: string
+  sheetCount?: number
+  totalArea?: number
+  usedArea?: number
+  wasteArea?: number
+  yieldPercent?: number
+  settings: OptimizationSettings
+  sheets?: NestedSheet[]
+  createdAt: string
+  completedAt?: string
 }
 
 export interface NestedSheet {
@@ -40,12 +54,15 @@ export interface NestedSheet {
   runId: string
   sheetIndex: number
   materialId: string
-  materialName: string
-  sheetWidth: number
-  sheetHeight: number
-  thickness: number
+  materialName?: string
+  width: number
+  height: number
+  sheetWidth?: number
+  sheetHeight?: number
+  thickness?: number
+  utilization: number
+  yieldPercent?: number
   parts: NestedPart[]
-  yieldPercent: number
   svgData?: string
 }
 

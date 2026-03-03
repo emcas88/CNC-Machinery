@@ -30,10 +30,10 @@ describe('partsService', () => {
 
   afterEach(() => vi.restoreAllMocks())
 
-  it('getParts calls GET /parts and returns data', async () => {
+  it('getParts calls GET /products/:productId/parts and returns data', async () => {
     getSpy.mockResolvedValueOnce({ data: [mockPart] })
     const result = await partsService.getParts('product-1')
-    expect(getSpy).toHaveBeenCalledWith('/products/product-1/parts', { params: undefined })
+    expect(getSpy).toHaveBeenCalledWith('/products/product-1/parts')
     expect(result).toEqual([mockPart])
   })
 
@@ -44,9 +44,9 @@ describe('partsService', () => {
   })
 
   it('createPart calls POST /parts with body and returns data', async () => {
-    const payload = { name: 'New Part', width: 400, height: 600 }
-    const result = await partsService.createPart('product-1', payload as any)
-    expect(postSpy).toHaveBeenCalledWith('/products/product-1/parts', payload)
+    const payload = { productId: 'product-1', name: 'New Part', width: 400, height: 600 }
+    const result = await partsService.createPart(payload as any)
+    expect(postSpy).toHaveBeenCalledWith('/parts', payload)
     expect(result).toEqual(mockPart)
   })
 

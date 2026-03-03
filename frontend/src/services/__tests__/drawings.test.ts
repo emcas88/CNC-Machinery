@@ -1,40 +1,48 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import * as drawingsService from '@/services/drawings'
+import { drawingsService } from '@/services/drawings'
 
 describe('drawings service', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
   })
 
-  it('exports a getDrawings function', () => {
-    expect(typeof drawingsService.getDrawings).toBe('function')
+  it('exports a getTemplates function', () => {
+    expect(typeof drawingsService.getTemplates).toBe('function')
   })
 
-  it('exports a getDrawingById function', () => {
-    expect(typeof drawingsService.getDrawingById).toBe('function')
+  it('exports a getTemplate function', () => {
+    expect(typeof drawingsService.getTemplate).toBe('function')
   })
 
-  it('exports a createDrawing function', () => {
-    expect(typeof drawingsService.createDrawing).toBe('function')
+  it('exports a createTemplate function', () => {
+    expect(typeof drawingsService.createTemplate).toBe('function')
   })
 
-  it('exports an updateDrawing function', () => {
-    expect(typeof drawingsService.updateDrawing).toBe('function')
+  it('exports an updateTemplate function', () => {
+    expect(typeof drawingsService.updateTemplate).toBe('function')
   })
 
-  it('exports a deleteDrawing function', () => {
-    expect(typeof drawingsService.deleteDrawing).toBe('function')
+  it('exports a deleteTemplate function', () => {
+    expect(typeof drawingsService.deleteTemplate).toBe('function')
   })
 
-  it('getDrawings returns a promise', () => {
-    vi.spyOn(drawingsService, 'getDrawings').mockResolvedValue([])
-    const result = drawingsService.getDrawings()
+  it('exports a generateDrawing function', () => {
+    expect(typeof drawingsService.generateDrawing).toBe('function')
+  })
+
+  it('exports a getProductDrawings function', () => {
+    expect(typeof drawingsService.getProductDrawings).toBe('function')
+  })
+
+  it('getTemplates returns a promise', () => {
+    vi.spyOn(drawingsService, 'getTemplates').mockResolvedValue([])
+    const result = drawingsService.getTemplates()
     expect(result).toBeInstanceOf(Promise)
   })
 
-  it('getDrawingById returns a promise', () => {
-    vi.spyOn(drawingsService, 'getDrawingById').mockResolvedValue(null)
-    const result = drawingsService.getDrawingById('1')
+  it('getTemplate returns a promise', () => {
+    vi.spyOn(drawingsService, 'getTemplate').mockResolvedValue(null as any)
+    const result = drawingsService.getTemplate('1')
     expect(result).toBeInstanceOf(Promise)
   })
 })

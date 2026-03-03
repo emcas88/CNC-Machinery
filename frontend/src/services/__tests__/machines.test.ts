@@ -30,14 +30,8 @@ describe('machinesService', () => {
   it('getMachines calls GET /machines and returns data', async () => {
     getSpy.mockResolvedValueOnce({ data: [mockMachine] })
     const result = await machinesService.getMachines()
-    expect(getSpy).toHaveBeenCalledWith('/machines', { params: undefined })
+    expect(getSpy).toHaveBeenCalledWith('/machines')
     expect(result).toEqual([mockMachine])
-  })
-
-  it('getMachines passes params', async () => {
-    getSpy.mockResolvedValueOnce({ data: [mockMachine] })
-    await machinesService.getMachines({ type: 'router' })
-    expect(getSpy).toHaveBeenCalledWith('/machines', { params: { type: 'router' } })
   })
 
   it('getMachine calls GET /machines/:id and returns data', async () => {
@@ -65,18 +59,19 @@ describe('machinesService', () => {
     expect(deleteSpy).toHaveBeenCalledWith('/machines/machine-1')
   })
 
-  it('getMachineCapabilities calls GET /machines/:id/capabilities and returns data', async () => {
-    const mockCaps = { maxFeedRate: 5000, spindleSpeeds: [6000, 12000] }
-    getSpy.mockResolvedValueOnce({ data: mockCaps })
-    const result = await machinesService.getMachineCapabilities('machine-1')
-    expect(getSpy).toHaveBeenCalledWith('/machines/machine-1/capabilities')
-    expect(result).toEqual(mockCaps)
+  it('getToolSets calls GET /machines/:id/tool-sets and returns data', async () => {
+    const mockToolSets = [{ id: 'ts-1', name: 'Default' }]
+    getSpy.mockResolvedValueOnce({ data: mockToolSets })
+    const result = await machinesService.getToolSets('machine-1')
+    expect(getSpy).toHaveBeenCalledWith('/machines/machine-1/tool-sets')
+    expect(result).toEqual(mockToolSets)
   })
 
-  it('updateMachineStatus calls PATCH /machines/:id/status and returns data', async () => {
-    patchSpy.mockResolvedValueOnce({ data: { ...mockMachine, status: 'maintenance' } })
-    const result = await machinesService.updateMachineStatus('machine-1', 'maintenance')
-    expect(patchSpy).toHaveBeenCalledWith('/machines/machine-1/status', { status: 'maintenance' })
-    expect(result.status).toBe('maintenance')
+  it('createToolSet calls POST /machines/:id/tool-sets and returns data', async () => {
+    const mockToolSet = { id: 'ts-1', name: 'New Set' }
+    postSpy.mockResolvedValueOnce({ data: mockToolSet })
+    const result = await machinesService.createToolSet('machine-1', 'New Set')
+    expect(postSpy).toHaveBeenCalledWith('/machines/machine-1/tool-sets', { name: 'New Set' })
+    expect(result).toEqual(mockToolSet)
   })
 })

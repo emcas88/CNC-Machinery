@@ -1,6 +1,16 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@/test/test-utils'
-import { LabelDesigner } from '@/pages/LabelDesigner'
+import { LabelDesigner } from '../LabelDesigner'
+
+vi.mock('@/store', () => ({
+  useAppStore: () => ({ currentJob: null }),
+}))
+
+vi.mock('@/services/cutlists', () => ({
+  cutlistsService: {
+    getCutlist: vi.fn().mockResolvedValue([]),
+  },
+}))
 
 describe('LabelDesigner', () => {
   it('renders without crashing', () => {
@@ -8,42 +18,36 @@ describe('LabelDesigner', () => {
     expect(document.body).toBeInTheDocument()
   })
 
-  it('renders the Templates sidebar', () => {
+  it('renders Label Settings sidebar', () => {
     render(<LabelDesigner />)
-    expect(screen.getByText('Templates')).toBeInTheDocument()
-    expect(screen.getByText('Standard Label 100×50')).toBeInTheDocument()
-    expect(screen.getByText('Small Label 60×30')).toBeInTheDocument()
+    expect(screen.getByText('Label Settings')).toBeInTheDocument()
   })
 
-  it('renders the label template canvas area', () => {
+  it('renders Template select', () => {
     render(<LabelDesigner />)
-    expect(screen.getByText(/100 × 50mm label/)).toBeInTheDocument()
+    expect(screen.getByText('Template')).toBeInTheDocument()
+    expect(screen.getByText('Standard Label')).toBeInTheDocument()
+    expect(screen.getByText('Compact (50×25)')).toBeInTheDocument()
+    expect(screen.getByText('Large (100×75)')).toBeInTheDocument()
+    expect(screen.getByText('QR Code Label')).toBeInTheDocument()
   })
 
-  it('renders label fields on the template canvas', () => {
+  it('renders Show Fields checkboxes', () => {
     render(<LabelDesigner />)
-    // Part name field is selected by default
-    expect(screen.getByText('Part Name')).toBeInTheDocument()
+    expect(screen.getByText('QR Code')).toBeInTheDocument()
+    expect(screen.getByText('Dimensions')).toBeInTheDocument()
+    expect(screen.getByText('Material')).toBeInTheDocument()
+    expect(screen.getByText('Room Name')).toBeInTheDocument()
   })
 
-  it('renders Generate Labels, Print Preview, and Export PDF buttons', () => {
+  it('renders Print All Labels and Export PDF buttons', () => {
     render(<LabelDesigner />)
-    expect(screen.getByRole('button', { name: /generate labels/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /print preview/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /print all labels/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /export pdf/i })).toBeInTheDocument()
   })
 
-  it('renders the Field properties panel for the selected field', () => {
+  it('shows "Select a job first" when no currentJob and no cutlist', async () => {
     render(<LabelDesigner />)
-    // partName is selected by default
-    expect(screen.getByText(/Field: partName/)).toBeInTheDocument()
-    expect(screen.getByText('Data Source')).toBeInTheDocument()
-  })
-
-  it('renders X, Y, Width, Height, Font Size inputs in the field panel', () => {
-    render(<LabelDesigner />)
-    expect(screen.getByText(/X \(mm\)/)).toBeInTheDocument()
-    expect(screen.getByText(/Y \(mm\)/)).toBeInTheDocument()
-    expect(screen.getByText(/Font Size/)).toBeInTheDocument()
+    expect(await screen.findByText('Select a job first')).toBeInTheDocument()
   })
 })

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import * as constructionMethodsService from '@/services/construction-methods'
+import { constructionMethodsService } from '@/services/construction-methods'
 
 describe('construction-methods service', () => {
   beforeEach(() => {
@@ -10,8 +10,8 @@ describe('construction-methods service', () => {
     expect(typeof constructionMethodsService.getConstructionMethods).toBe('function')
   })
 
-  it('exports a getConstructionMethodById function', () => {
-    expect(typeof constructionMethodsService.getConstructionMethodById).toBe('function')
+  it('exports a getConstructionMethod function', () => {
+    expect(typeof constructionMethodsService.getConstructionMethod).toBe('function')
   })
 
   it('exports a createConstructionMethod function', () => {
@@ -32,9 +32,9 @@ describe('construction-methods service', () => {
     expect(result).toBeInstanceOf(Promise)
   })
 
-  it('getConstructionMethodById returns a promise', () => {
-    vi.spyOn(constructionMethodsService, 'getConstructionMethodById').mockResolvedValue(null)
-    const result = constructionMethodsService.getConstructionMethodById('1')
+  it('getConstructionMethod returns a promise', () => {
+    vi.spyOn(constructionMethodsService, 'getConstructionMethod').mockResolvedValue(null as any)
+    const result = constructionMethodsService.getConstructionMethod('1')
     expect(result).toBeInstanceOf(Promise)
   })
 })

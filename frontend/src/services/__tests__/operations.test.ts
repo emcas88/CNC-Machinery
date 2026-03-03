@@ -26,10 +26,10 @@ describe('operationsService', () => {
 
   afterEach(() => vi.restoreAllMocks())
 
-  it('getOperations calls GET /operations and returns data', async () => {
+  it('getOperations calls GET /parts/:partId/operations and returns data', async () => {
     getSpy.mockResolvedValueOnce({ data: [mockOperation] })
-    const result = await operationsService.getOperations()
-    expect(getSpy).toHaveBeenCalledWith('/operations', { params: undefined })
+    const result = await operationsService.getOperations('part-1')
+    expect(getSpy).toHaveBeenCalledWith('/parts/part-1/operations')
     expect(result).toEqual([mockOperation])
   })
 

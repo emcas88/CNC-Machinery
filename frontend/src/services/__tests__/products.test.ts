@@ -31,10 +31,10 @@ describe('productsService', () => {
 
   afterEach(() => vi.restoreAllMocks())
 
-  it('getProducts calls GET /jobs/:jobId/products and returns data', async () => {
+  it('getProducts calls GET /rooms/:roomId/products and returns data', async () => {
     getSpy.mockResolvedValueOnce({ data: [mockProduct] })
-    const result = await productsService.getProducts('job-1')
-    expect(getSpy).toHaveBeenCalledWith('/jobs/job-1/products', { params: undefined })
+    const result = await productsService.getProducts('room-1')
+    expect(getSpy).toHaveBeenCalledWith('/rooms/room-1/products')
     expect(result).toEqual([mockProduct])
   })
 
@@ -44,10 +44,10 @@ describe('productsService', () => {
     expect(result).toEqual(mockProduct)
   })
 
-  it('createProduct calls POST /jobs/:jobId/products and returns data', async () => {
-    const payload = { name: 'Wall Unit', type: 'wall' }
-    const result = await productsService.createProduct('job-1', payload as any)
-    expect(postSpy).toHaveBeenCalledWith('/jobs/job-1/products', payload)
+  it('createProduct calls POST /products with body and returns data', async () => {
+    const payload = { roomId: 'room-1', name: 'Wall Unit', type: 'wall' }
+    const result = await productsService.createProduct(payload as any)
+    expect(postSpy).toHaveBeenCalledWith('/products', payload)
     expect(result).toEqual(mockProduct)
   })
 
@@ -61,11 +61,5 @@ describe('productsService', () => {
   it('deleteProduct calls DELETE /products/:id', async () => {
     await productsService.deleteProduct('prod-1')
     expect(deleteSpy).toHaveBeenCalledWith('/products/prod-1')
-  })
-
-  it('duplicateProduct calls POST /products/:id/duplicate and returns data', async () => {
-    const result = await productsService.duplicateProduct('prod-1')
-    expect(postSpy).toHaveBeenCalledWith('/products/prod-1/duplicate', {})
-    expect(result).toEqual(mockProduct)
   })
 })

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@/test/test-utils'
-import { MachineSetup } from '@/pages/MachineSetup'
+import { MachineSetup } from '../MachineSetup'
 
 describe('MachineSetup', () => {
   it('renders without crashing', () => {
@@ -13,33 +13,26 @@ describe('MachineSetup', () => {
     expect(screen.getByText('Machine Setup')).toBeInTheDocument()
   })
 
-  it('renders the Machines list sidebar', () => {
+  it('renders CNC Router section', () => {
     render(<MachineSetup />)
-    expect(screen.getByText('Machines')).toBeInTheDocument()
-    expect(screen.getByText(/Biesse Rover B/i)).toBeInTheDocument()
+    expect(screen.getByText('CNC Router')).toBeInTheDocument()
   })
 
   it('renders machine configuration form fields', () => {
     render(<MachineSetup />)
-    expect(screen.getByText('Manufacturer')).toBeInTheDocument()
-    expect(screen.getByText('Model')).toBeInTheDocument()
+    expect(screen.getByText('Table Width (mm)')).toBeInTheDocument()
+    expect(screen.getByText('Table Height (mm)')).toBeInTheDocument()
+    expect(screen.getByText('Spindle RPM Max')).toBeInTheDocument()
+    expect(screen.getByText('Feed Rate Max (mm/min)')).toBeInTheDocument()
   })
 
-  it('renders the ATC Tool Magazine section', () => {
+  it('renders Safety section', () => {
     render(<MachineSetup />)
-    expect(screen.getByText('ATC Tool Magazine')).toBeInTheDocument()
+    expect(screen.getByText('Safety')).toBeInTheDocument()
   })
 
-  it('renders 12 tool position slots', () => {
+  it('renders Save Machine Config button', () => {
     render(<MachineSetup />)
-    // Tool slots labeled 1-12
-    expect(screen.getByText('1')).toBeInTheDocument()
-    expect(screen.getByText('12')).toBeInTheDocument()
-  })
-
-  it('renders the add machine button', () => {
-    render(<MachineSetup />)
-    const addBtn = screen.getByRole('button', { name: '+' })
-    expect(addBtn).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /save machine config/i })).toBeInTheDocument()
   })
 })

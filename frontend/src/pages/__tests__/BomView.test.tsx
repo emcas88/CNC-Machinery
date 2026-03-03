@@ -1,31 +1,49 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@/test/test-utils'
 import { BomView } from '../BomView'
 
+vi.mock('@/store', () => ({
+  useAppStore: () => ({ currentJob: null }),
+}))
+
+vi.mock('@/services/cutlists', () => ({
+  cutlistsService: {
+    getBom: vi.fn(),
+    getBoq: vi.fn(),
+  },
+}))
+
+import { cutlistsService } from '@/services/cutlists'
+
 describe('BomView', () => {
+  beforeEach(() => {
+    vi.mocked(cutlistsService.getBom).mockResolvedValue([])
+    vi.mocked(cutlistsService.getBoq).mockResolvedValue([])
+  })
+
   it('renders page heading', () => {
     render(<BomView />)
-    expect(screen.getByText(/bill of materials/i)).toBeInTheDocument()
+    expect(screen.getByText('Bill of Materials')).toBeInTheDocument()
   })
 
   it('renders export button', () => {
     render(<BomView />)
-    expect(screen.getByText(/export/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /export/i })).toBeInTheDocument()
   })
 
-  it('renders material rows', () => {
+  it('shows "Select a job first" when no currentJob', () => {
     render(<BomView />)
-    expect(screen.getByText(/birch ply/i)).toBeInTheDocument()
+    expect(screen.getByText('Select a job first')).toBeInTheDocument()
   })
 
-  it('renders category badges', () => {
+  it('renders BOM and BOQ tabs', () => {
     render(<BomView />)
-    const badges = screen.getAllByText(/sheet goods|hardware|edging/i)
-    expect(badges.length).toBeGreaterThan(0)
+    expect(screen.getByText('Bill of Materials (BOM)')).toBeInTheDocument()
+    expect(screen.getByText('Bill of Quantities (BOQ)')).toBeInTheDocument()
   })
 
-  it('snapshot', () => {
-    const { container } = render(<BomView />)
-    expect(container).toMatchSnapshot()
+  it('renders Grand Total footer', () => {
+    render(<BomView />)
+    expect(screen.getByText(/Grand Total:/)).toBeInTheDocument()
   })
 })

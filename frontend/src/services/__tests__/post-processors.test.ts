@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import api from '@/services/api'
-import { postProcessorsService } from '@/services/post-processors'
+import { postProcessorService } from '@/services/post-processors'
 
 const mockPostProcessor = {
   id: 'pp-1',
@@ -12,7 +12,7 @@ const mockPostProcessor = {
   updatedAt: '2026-01-01T00:00:00Z',
 }
 
-describe('postProcessorsService', () => {
+describe('postProcessorService', () => {
   let getSpy: ReturnType<typeof vi.spyOn>
   let postSpy: ReturnType<typeof vi.spyOn>
   let patchSpy: ReturnType<typeof vi.spyOn>
@@ -27,35 +27,35 @@ describe('postProcessorsService', () => {
 
   afterEach(() => vi.restoreAllMocks())
 
-  it('getPostProcessors calls GET /post-processors and returns data', async () => {
+  it('getProcessors calls GET /post-processors and returns data', async () => {
     getSpy.mockResolvedValueOnce({ data: [mockPostProcessor] })
-    const result = await postProcessorsService.getPostProcessors()
-    expect(getSpy).toHaveBeenCalledWith('/post-processors', { params: undefined })
+    const result = await postProcessorService.getProcessors()
+    expect(getSpy).toHaveBeenCalledWith('/post-processors')
     expect(result).toEqual([mockPostProcessor])
   })
 
-  it('getPostProcessor calls GET /post-processors/:id and returns data', async () => {
-    const result = await postProcessorsService.getPostProcessor('pp-1')
+  it('getProcessor calls GET /post-processors/:id and returns data', async () => {
+    const result = await postProcessorService.getProcessor('pp-1')
     expect(getSpy).toHaveBeenCalledWith('/post-processors/pp-1')
     expect(result).toEqual(mockPostProcessor)
   })
 
-  it('createPostProcessor calls POST /post-processors and returns data', async () => {
+  it('createProcessor calls POST /post-processors and returns data', async () => {
     const payload = { name: 'New PP', manufacturer: 'Heidenhain' }
-    const result = await postProcessorsService.createPostProcessor(payload as any)
+    const result = await postProcessorService.createProcessor(payload as any)
     expect(postSpy).toHaveBeenCalledWith('/post-processors', payload)
     expect(result).toEqual(mockPostProcessor)
   })
 
-  it('updatePostProcessor calls PATCH /post-processors/:id and returns data', async () => {
+  it('updateProcessor calls PATCH /post-processors/:id and returns data', async () => {
     const changes = { name: 'Updated' }
-    const result = await postProcessorsService.updatePostProcessor('pp-1', changes)
+    const result = await postProcessorService.updateProcessor('pp-1', changes)
     expect(patchSpy).toHaveBeenCalledWith('/post-processors/pp-1', changes)
     expect(result).toEqual(mockPostProcessor)
   })
 
-  it('deletePostProcessor calls DELETE /post-processors/:id', async () => {
-    await postProcessorsService.deletePostProcessor('pp-1')
+  it('deleteProcessor calls DELETE /post-processors/:id', async () => {
+    await postProcessorService.deleteProcessor('pp-1')
     expect(deleteSpy).toHaveBeenCalledWith('/post-processors/pp-1')
   })
 })

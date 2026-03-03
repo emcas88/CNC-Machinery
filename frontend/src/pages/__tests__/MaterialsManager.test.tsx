@@ -1,6 +1,13 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen, waitFor } from '@/test/test-utils'
-import { MaterialsManager } from '@/pages/MaterialsManager'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen } from '@/test/test-utils'
+import { MaterialsManager } from '../MaterialsManager'
+
+vi.mock('@/services/materials', () => ({
+  materialsService: {
+    list: vi.fn().mockResolvedValue([]),
+    delete: vi.fn(),
+  },
+}))
 
 describe('MaterialsManager', () => {
   it('renders without crashing', () => {
@@ -8,48 +15,18 @@ describe('MaterialsManager', () => {
     expect(document.body).toBeInTheDocument()
   })
 
-  it('renders the "Materials Library" heading', () => {
+  it('renders the "Materials" heading', () => {
     render(<MaterialsManager />)
-    expect(screen.getByText('Materials Library')).toBeInTheDocument()
+    expect(screen.getByText('Materials')).toBeInTheDocument()
   })
 
   it('renders a search bar for filtering materials', () => {
     render(<MaterialsManager />)
-    expect(screen.getByPlaceholderText(/search materials/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search…')).toBeInTheDocument()
   })
 
-  it('renders the category filter dropdown', () => {
+  it('shows "Select a material to view details" when none selected', async () => {
     render(<MaterialsManager />)
-    const selects = screen.getAllByRole('combobox')
-    expect(selects.length).toBeGreaterThan(0)
-  })
-
-  it('renders the "Add Material" button', () => {
-    render(<MaterialsManager />)
-    expect(screen.getByRole('button', { name: /add material/i })).toBeInTheDocument()
-  })
-
-  it('shows material data after loading', async () => {
-    render(<MaterialsManager />)
-    await waitFor(() => {
-      expect(screen.getByText('Birch Ply 18mm')).toBeInTheDocument()
-    })
-  })
-
-  it('renders column headers in the material table', async () => {
-    render(<MaterialsManager />)
-    await waitFor(() => {
-      expect(screen.getByText('Name')).toBeInTheDocument()
-      expect(screen.getByText('Thickness')).toBeInTheDocument()
-    })
-  })
-
-  it('opens the "Add Material" modal when the button is clicked', async () => {
-    render(<MaterialsManager />)
-    const addBtn = screen.getByRole('button', { name: /add material/i })
-    addBtn.click()
-    await waitFor(() => {
-      expect(screen.getByText('Add Material')).toBeInTheDocument()
-    })
+    expect(await screen.findByText('Select a material to view details')).toBeInTheDocument()
   })
 })

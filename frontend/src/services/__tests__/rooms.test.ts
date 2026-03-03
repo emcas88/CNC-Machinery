@@ -18,12 +18,14 @@ describe('roomsService', () => {
   let getSpy: ReturnType<typeof vi.spyOn>
   let postSpy: ReturnType<typeof vi.spyOn>
   let patchSpy: ReturnType<typeof vi.spyOn>
+  let putSpy: ReturnType<typeof vi.spyOn>
   let deleteSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     getSpy = vi.spyOn(api, 'get').mockResolvedValue({ data: mockRoom })
     postSpy = vi.spyOn(api, 'post').mockResolvedValue({ data: mockRoom })
     patchSpy = vi.spyOn(api, 'patch').mockResolvedValue({ data: mockRoom })
+    putSpy = vi.spyOn(api, 'put').mockResolvedValue({ data: mockRoom })
     deleteSpy = vi.spyOn(api, 'delete').mockResolvedValue({ data: { status: 'ok' } })
   })
 
@@ -32,14 +34,8 @@ describe('roomsService', () => {
   it('getRooms calls GET /jobs/:jobId/rooms and returns data', async () => {
     getSpy.mockResolvedValueOnce({ data: [mockRoom] })
     const result = await roomsService.getRooms('job-1')
-    expect(getSpy).toHaveBeenCalledWith('/jobs/job-1/rooms', { params: undefined })
+    expect(getSpy).toHaveBeenCalledWith('/jobs/job-1/rooms')
     expect(result).toEqual([mockRoom])
-  })
-
-  it('getRooms passes params', async () => {
-    getSpy.mockResolvedValueOnce({ data: [mockRoom] })
-    await roomsService.getRooms('job-1', { search: 'kitchen' })
-    expect(getSpy).toHaveBeenCalledWith('/jobs/job-1/rooms', { params: { search: 'kitchen' } })
   })
 
   it('getRoom calls GET /rooms/:id and returns data', async () => {
@@ -48,10 +44,10 @@ describe('roomsService', () => {
     expect(result).toEqual(mockRoom)
   })
 
-  it('createRoom calls POST /jobs/:jobId/rooms and returns data', async () => {
-    const payload = { name: 'Living Room', width: 5000, height: 2400, depth: 4000 }
-    const result = await roomsService.createRoom('job-1', payload as any)
-    expect(postSpy).toHaveBeenCalledWith('/jobs/job-1/rooms', payload)
+  it('createRoom calls POST /rooms with body and returns data', async () => {
+    const payload = { jobId: 'job-1', name: 'Living Room', width: 5000, height: 2400, depth: 4000 }
+    const result = await roomsService.createRoom(payload as any)
+    expect(postSpy).toHaveBeenCalledWith('/rooms', payload)
     expect(result).toEqual(mockRoom)
   })
 
@@ -67,11 +63,19 @@ describe('roomsService', () => {
     expect(deleteSpy).toHaveBeenCalledWith('/rooms/room-1')
   })
 
-  it('getRoomLayout calls GET /rooms/:id/layout and returns data', async () => {
-    const mockLayout = { products: [], walls: [] }
-    getSpy.mockResolvedValueOnce({ data: mockLayout })
-    const result = await roomsService.getRoomLayout('room-1')
-    expect(getSpy).toHaveBeenCalledWith('/rooms/room-1/layout')
-    expect(result).toEqual(mockLayout)
+  it('getElevation calls GET /rooms/:id/elevation with wall param and returns data', async () => {
+    const mockElevation = { wall: 'north', data: {} }
+    getSpy.mockResolvedValueOnce({ data: mockElevation })
+    const result = await roomsService.getElevation('room-1', 'north')
+    expect(getSpy).toHaveBeenCalledWith('/rooms/room-1/elevation', { params: { wall: 'north' } })
+    expect(result).toEqual(mockElevation)
+  })
+
+  it('getFloorplan calls GET /rooms/:id/floorplan and returns data', async () => {
+    const mockFloorplan = { products: [], walls: [] }
+    getSpy.mockResolvedValueOnce({ data: mockFloorplan })
+    const result = await roomsService.getFloorplan('room-1')
+    expect(getSpy).toHaveBeenCalledWith('/rooms/room-1/floorplan')
+    expect(result).toEqual(mockFloorplan)
   })
 })

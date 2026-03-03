@@ -39,8 +39,8 @@ describe('materialsService', () => {
 
   it('getMaterials passes params', async () => {
     getSpy.mockResolvedValueOnce({ data: [mockMaterial] })
-    await materialsService.getMaterials({ type: 'sheet' })
-    expect(getSpy).toHaveBeenCalledWith('/materials', { params: { type: 'sheet' } })
+    await materialsService.getMaterials({ category: 'sheet' })
+    expect(getSpy).toHaveBeenCalledWith('/materials', { params: { category: 'sheet' } })
   })
 
   it('getMaterial calls GET /materials/:id and returns data', async () => {
@@ -68,11 +68,11 @@ describe('materialsService', () => {
     expect(deleteSpy).toHaveBeenCalledWith('/materials/mat-1')
   })
 
-  it('getMaterialStock calls GET /materials/:id/stock and returns data', async () => {
-    const mockStock = { quantity: 10, unit: 'sheet', lastUpdated: '2026-01-01T00:00:00Z' }
-    getSpy.mockResolvedValueOnce({ data: mockStock })
-    const result = await materialsService.getMaterialStock('mat-1')
-    expect(getSpy).toHaveBeenCalledWith('/materials/mat-1/stock')
-    expect(result).toEqual(mockStock)
+  it('getTemplates calls GET /materials/templates and returns data', async () => {
+    const mockTemplates = [{ id: 'tpl-1', name: 'Standard Plywood' }]
+    getSpy.mockResolvedValueOnce({ data: mockTemplates })
+    const result = await materialsService.getTemplates()
+    expect(getSpy).toHaveBeenCalledWith('/materials/templates')
+    expect(result).toEqual(mockTemplates)
   })
 })

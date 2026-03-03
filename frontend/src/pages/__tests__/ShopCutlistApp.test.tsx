@@ -8,46 +8,51 @@ describe('ShopCutlistApp', () => {
     expect(document.body).toBeInTheDocument()
   })
 
-  it('renders the "Shop Cut List" heading', () => {
+  it('renders the "Shop Cutlist" heading', () => {
     render(<ShopCutlistApp />)
-    expect(screen.getByText('Shop Cut List')).toBeInTheDocument()
+    expect(screen.getByText('Shop Cutlist')).toBeInTheDocument()
   })
 
-  it('shows the cut progress counter (e.g., "2/8 cut")', () => {
+  it('shows the cut progress counter (e.g., "0/6 parts cut")', () => {
     render(<ShopCutlistApp />)
-    expect(screen.getByText(/cut/i)).toBeInTheDocument()
+    expect(screen.getByText(/parts cut/i)).toBeInTheDocument()
     expect(screen.getByText(/\d+\/\d+/)).toBeInTheDocument()
-  })
-
-  it('renders the search bar for filtering parts', () => {
-    render(<ShopCutlistApp />)
-    expect(screen.getByPlaceholderText(/search parts/i)).toBeInTheDocument()
   })
 
   it('renders part names from the mock data', () => {
     render(<ShopCutlistApp />)
-    expect(screen.getByText('LHS Side Panel')).toBeInTheDocument()
-    expect(screen.getByText('RHS Side Panel')).toBeInTheDocument()
-    expect(screen.getByText('Top Panel')).toBeInTheDocument()
+    expect(screen.getByText('Upper Carcass Side')).toBeInTheDocument()
+    expect(screen.getByText('Upper Carcass Top/Bottom')).toBeInTheDocument()
+    expect(screen.getByText('Base Carcass Side')).toBeInTheDocument()
+    expect(screen.getByText('Shelf')).toBeInTheDocument()
   })
 
   it('renders part dimensions and material info', () => {
     render(<ShopCutlistApp />)
-    expect(screen.getByText(/800 × 600 × 18mm · Birch Ply/)).toBeInTheDocument()
+    expect(screen.getAllByText('18mm Birch Ply').length).toBeGreaterThan(0)
+    const dims = screen.getAllByText(/700\s*[×x]\s*320/)
+    expect(dims.length).toBeGreaterThan(0)
   })
 
   it('renders a progress bar for cut completion', () => {
     render(<ShopCutlistApp />)
-    // ProgressBar renders a bar track element
     const track = document.querySelector('.bg-gray-700')
     expect(track).toBeInTheDocument()
   })
 
-  it('filters parts by name when searching', () => {
+  it('renders Print Cutlist button', () => {
     render(<ShopCutlistApp />)
-    const searchInput = screen.getByPlaceholderText(/search parts/i)
-    fireEvent.change(searchInput, { target: { value: 'door' } })
-    expect(screen.getByText('Door LHS')).toBeInTheDocument()
-    expect(screen.queryByText('LHS Side Panel')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /print cutlist/i })).toBeInTheDocument()
+  })
+
+  it('toggling cut marks the part as cut', () => {
+    render(<ShopCutlistApp />)
+    // Find the cut toggle for first part (Upper Carcass Side row - starts uncut)
+    const firstRow = screen.getByText('Upper Carcass Side').closest('tr')
+    const cutButton = firstRow?.querySelector('button')
+    expect(cutButton).toBeInTheDocument()
+    // Initial: 2 parts cut (Upper Back Panel, Base Carcass Bottom). Click adds 1 → 3/6
+    fireEvent.click(cutButton!)
+    expect(screen.getByText(/3\/6/)).toBeInTheDocument()
   })
 })

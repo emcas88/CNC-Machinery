@@ -1,50 +1,63 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@/test/test-utils'
 import { Header } from '@/components/layout/Header'
 
+// Mock useAppStore
+vi.mock('@/store', () => ({
+  useAppStore: () => ({ currentJob: null }),
+}))
+
 describe('Header', () => {
+  beforeEach(() => {
+    // Set path to /dashboard so we get a known title
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/dashboard' },
+      writable: true,
+    })
+  })
+
   it('renders without crashing', () => {
     render(<Header />)
     expect(document.querySelector('header')).toBeInTheDocument()
   })
 
-  it('renders the undo button with the correct title', () => {
+  it('renders page title derived from path', () => {
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/dashboard' },
+      writable: true,
+    })
     render(<Header />)
-    expect(screen.getByTitle('Undo (Ctrl+Z)')).toBeInTheDocument()
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
   })
 
-  it('renders the redo button with the correct title', () => {
+  it('renders search input', () => {
     render(<Header />)
-    expect(screen.getByTitle('Redo (Ctrl+Y)')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search…')).toBeInTheDocument()
   })
 
-  it('renders the unit toggle button', () => {
+  it('renders notification bell button', () => {
     render(<Header />)
-    expect(screen.getByTitle('Toggle unit system')).toBeInTheDocument()
-  })
-
-  it('displays "mm" unit label when unit system is metric (default)', () => {
-    render(<Header />)
-    // Default store state should be metric
-    const unitBtn = screen.getByTitle('Toggle unit system')
-    expect(unitBtn.textContent).toMatch(/mm|in/)
-  })
-
-  it('renders a title when provided via the title prop', () => {
-    render(<Header title="Room Designer" />)
-    expect(screen.getByText('Room Designer')).toBeInTheDocument()
-  })
-
-  it('renders breadcrumbs when provided', () => {
-    render(<Header breadcrumbs={[{ label: 'Job Manager' }, { label: 'Kitchen Reno' }]} />)
-    expect(screen.getByText('Kitchen Reno')).toBeInTheDocument()
-    expect(screen.getByText('Job Manager')).toBeInTheDocument()
-  })
-
-  it('renders a settings/home navigation button', () => {
-    render(<Header />)
-    // CogIcon button navigates home
     const buttons = screen.getAllByRole('button')
     expect(buttons.length).toBeGreaterThan(0)
+  })
+
+  it('renders settings link', () => {
+    render(<Header />)
+    const settingsLink = document.querySelector('a[href="/settings"]')
+    expect(settingsLink).toBeInTheDocument()
+  })
+
+  it('renders user avatar area with "User" text', () => {
+    render(<Header />)
+    expect(screen.getByText('User')).toBeInTheDocument()
+  })
+
+  it('renders different title for /bom path', () => {
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/bom' },
+      writable: true,
+    })
+    render(<Header />)
+    expect(screen.getByText('Bill of Materials')).toBeInTheDocument()
   })
 })

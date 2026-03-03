@@ -1,42 +1,42 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import * as exportsService from '@/services/exports'
+import { exportsService } from '@/services/exports'
 
 describe('exports service', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
   })
 
-  it('exports an exportToPdf function', () => {
-    expect(typeof exportsService.exportToPdf).toBe('function')
+  it('exports an exportJob function', () => {
+    expect(typeof exportsService.exportJob).toBe('function')
   })
 
-  it('exports an exportToDxf function', () => {
-    expect(typeof exportsService.exportToDxf).toBe('function')
+  it('exports an exportCutlist function', () => {
+    expect(typeof exportsService.exportCutlist).toBe('function')
   })
 
-  it('exports an exportToGltf function', () => {
-    expect(typeof exportsService.exportToGltf).toBe('function')
+  it('exports an exportGcode function', () => {
+    expect(typeof exportsService.exportGcode).toBe('function')
   })
 
-  it('exports an exportToCsv function', () => {
-    expect(typeof exportsService.exportToCsv).toBe('function')
+  it('exports a getExportFormats function', () => {
+    expect(typeof exportsService.getExportFormats).toBe('function')
   })
 
-  it('exportToPdf returns a promise', () => {
-    vi.spyOn(exportsService, 'exportToPdf').mockResolvedValue(new Blob())
-    const result = exportsService.exportToPdf({ jobId: '1' })
+  it('exportJob returns a promise', () => {
+    vi.spyOn(exportsService, 'exportJob').mockResolvedValue(new Blob())
+    const result = exportsService.exportJob('job-1', 'pdf')
     expect(result).toBeInstanceOf(Promise)
   })
 
-  it('exportToDxf returns a promise', () => {
-    vi.spyOn(exportsService, 'exportToDxf').mockResolvedValue(new Blob())
-    const result = exportsService.exportToDxf({ jobId: '1' })
+  it('exportCutlist returns a promise', () => {
+    vi.spyOn(exportsService, 'exportCutlist').mockResolvedValue(new Blob())
+    const result = exportsService.exportCutlist('job-1', 'pdf')
     expect(result).toBeInstanceOf(Promise)
   })
 
-  it('exportToGltf returns a promise', () => {
-    vi.spyOn(exportsService, 'exportToGltf').mockResolvedValue(new Blob())
-    const result = exportsService.exportToGltf({ jobId: '1' })
+  it('getExportFormats returns a promise', () => {
+    vi.spyOn(exportsService, 'getExportFormats').mockResolvedValue([])
+    const result = exportsService.getExportFormats()
     expect(result).toBeInstanceOf(Promise)
   })
 })

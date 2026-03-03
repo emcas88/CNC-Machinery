@@ -30,14 +30,8 @@ describe('usersService', () => {
   it('getUsers calls GET /users and returns data', async () => {
     getSpy.mockResolvedValueOnce({ data: [mockUser] })
     const result = await usersService.getUsers()
-    expect(getSpy).toHaveBeenCalledWith('/users', { params: undefined })
+    expect(getSpy).toHaveBeenCalledWith('/users')
     expect(result).toEqual([mockUser])
-  })
-
-  it('getUsers passes params', async () => {
-    getSpy.mockResolvedValueOnce({ data: [mockUser] })
-    await usersService.getUsers({ role: 'operator' })
-    expect(getSpy).toHaveBeenCalledWith('/users', { params: { role: 'operator' } })
   })
 
   it('getUser calls GET /users/:id and returns data', async () => {
@@ -60,22 +54,15 @@ describe('usersService', () => {
     expect(result).toEqual(mockUser)
   })
 
-  it('deleteUser calls DELETE /users/:id', async () => {
-    await usersService.deleteUser('user-1')
-    expect(deleteSpy).toHaveBeenCalledWith('/users/user-1')
-  })
-
-  it('updateUserRole calls PATCH /users/:id/role and returns data', async () => {
+  it('updateUser with role change calls PATCH /users/:id with role in body', async () => {
     patchSpy.mockResolvedValueOnce({ data: { ...mockUser, role: 'admin' } })
-    const result = await usersService.updateUserRole('user-1', 'admin')
-    expect(patchSpy).toHaveBeenCalledWith('/users/user-1/role', { role: 'admin' })
+    const result = await usersService.updateUser('user-1', { role: 'admin' })
+    expect(patchSpy).toHaveBeenCalledWith('/users/user-1', { role: 'admin' })
     expect(result.role).toBe('admin')
   })
 
-  it('deactivateUser calls PATCH /users/:id/deactivate and returns data', async () => {
-    patchSpy.mockResolvedValueOnce({ data: { ...mockUser, isActive: false } })
-    const result = await usersService.deactivateUser('user-1')
-    expect(patchSpy).toHaveBeenCalledWith('/users/user-1/deactivate', {})
-    expect(result.isActive).toBe(false)
+  it('deleteUser calls DELETE /users/:id', async () => {
+    await usersService.deleteUser('user-1')
+    expect(deleteSpy).toHaveBeenCalledWith('/users/user-1')
   })
 })

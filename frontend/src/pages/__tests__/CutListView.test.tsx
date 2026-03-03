@@ -1,30 +1,35 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@/test/test-utils'
 import { CutListView } from '../CutListView'
+
+vi.mock('@/store', () => ({
+  useAppStore: () => ({ currentJob: null }),
+}))
+
+vi.mock('@/services/cutlists', () => ({
+  cutlistsService: {
+    getCutlist: vi.fn().mockResolvedValue([]),
+  },
+}))
 
 describe('CutListView', () => {
   it('renders page heading', () => {
     render(<CutListView />)
-    expect(screen.getByText(/cut list/i)).toBeInTheDocument()
+    expect(screen.getByText('Cut List')).toBeInTheDocument()
   })
 
-  it('renders part rows', () => {
+  it('renders Export CSV button', () => {
     render(<CutListView />)
-    expect(screen.getByText(/carcass|panel|shelf/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /export csv/i })).toBeInTheDocument()
   })
 
-  it('renders export button', () => {
+  it('shows "Select a job to view cut list" when no currentJob', async () => {
     render(<CutListView />)
-    expect(screen.getByText(/export/i)).toBeInTheDocument()
+    expect(await screen.findByText('Select a job to view cut list')).toBeInTheDocument()
   })
 
-  it('renders dimension columns', () => {
+  it('renders search/filter input', () => {
     render(<CutListView />)
-    expect(screen.getByText(/length|width|thickness/i)).toBeInTheDocument()
-  })
-
-  it('snapshot', () => {
-    const { container } = render(<CutListView />)
-    expect(container).toMatchSnapshot()
+    expect(screen.getByPlaceholderText('Filter parts…')).toBeInTheDocument()
   })
 })

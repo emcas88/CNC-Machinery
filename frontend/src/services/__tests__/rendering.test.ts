@@ -2,62 +2,56 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import api from '@/services/api'
 import { renderingService } from '@/services/rendering'
 
-const mockRenderRequest = {
-  productId: 'prod-1',
-  viewType: 'perspective',
-  resolution: { width: 1920, height: 1080 },
-}
-
-const mockRenderResult = {
+const mockRenderJob = {
   id: 'render-1',
-  productId: 'prod-1',
+  jobId: 'job-1',
   status: 'completed',
-  imageUrl: 'https://example.com/render.png',
+  progress: 100,
+  settings: {},
   createdAt: '2026-01-01T00:00:00Z',
 }
 
 describe('renderingService', () => {
   let getSpy: ReturnType<typeof vi.spyOn>
   let postSpy: ReturnType<typeof vi.spyOn>
-  let deleteSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
-    getSpy = vi.spyOn(api, 'get').mockResolvedValue({ data: mockRenderResult })
-    postSpy = vi.spyOn(api, 'post').mockResolvedValue({ data: mockRenderResult })
-    deleteSpy = vi.spyOn(api, 'delete').mockResolvedValue({ data: { status: 'ok' } })
+    getSpy = vi.spyOn(api, 'get').mockResolvedValue({ data: mockRenderJob })
+    postSpy = vi.spyOn(api, 'post').mockResolvedValue({ data: mockRenderJob })
   })
 
   afterEach(() => vi.restoreAllMocks())
 
-  it('render calls POST /rendering/render and returns data', async () => {
-    const result = await renderingService.render(mockRenderRequest)
-    expect(postSpy).toHaveBeenCalledWith('/rendering/render', mockRenderRequest)
-    expect(result).toEqual(mockRenderResult)
+  it('submitRender calls POST /renders with jobId, viewId, settings and returns data', async () => {
+    const settings = { resolution: '1920x1080' as const }
+    const result = await renderingService.submitRender('job-1', 'view-1', settings)
+    expect(postSpy).toHaveBeenCalledWith('/renders', { jobId: 'job-1', viewId: 'view-1', settings })
+    expect(result).toEqual(mockRenderJob)
   })
 
-  it('getRenderResult calls GET /rendering/:id and returns data', async () => {
-    const result = await renderingService.getRenderResult('render-1')
-    expect(getSpy).toHaveBeenCalledWith('/rendering/render-1')
-    expect(result).toEqual(mockRenderResult)
+  it('getStatus calls GET /renders/:renderId and returns data', async () => {
+    const result = await renderingService.getStatus('render-1')
+    expect(getSpy).toHaveBeenCalledWith('/renders/render-1')
+    expect(result).toEqual(mockRenderJob)
   })
 
-  it('getProductRenders calls GET /rendering and returns data', async () => {
-    getSpy.mockResolvedValueOnce({ data: [mockRenderResult] })
-    const result = await renderingService.getProductRenders('prod-1')
-    expect(getSpy).toHaveBeenCalledWith('/rendering', { params: { productId: 'prod-1' } })
-    expect(result).toEqual([mockRenderResult])
+  it('getRenders calls GET /jobs/:jobId/renders and returns data', async () => {
+    getSpy.mockResolvedValueOnce({ data: [mockRenderJob] })
+    const result = await renderingService.getRenders('job-1')
+    expect(getSpy).toHaveBeenCalledWith('/jobs/job-1/renders')
+    expect(result).toEqual([mockRenderJob])
   })
 
-  it('deleteRender calls DELETE /rendering/:id', async () => {
-    await renderingService.deleteRender('render-1')
-    expect(deleteSpy).toHaveBeenCalledWith('/rendering/render-1')
+  it('getResult calls GET /renders/:renderId/result and returns data', async () => {
+    const mockResult = { imageUrl: 'https://example.com/render.png', downloadUrl: 'https://example.com/download' }
+    getSpy.mockResolvedValueOnce({ data: mockResult })
+    const result = await renderingService.getResult('render-1')
+    expect(getSpy).toHaveBeenCalledWith('/renders/render-1/result')
+    expect(result).toEqual(mockResult)
   })
 
-  it('getRenderSettings calls GET /rendering/settings and returns data', async () => {
-    const mockSettings = { defaultResolution: { width: 1920, height: 1080 } }
-    getSpy.mockResolvedValueOnce({ data: mockSettings })
-    const result = await renderingService.getRenderSettings()
-    expect(getSpy).toHaveBeenCalledWith('/rendering/settings')
-    expect(result).toEqual(mockSettings)
+  it('cancelRender calls POST /renders/:renderId/cancel', async () => {
+    await renderingService.cancelRender('render-1')
+    expect(postSpy).toHaveBeenCalledWith('/renders/render-1/cancel')
   })
 })

@@ -5,22 +5,11 @@ import { FloorPlanEditor } from '../FloorPlanEditor'
 describe('FloorPlanEditor', () => {
   it('renders page heading', () => {
     render(<FloorPlanEditor />)
-    expect(screen.getByText(/floor plan/i)).toBeInTheDocument()
+    expect(screen.getAllByText('Floor Plan Editor').length).toBeGreaterThan(0)
   })
 
-  it('renders canvas element', () => {
+  it('renders placeholder content', () => {
     render(<FloorPlanEditor />)
-    expect(document.querySelector('canvas')).toBeInTheDocument()
-  })
-
-  it('renders toolbar', () => {
-    render(<FloorPlanEditor />)
-    const btns = screen.getAllByRole('button')
-    expect(btns.length).toBeGreaterThan(0)
-  })
-
-  it('snapshot', () => {
-    const { container } = render(<FloorPlanEditor />)
-    expect(container).toMatchSnapshot()
+    expect(screen.getByText('2D room layout coming soon')).toBeInTheDocument()
   })
 })

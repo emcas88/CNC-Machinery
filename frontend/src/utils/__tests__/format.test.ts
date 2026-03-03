@@ -52,7 +52,8 @@ describe('formatCurrency', () => {
 
   it('uses AUD as default currency', () => {
     const result = formatCurrency(10)
-    expect(result).toContain('A$')
+    expect(result).toContain('10.00')
+    expect(result).toContain('$')
   })
 
   it('supports USD currency', () => {

@@ -27,7 +27,7 @@ import gcodeService, {
   type SimulationOutput,
   type SafetyCheckOutput,
   type SpoilboardResurfaceResponse,
-} from '../services/gcode';
+} from '../gcode';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock axios globally

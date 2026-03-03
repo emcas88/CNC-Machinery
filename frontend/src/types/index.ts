@@ -34,7 +34,7 @@ export type { PostProcessor, PostProcessorVariable, CreatePostProcessor } from '
 export { OutputFormat } from './post-processor'
 
 export type { OptimizationRun, NestedSheet, NestedPart, OptimizationSettings } from './optimization'
-export { OptimizationQuality } from './optimization'
+export { OptimizationQuality, OptimizationStatus } from './optimization'
 
 export type { LabelTemplate, LabelField } from './label'
 export { LabelFieldType } from './label'

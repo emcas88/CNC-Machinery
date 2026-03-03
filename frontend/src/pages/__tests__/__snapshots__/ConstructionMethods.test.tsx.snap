@@ -1,0 +1,215 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ConstructionMethods > snapshot 1`] = `
+<div>
+  <div
+    class="flex flex-col h-full fade-in"
+  >
+    <div
+      class="flex items-center gap-3 px-6 py-3 border-b border-gray-800 bg-gray-900 shrink-0"
+    >
+      <svg
+        aria-hidden="true"
+        class="w-5 h-5 text-cyan-500"
+        data-slot="icon"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+      <h1
+        class="text-sm font-semibold text-gray-200"
+      >
+        Construction Methods
+      </h1>
+    </div>
+    <div
+      class="flex-1 overflow-hidden"
+    >
+      <div
+        class="flex h-full gap-4 p-4"
+      >
+        <aside
+          class="w-52 panel p-3"
+        >
+          <div
+            class="flex items-center justify-between mb-2"
+          >
+            <p
+              class="text-xs font-semibold text-gray-400 uppercase tracking-wide"
+            >
+              Methods
+            </p>
+            <button
+              class="btn-ghost p-1 text-xs"
+            >
+              +
+            </button>
+          </div>
+          <button
+            class="w-full text-left px-2 py-2 text-xs text-gray-400 hover:text-gray-200 hover:bg-gray-800 rounded transition-colors border-b border-gray-800"
+          >
+            Frameless Standard
+          </button>
+          <button
+            class="w-full text-left px-2 py-2 text-xs text-gray-400 hover:text-gray-200 hover:bg-gray-800 rounded transition-colors border-b border-gray-800"
+          >
+            Face Frame 1/2 Overlay
+          </button>
+          <button
+            class="w-full text-left px-2 py-2 text-xs text-gray-400 hover:text-gray-200 hover:bg-gray-800 rounded transition-colors border-b border-gray-800"
+          >
+            Inset Face Frame
+          </button>
+          <button
+            class="w-full text-left px-2 py-2 text-xs text-gray-400 hover:text-gray-200 hover:bg-gray-800 rounded transition-colors border-b border-gray-800"
+          >
+            Dovetail Drawer Box
+          </button>
+          <button
+            class="w-full text-left px-2 py-2 text-xs text-gray-400 hover:text-gray-200 hover:bg-gray-800 rounded transition-colors border-b border-gray-800"
+          >
+            Pocket Screw
+          </button>
+        </aside>
+        <div
+          class="flex-1 panel p-4 space-y-3"
+        >
+          <h3
+            class="text-sm font-semibold text-gray-200"
+          >
+            Frameless Standard
+          </h3>
+          <div
+            class="grid grid-cols-2 gap-3"
+          >
+            <div>
+              <label
+                class="text-xs text-gray-500"
+              >
+                Joining Method
+              </label>
+              <input
+                class="input-field w-full mt-0.5 text-xs"
+                value="Cam Lock"
+              />
+            </div>
+            <div>
+              <label
+                class="text-xs text-gray-500"
+              >
+                Back Panel
+              </label>
+              <input
+                class="input-field w-full mt-0.5 text-xs"
+                value="Dado"
+              />
+            </div>
+            <div>
+              <label
+                class="text-xs text-gray-500"
+              >
+                Bottom Panel
+              </label>
+              <input
+                class="input-field w-full mt-0.5 text-xs"
+                value="Dado"
+              />
+            </div>
+            <div>
+              <label
+                class="text-xs text-gray-500"
+              >
+                Case Thickness
+              </label>
+              <input
+                class="input-field w-full mt-0.5 text-xs"
+                value="18mm"
+              />
+            </div>
+            <div>
+              <label
+                class="text-xs text-gray-500"
+              >
+                Back Thickness
+              </label>
+              <input
+                class="input-field w-full mt-0.5 text-xs"
+                value="9mm"
+              />
+            </div>
+            <div>
+              <label
+                class="text-xs text-gray-500"
+              >
+                System Hole Spacing
+              </label>
+              <input
+                class="input-field w-full mt-0.5 text-xs"
+                value="32mm"
+              />
+            </div>
+            <div>
+              <label
+                class="text-xs text-gray-500"
+              >
+                Overlap
+              </label>
+              <input
+                class="input-field w-full mt-0.5 text-xs"
+                value="0mm"
+              />
+            </div>
+            <div>
+              <label
+                class="text-xs text-gray-500"
+              >
+                Inset Depth
+              </label>
+              <input
+                class="input-field w-full mt-0.5 text-xs"
+                value="0mm"
+              />
+            </div>
+          </div>
+          <label
+            class="flex items-center gap-2 text-xs text-gray-400 mt-2"
+          >
+            <input
+              checked=""
+              type="checkbox"
+            />
+             Blum System Holes (32mm pitch)
+          </label>
+          <div
+            class="flex gap-2 mt-4"
+          >
+            <button
+              class="btn-primary text-xs"
+            >
+              Save Method
+            </button>
+            <button
+              class="btn-secondary text-xs"
+            >
+              Apply to Products
+            </button>
+            <button
+              class="btn-secondary text-xs"
+            >
+              Set as Default
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;

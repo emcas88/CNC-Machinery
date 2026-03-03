@@ -1,30 +1,37 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@/test/test-utils'
 import { JobManager } from '../JobManager'
+
+vi.mock('@/store', () => ({
+  useAppStore: () => ({ setCurrentJob: vi.fn() }),
+}))
+
+vi.mock('@/services/jobs', () => ({
+  jobsService: {
+    list: vi.fn().mockResolvedValue([]),
+    delete: vi.fn(),
+  },
+}))
 
 describe('JobManager', () => {
   it('renders page heading', () => {
     render(<JobManager />)
-    expect(screen.getByText(/job manager/i)).toBeInTheDocument()
+    expect(screen.getByText('Job Manager')).toBeInTheDocument()
   })
 
-  it('renders job list', () => {
+  it('renders New Job button', () => {
     render(<JobManager />)
-    expect(screen.getByText(/JOB-/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /new job/i })).toBeInTheDocument()
   })
 
-  it('renders create job button', () => {
+  it('renders search input', () => {
     render(<JobManager />)
-    expect(screen.getByText(/new job|create/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search jobs…')).toBeInTheDocument()
   })
 
-  it('renders search or filter', () => {
+  it('renders status filter', () => {
     render(<JobManager />)
-    expect(screen.getByRole('textbox')).toBeInTheDocument()
-  })
-
-  it('snapshot', () => {
-    const { container } = render(<JobManager />)
-    expect(container).toMatchSnapshot()
+    expect(screen.getByRole('combobox')).toBeInTheDocument()
+    expect(screen.getByText('All Status')).toBeInTheDocument()
   })
 })

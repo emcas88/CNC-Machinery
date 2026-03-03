@@ -1,36 +1,35 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@/test/test-utils'
 import { ExportCenter } from '../ExportCenter'
+
+vi.mock('@/store', () => ({
+  useAppStore: () => ({ currentJob: null }),
+}))
 
 describe('ExportCenter', () => {
   it('renders page heading', () => {
     render(<ExportCenter />)
-    expect(screen.getByText(/export center/i)).toBeInTheDocument()
+    expect(screen.getByText('Export Center')).toBeInTheDocument()
   })
 
   it('renders export format options', () => {
     render(<ExportCenter />)
-    expect(screen.getByText(/dxf|pdf|csv|svg/i)).toBeInTheDocument()
+    expect(screen.getByText('Cut List CSV')).toBeInTheDocument()
+    expect(screen.getByText('DXF Files')).toBeInTheDocument()
+    expect(screen.getByText('SVG Nest')).toBeInTheDocument()
+    expect(screen.getByText('Job PDF')).toBeInTheDocument()
+    expect(screen.getByText('Machine XML')).toBeInTheDocument()
+    expect(screen.getByText('JSON Export')).toBeInTheDocument()
   })
 
-  it('renders export buttons', () => {
+  it('renders Export buttons for each format', () => {
     render(<ExportCenter />)
-    const btns = screen.getAllByRole('button')
-    expect(btns.length).toBeGreaterThan(0)
+    const exportBtns = screen.getAllByRole('button', { name: /export/i })
+    expect(exportBtns.length).toBeGreaterThan(0)
   })
 
-  it('renders recent exports section', () => {
+  it('shows "No job selected" when no currentJob', () => {
     render(<ExportCenter />)
-    expect(screen.getByText(/recent|history/i)).toBeInTheDocument()
-  })
-
-  it('renders file size or metadata', () => {
-    render(<ExportCenter />)
-    expect(screen.getByText(/kb|mb|size/i)).toBeInTheDocument()
-  })
-
-  it('snapshot', () => {
-    const { container } = render(<ExportCenter />)
-    expect(container).toMatchSnapshot()
+    expect(screen.getByText(/no job selected/i)).toBeInTheDocument()
   })
 })

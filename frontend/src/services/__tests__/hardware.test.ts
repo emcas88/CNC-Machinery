@@ -1,46 +1,50 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import * as hardwareService from '@/services/hardware'
+import { hardwareService } from '@/services/hardware'
 
 describe('hardware service', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
   })
 
-  it('exports a getHardwareItems function', () => {
-    expect(typeof hardwareService.getHardwareItems).toBe('function')
+  it('exports a getHardware function', () => {
+    expect(typeof hardwareService.getHardware).toBe('function')
   })
 
-  it('exports a getHardwareItemById function', () => {
-    expect(typeof hardwareService.getHardwareItemById).toBe('function')
+  it('exports a getHardwareItem function', () => {
+    expect(typeof hardwareService.getHardwareItem).toBe('function')
   })
 
-  it('exports a createHardwareItem function', () => {
-    expect(typeof hardwareService.createHardwareItem).toBe('function')
+  it('exports a createHardware function', () => {
+    expect(typeof hardwareService.createHardware).toBe('function')
   })
 
-  it('exports an updateHardwareItem function', () => {
-    expect(typeof hardwareService.updateHardwareItem).toBe('function')
+  it('exports an updateHardware function', () => {
+    expect(typeof hardwareService.updateHardware).toBe('function')
   })
 
-  it('exports a deleteHardwareItem function', () => {
-    expect(typeof hardwareService.deleteHardwareItem).toBe('function')
+  it('exports a deleteHardware function', () => {
+    expect(typeof hardwareService.deleteHardware).toBe('function')
   })
 
-  it('getHardwareItems returns a promise', () => {
-    vi.spyOn(hardwareService, 'getHardwareItems').mockResolvedValue([])
-    const result = hardwareService.getHardwareItems()
+  it('exports a getHardwareCategories function', () => {
+    expect(typeof hardwareService.getHardwareCategories).toBe('function')
+  })
+
+  it('getHardware returns a promise', () => {
+    vi.spyOn(hardwareService, 'getHardware').mockResolvedValue([])
+    const result = hardwareService.getHardware()
     expect(result).toBeInstanceOf(Promise)
   })
 
-  it('getHardwareItemById returns a promise', () => {
-    vi.spyOn(hardwareService, 'getHardwareItemById').mockResolvedValue(null)
-    const result = hardwareService.getHardwareItemById('1')
+  it('getHardwareItem returns a promise', () => {
+    vi.spyOn(hardwareService, 'getHardwareItem').mockResolvedValue(null as any)
+    const result = hardwareService.getHardwareItem('1')
     expect(result).toBeInstanceOf(Promise)
   })
 
-  it('createHardwareItem returns a promise', () => {
-    vi.spyOn(hardwareService, 'createHardwareItem').mockResolvedValue({ id: '1' })
-    const result = hardwareService.createHardwareItem({ name: 'Hinge', type: 'hinge' })
+  it('createHardware returns a promise', () => {
+    vi.spyOn(hardwareService, 'createHardware').mockResolvedValue({ id: '1' } as any)
+    const result = hardwareService.createHardware({ name: 'Hinge', type: 'hinge' } as any)
     expect(result).toBeInstanceOf(Promise)
   })
 })

@@ -1,25 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import * as cutlistsService from '@/services/cutlists'
+import { cutlistsService } from '@/services/cutlists'
 
 describe('cutlists service', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
   })
 
+  it('exports a generateCutlist function', () => {
+    expect(typeof cutlistsService.generateCutlist).toBe('function')
+  })
+
+  it('exports a getCutlistPreview function', () => {
+    expect(typeof cutlistsService.getCutlistPreview).toBe('function')
+  })
+
   it('exports a getCutlists function', () => {
     expect(typeof cutlistsService.getCutlists).toBe('function')
-  })
-
-  it('exports a getCutlistById function', () => {
-    expect(typeof cutlistsService.getCutlistById).toBe('function')
-  })
-
-  it('exports a createCutlist function', () => {
-    expect(typeof cutlistsService.createCutlist).toBe('function')
-  })
-
-  it('exports an updateCutlist function', () => {
-    expect(typeof cutlistsService.updateCutlist).toBe('function')
   })
 
   it('exports a deleteCutlist function', () => {
@@ -28,19 +24,19 @@ describe('cutlists service', () => {
 
   it('getCutlists returns a promise', () => {
     vi.spyOn(cutlistsService, 'getCutlists').mockResolvedValue([])
-    const result = cutlistsService.getCutlists()
+    const result = cutlistsService.getCutlists('job-1')
     expect(result).toBeInstanceOf(Promise)
   })
 
-  it('getCutlistById returns a promise', () => {
-    vi.spyOn(cutlistsService, 'getCutlistById').mockResolvedValue(null)
-    const result = cutlistsService.getCutlistById('1')
+  it('generateCutlist returns a promise', () => {
+    vi.spyOn(cutlistsService, 'generateCutlist').mockResolvedValue(new Blob())
+    const result = cutlistsService.generateCutlist({ jobId: 'job-1' })
     expect(result).toBeInstanceOf(Promise)
   })
 
-  it('createCutlist returns a promise', () => {
-    vi.spyOn(cutlistsService, 'createCutlist').mockResolvedValue({ id: '1' })
-    const result = cutlistsService.createCutlist({ name: 'Test' })
+  it('getCutlistPreview returns a promise', () => {
+    vi.spyOn(cutlistsService, 'getCutlistPreview').mockResolvedValue(null)
+    const result = cutlistsService.getCutlistPreview('job-1')
     expect(result).toBeInstanceOf(Promise)
   })
 })

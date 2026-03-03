@@ -2,55 +2,52 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import api from '@/services/api'
 import { shopService } from '@/services/shop'
 
-const mockShopSettings = {
-  id: 'shop-1',
-  name: 'My CNC Shop',
-  currency: 'USD',
-  timezone: 'America/New_York',
-  workingHours: { start: '08:00', end: '17:00' },
-  createdAt: '2026-01-01T00:00:00Z',
-  updatedAt: '2026-01-01T00:00:00Z',
+const mockCutlist = {
+  jobId: 'job-1',
+  parts: [],
+  sheets: [],
 }
 
 describe('shopService', () => {
   let getSpy: ReturnType<typeof vi.spyOn>
   let postSpy: ReturnType<typeof vi.spyOn>
-  let patchSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
-    getSpy = vi.spyOn(api, 'get').mockResolvedValue({ data: mockShopSettings })
-    postSpy = vi.spyOn(api, 'post').mockResolvedValue({ data: mockShopSettings })
-    patchSpy = vi.spyOn(api, 'patch').mockResolvedValue({ data: mockShopSettings })
+    getSpy = vi.spyOn(api, 'get').mockResolvedValue({ data: mockCutlist })
+    postSpy = vi.spyOn(api, 'post').mockResolvedValue({ data: { status: 'ok' } })
   })
 
   afterEach(() => vi.restoreAllMocks())
 
-  it('getShopSettings calls GET /shop/settings and returns data', async () => {
-    const result = await shopService.getShopSettings()
-    expect(getSpy).toHaveBeenCalledWith('/shop/settings')
-    expect(result).toEqual(mockShopSettings)
+  it('getCutlist calls GET /shop/cutlist with jobId and optional runId and returns data', async () => {
+    const result = await shopService.getCutlist('job-1')
+    expect(getSpy).toHaveBeenCalledWith('/shop/cutlist', { params: { jobId: 'job-1', runId: undefined } })
+    expect(result).toEqual(mockCutlist)
   })
 
-  it('updateShopSettings calls PATCH /shop/settings and returns data', async () => {
-    const changes = { name: 'Updated Shop' }
-    const result = await shopService.updateShopSettings(changes)
-    expect(patchSpy).toHaveBeenCalledWith('/shop/settings', changes)
-    expect(result).toEqual(mockShopSettings)
+  it('getCutlist passes runId when provided', async () => {
+    await shopService.getCutlist('job-1', 'run-1')
+    expect(getSpy).toHaveBeenCalledWith('/shop/cutlist', { params: { jobId: 'job-1', runId: 'run-1' } })
   })
 
-  it('getShopStats calls GET /shop/stats and returns data', async () => {
-    const mockStats = { totalJobs: 10, activeJobs: 3, completedJobs: 7 }
-    getSpy.mockResolvedValueOnce({ data: mockStats })
-    const result = await shopService.getShopStats()
-    expect(getSpy).toHaveBeenCalledWith('/shop/stats')
-    expect(result).toEqual(mockStats)
+  it('getAssembly calls GET /shop/assembly/:jobId and returns data', async () => {
+    const mockAssembly = { steps: [] }
+    getSpy.mockResolvedValueOnce({ data: mockAssembly })
+    const result = await shopService.getAssembly('job-1')
+    expect(getSpy).toHaveBeenCalledWith('/shop/assembly/job-1')
+    expect(result).toEqual(mockAssembly)
   })
 
-  it('getShopCapacity calls GET /shop/capacity and returns data', async () => {
-    const mockCapacity = { available: 80, used: 20, unit: 'percent' }
-    getSpy.mockResolvedValueOnce({ data: mockCapacity })
-    const result = await shopService.getShopCapacity()
-    expect(getSpy).toHaveBeenCalledWith('/shop/capacity')
-    expect(result).toEqual(mockCapacity)
+  it('printLabel calls POST /shop/print-label with partId', async () => {
+    await shopService.printLabel('part-1')
+    expect(postSpy).toHaveBeenCalledWith('/shop/print-label', { partId: 'part-1' })
+  })
+
+  it('getProgress calls GET /shop/progress/:jobId and returns data', async () => {
+    const mockProgress = { total: 10, cut: 5, assembled: 2, percent: 50 }
+    getSpy.mockResolvedValueOnce({ data: mockProgress })
+    const result = await shopService.getProgress('job-1')
+    expect(getSpy).toHaveBeenCalledWith('/shop/progress/job-1')
+    expect(result).toEqual(mockProgress)
   })
 })

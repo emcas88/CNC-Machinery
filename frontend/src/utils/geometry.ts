@@ -15,26 +15,54 @@ export interface Line {
   p2: Point
 }
 
-/** Euclidean distance between two points */
+// ── Unit conversions ────────────────────────────────────────────────
+
+export const mmToInches = (mm: number): number => mm / 25.4
+export const inchesToMm = (inches: number): number => inches * 25.4
+export const mmToFeet = (mm: number): number => mm / 304.8
+export const feetToMm = (feet: number): number => feet * 304.8
+
+// ── Scalar geometry ─────────────────────────────────────────────────
+
+export const calculateArea = (w: number, h: number): number => w * h
+export const calculatePerimeter = (w: number, h: number): number => 2 * (w + h)
+export const calculateVolume = (w: number, h: number, d: number): number => w * h * d
+
+// ── Math helpers ────────────────────────────────────────────────────
+
+export const clamp = (value: number, min: number, max: number): number =>
+  Math.min(Math.max(value, min), max)
+
+export const lerp = (start: number, end: number, t: number): number =>
+  start + (end - start) * t
+
+export const degreesToRadians = (deg: number): number => (deg * Math.PI) / 180
+export const radiansToDegrees = (rad: number): number => (rad * 180) / Math.PI
+
+// ── Point helpers ───────────────────────────────────────────────────
+
 export const distance = (a: Point, b: Point): number =>
   Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2)
 
-/** Midpoint of two points */
 export const midpoint = (a: Point, b: Point): Point => ({
   x: (a.x + b.x) / 2,
   y: (a.y + b.y) / 2,
 })
 
-/** Check if two rectangles overlap */
-export const rectsOverlap = (a: Rect, b: Rect): boolean =>
+// ── Rect helpers ────────────────────────────────────────────────────
+
+/** Check if two rectangles overlap (touching edges = not overlapping) */
+export const rectOverlap = (a: Rect, b: Rect): boolean =>
   a.x < b.x + b.width &&
   a.x + a.width > b.x &&
   a.y < b.y + b.height &&
   a.y + a.height > b.y
 
-/** Check if a point is inside a rectangle */
+export const rectsOverlap = rectOverlap
+
+/** Point in rect — inclusive min, exclusive max */
 export const pointInRect = (p: Point, r: Rect): boolean =>
-  p.x >= r.x && p.x <= r.x + r.width && p.y >= r.y && p.y <= r.y + r.height
+  p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height
 
 /** Line segment intersection — returns intersection point or null */
 export const lineIntersection = (l1: Line, l2: Line): Point | null => {
@@ -56,13 +84,11 @@ export const lineIntersection = (l1: Line, l2: Line): Point | null => {
   return null
 }
 
-/** Angle between two points in degrees */
 export const angleDeg = (from: Point, to: Point): number =>
   (Math.atan2(to.y - from.y, to.x - from.x) * 180) / Math.PI
 
-/** Rotate a point around an origin by degrees */
 export const rotatePoint = (point: Point, origin: Point, degrees: number): Point => {
-  const rad = (degrees * Math.PI) / 180
+  const rad = degreesToRadians(degrees)
   const cos = Math.cos(rad)
   const sin = Math.sin(rad)
   const dx = point.x - origin.x
@@ -73,9 +99,7 @@ export const rotatePoint = (point: Point, origin: Point, degrees: number): Point
   }
 }
 
-/** Snap value to nearest grid size */
 export const snapToGrid = (value: number, gridSize: number): number =>
   Math.round(value / gridSize) * gridSize
 
-/** Area of a rectangle */
 export const rectArea = (r: Rect): number => r.width * r.height

@@ -3,40 +3,25 @@ import { render, screen } from '@/test/test-utils'
 import { ProductEditor } from '@/pages/ProductEditor'
 
 describe('ProductEditor', () => {
+  const renderPage = () => render(<ProductEditor />)
+
   it('renders without crashing', () => {
-    render(<ProductEditor />)
+    renderPage()
     expect(document.body).toBeInTheDocument()
   })
 
   it('renders the "Product Editor" heading', () => {
-    render(<ProductEditor />)
+    renderPage()
     expect(screen.getByText('Product Editor')).toBeInTheDocument()
   })
 
-  it('renders the Face Sections panel', () => {
-    render(<ProductEditor />)
-    expect(screen.getByText('Face Sections')).toBeInTheDocument()
+  it('renders the 3D Product Editor subtitle', () => {
+    renderPage()
+    expect(screen.getByText('3D Product Editor')).toBeInTheDocument()
   })
 
-  it('renders the Interior Layout panel', () => {
-    render(<ProductEditor />)
-    expect(screen.getByText('Interior Layout')).toBeInTheDocument()
-  })
-
-  it('renders the Dimensions panel', () => {
-    render(<ProductEditor />)
-    expect(screen.getByText('Dimensions')).toBeInTheDocument()
-  })
-
-  it('renders Width, Height, and Depth dimension inputs', () => {
-    render(<ProductEditor />)
-    expect(screen.getByText('Width (mm)')).toBeInTheDocument()
-    expect(screen.getByText('Height (mm)')).toBeInTheDocument()
-    expect(screen.getByText('Depth (mm)')).toBeInTheDocument()
-  })
-
-  it('renders the "Regenerate Parts" button', () => {
-    render(<ProductEditor />)
-    expect(screen.getByRole('button', { name: /regenerate parts/i })).toBeInTheDocument()
+  it('renders the coming soon message', () => {
+    renderPage()
+    expect(screen.getByText('Cabinet design canvas coming soon')).toBeInTheDocument()
   })
 })

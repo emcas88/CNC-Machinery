@@ -8,14 +8,14 @@ describe('ShopLabelApp', () => {
     expect(document.body).toBeInTheDocument()
   })
 
-  it('renders the "Label Printing" heading', () => {
+  it('renders the "Shop Labels" heading', () => {
     render(<ShopLabelApp />)
-    expect(screen.getByText('Label Printing')).toBeInTheDocument()
+    expect(screen.getByText('Shop Labels')).toBeInTheDocument()
   })
 
-  it('renders the subtitle "Nested Sheet Label App"', () => {
+  it('renders the subtitle "Print part identification labels"', () => {
     render(<ShopLabelApp />)
-    expect(screen.getByText('Nested Sheet Label App')).toBeInTheDocument()
+    expect(screen.getByText('Print part identification labels')).toBeInTheDocument()
   })
 
   it('renders the "Print All" button', () => {
@@ -23,26 +23,24 @@ describe('ShopLabelApp', () => {
     expect(screen.getByRole('button', { name: /print all/i })).toBeInTheDocument()
   })
 
-  it('renders label entries with code and part name', () => {
+  it('renders label cards with part name and job', () => {
     render(<ShopLabelApp />)
-    expect(screen.getByText(/A-001 — LHS Side Panel/)).toBeInTheDocument()
-    expect(screen.getByText(/A-002 — RHS Side Panel/)).toBeInTheDocument()
+    expect(screen.getByText('Upper Carcass Side L')).toBeInTheDocument()
+    expect(screen.getByText('Upper Carcass Side R')).toBeInTheDocument()
+    expect(screen.getByText('Base Carcass Side L')).toBeInTheDocument()
+    expect(screen.getAllByText('JOB-2024-089').length).toBeGreaterThan(0)
   })
 
-  it('renders label sheet and position info', () => {
+  it('renders dimensions and material in label cards', () => {
     render(<ShopLabelApp />)
-    expect(screen.getByText(/Sheet 1 · X:10 Y:10/)).toBeInTheDocument()
+    const dims = screen.getAllByText(/700\s*[×x]\s*320mm/)
+    expect(dims.length).toBeGreaterThan(0)
+    expect(screen.getAllByText('18mm Birch Ply').length).toBeGreaterThan(0)
   })
 
-  it('renders "Printed" badge for already printed labels', () => {
+  it('renders barcode in label cards', () => {
     render(<ShopLabelApp />)
-    const printedBadges = screen.getAllByText('Printed')
-    expect(printedBadges.length).toBeGreaterThan(0)
-  })
-
-  it('renders "Queue" badge for pending labels', () => {
-    render(<ShopLabelApp />)
-    const queueBadges = screen.getAllByText('Queue')
-    expect(queueBadges.length).toBeGreaterThan(0)
+    expect(screen.getByText('089-001')).toBeInTheDocument()
+    expect(screen.getByText('089-002')).toBeInTheDocument()
   })
 })

@@ -8,37 +8,45 @@ describe('TextureManager', () => {
     expect(document.body).toBeInTheDocument()
   })
 
-  it('renders the "Texture Library" heading', () => {
+  it('renders the "Texture Manager" heading', () => {
     render(<TextureManager />)
-    expect(screen.getByText('Texture Library')).toBeInTheDocument()
+    expect(screen.getByText('Texture Manager')).toBeInTheDocument()
   })
 
-  it('renders the texture group sidebar', () => {
+  it('renders the subtitle "Manage material textures for 3D visualisation"', () => {
     render(<TextureManager />)
-    expect(screen.getByText('Groups')).toBeInTheDocument()
-    expect(screen.getByText('Wood')).toBeInTheDocument()
-    expect(screen.getByText('Laminate')).toBeInTheDocument()
+    expect(screen.getByText('Manage material textures for 3D visualisation')).toBeInTheDocument()
   })
 
-  it('renders the texture search bar', () => {
+  it('renders the "Upload Texture" button', () => {
     render(<TextureManager />)
-    expect(screen.getByPlaceholderText(/search textures/i)).toBeInTheDocument()
-  })
-
-  it('renders the "Import Texture" button', () => {
-    render(<TextureManager />)
-    expect(screen.getByRole('button', { name: /import texture/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /upload texture/i })).toBeInTheDocument()
   })
 
   it('renders texture grid items with names', () => {
     render(<TextureManager />)
-    expect(screen.getByText('Oak Natural')).toBeInTheDocument()
-    expect(screen.getByText('Walnut Dark')).toBeInTheDocument()
+    expect(screen.getByText('Birch Ply Natural')).toBeInTheDocument()
+    expect(screen.getByText('White Melamine')).toBeInTheDocument()
+    expect(screen.getByText('Oak Veneer')).toBeInTheDocument()
+    expect(screen.getByText('Walnut Veneer')).toBeInTheDocument()
   })
 
-  it('renders the texture detail panel for the selected texture', () => {
+  it('renders texture categories', () => {
     render(<TextureManager />)
-    expect(screen.getByText('Texture Details')).toBeInTheDocument()
-    expect(screen.getByText('Dimensions')).toBeInTheDocument()
+    expect(screen.getByText('Ply')).toBeInTheDocument()
+    expect(screen.getByText('Melamine')).toBeInTheDocument()
+    const veneerElements = screen.getAllByText('Veneer')
+    expect(veneerElements.length).toBeGreaterThan(0)
+  })
+
+  it('renders "Used in X jobs" for textures', () => {
+    render(<TextureManager />)
+    const usedInElements = screen.getAllByText(/Used in \d+ jobs/)
+    expect(usedInElements.length).toBeGreaterThan(0)
+  })
+
+  it('renders Add Texture slot', () => {
+    render(<TextureManager />)
+    expect(screen.getByText('Add Texture')).toBeInTheDocument()
   })
 })

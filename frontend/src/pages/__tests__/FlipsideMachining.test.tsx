@@ -1,36 +1,31 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@/test/test-utils'
 import { FlipsideMachining } from '../FlipsideMachining'
+
+vi.mock('@/store', () => ({
+  useOptimizerStore: () => ({
+    sheets: [],
+  }),
+}))
 
 describe('FlipsideMachining', () => {
   it('renders page heading', () => {
     render(<FlipsideMachining />)
-    expect(screen.getByText(/flipside|flip side|machining/i)).toBeInTheDocument()
+    expect(screen.getByText('Flipside Machining')).toBeInTheDocument()
   })
 
-  it('renders side toggle', () => {
+  it('renders Sheets sidebar', () => {
     render(<FlipsideMachining />)
-    expect(screen.getByText(/side a|side b|front|back/i)).toBeInTheDocument()
+    expect(screen.getByText('Sheets')).toBeInTheDocument()
   })
 
-  it('renders operation list', () => {
+  it('shows "No sheets" when no sheets', () => {
     render(<FlipsideMachining />)
-    expect(screen.getByText(/operation|pocket|drill|slot/i)).toBeInTheDocument()
+    expect(screen.getByText('No sheets')).toBeInTheDocument()
   })
 
-  it('renders part selector', () => {
+  it('shows "No sheets available" in main content when no sheets', () => {
     render(<FlipsideMachining />)
-    expect(screen.getByText(/part|panel|component/i)).toBeInTheDocument()
-  })
-
-  it('renders action buttons', () => {
-    render(<FlipsideMachining />)
-    const btns = screen.getAllByRole('button')
-    expect(btns.length).toBeGreaterThan(0)
-  })
-
-  it('snapshot', () => {
-    const { container } = render(<FlipsideMachining />)
-    expect(container).toMatchSnapshot()
+    expect(screen.getByText('No sheets available')).toBeInTheDocument()
   })
 })

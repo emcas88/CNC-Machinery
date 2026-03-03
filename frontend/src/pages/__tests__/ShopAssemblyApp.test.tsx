@@ -1,47 +1,43 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen, fireEvent } from '@/test/test-utils'
+import { render, screen } from '@/test/test-utils'
 import { ShopAssemblyApp } from '@/pages/ShopAssemblyApp'
 
 describe('ShopAssemblyApp', () => {
+  const renderPage = () => render(<ShopAssemblyApp />)
+
   it('renders without crashing', () => {
-    render(<ShopAssemblyApp />)
+    renderPage()
     expect(document.body).toBeInTheDocument()
   })
 
-  it('renders the "Assembly Checklist" heading', () => {
-    render(<ShopAssemblyApp />)
-    expect(screen.getByText('Assembly Checklist')).toBeInTheDocument()
+  it('renders the "Shop Assembly" heading', () => {
+    renderPage()
+    expect(screen.getByText('Shop Assembly')).toBeInTheDocument()
   })
 
-  it('shows the steps progress counter', () => {
-    render(<ShopAssemblyApp />)
-    expect(screen.getByText(/steps/i)).toBeInTheDocument()
-    expect(screen.getByText(/\d+\/\d+/)).toBeInTheDocument()
+  it('renders the subtitle "Assembly queue for shop floor"', () => {
+    renderPage()
+    expect(screen.getByText('Assembly queue for shop floor')).toBeInTheDocument()
   })
 
-  it('renders assembly step descriptions', () => {
-    render(<ShopAssemblyApp />)
-    expect(screen.getByText('Install bottom panel into side dados')).toBeInTheDocument()
-    expect(screen.getByText('Install back panel')).toBeInTheDocument()
+  it('renders assembly task items', () => {
+    renderPage()
+    expect(screen.getByText('Upper Cabinet L1')).toBeInTheDocument()
+    expect(screen.getByText('Base Cabinet B2')).toBeInTheDocument()
+    expect(screen.getByText('Pantry Unit P1')).toBeInTheDocument()
+    expect(screen.getByText('Island Cabinet IC1')).toBeInTheDocument()
   })
 
-  it('renders product names associated with steps', () => {
-    render(<ShopAssemblyApp />)
-    expect(screen.getByText('Base Cabinet 600')).toBeInTheDocument()
+  it('renders job numbers and assignees', () => {
+    renderPage()
+    expect(screen.getAllByText(/JOB-2024-089/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Tom R\./).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Mike T\./).length).toBeGreaterThan(0)
   })
 
-  it('renders a progress bar for assembly completion', () => {
-    render(<ShopAssemblyApp />)
-    const track = document.querySelector('.bg-gray-700')
-    expect(track).toBeInTheDocument()
-  })
-
-  it('toggles step completion when a step is clicked', () => {
-    render(<ShopAssemblyApp />)
-    // Step 3 starts incomplete
-    const step3 = screen.getByText('Install back panel').closest('[role="button"], button, [tabindex]')
-    if (step3) fireEvent.click(step3)
-    // Just verify no crash
-    expect(screen.getByText('Assembly Checklist')).toBeInTheDocument()
+  it('renders Update buttons for each task', () => {
+    renderPage()
+    const updateButtons = screen.getAllByRole('button', { name: /update/i })
+    expect(updateButtons.length).toBeGreaterThan(0)
   })
 })
