@@ -1,115 +1,295 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
-use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-/// List all parts for a product.
+use crate::models::part::{CreatePart, Part, UpdatePart};
+
+// ---------------------------------------------------------------------------
+// Handlers
+// ---------------------------------------------------------------------------
+
+/// GET /products/{product_id}/parts
 #[get("")]
 pub async fn list_parts(
-    _pool: web::Data<PgPool>,
-    product_id: web::Path<Uuid>,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
 ) -> impl Responder {
-    HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "message": format!("List parts for product {}", product_id),
-        "data": []
-    }))
+    let product_id = path.into_inner();
+
+    let result = sqlx::query_as!(
+        Part,
+        r#"
+        SELECT
+            id, product_id, material_id, name, part_type,
+            width_mm, height_mm, thickness_mm, quantity,
+            edge_banding, machining_data,
+            grain_direction, notes,
+            created_at, updated_at
+        FROM parts
+        WHERE product_id = $1
+        ORDER BY created_at ASC
+        "#,
+        product_id
+    )
+    .fetch_all(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(parts) => HttpResponse::Ok().json(parts),
+        Err(e) => {
+            log::error!("list_parts DB error: {e}");
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to fetch parts"
+            }))
+        }
+    }
 }
 
-/// Get a single part with all its operations.
-#[get("/{part_id}")]
+/// GET /products/{product_id}/parts/{id}
+#[get("/{id}")]
 pub async fn get_part(
-    _pool: web::Data<PgPool>,
+    pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
 ) -> impl Responder {
-    let (product_id, part_id) = path.into_inner();
-    HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "message": format!("Get part {} in product {}", part_id, product_id)
-    }))
+    let (product_id, id) = path.into_inner();
+
+    let result = sqlx::query_as!(
+        Part,
+        r#"
+        SELECT
+            id, product_id, material_id, name, part_type,
+            width_mm, height_mm, thickness_mm, quantity,
+            edge_banding, machining_data,
+            grain_direction, notes,
+            created_at, updated_at
+        FROM parts
+        WHERE id = $1 AND product_id = $2
+        "#,
+        id,
+        product_id
+    )
+    .fetch_optional(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(Some(part)) => HttpResponse::Ok().json(part),
+        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
+            "error": format!("Part {} not found for product {}", id, product_id)
+        })),
+        Err(e) => {
+            log::error!("get_part DB error: {e}");
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to fetch part"
+            }))
+        }
+    }
 }
 
-/// Create a custom part manually (bypasses auto-generation).
+/// POST /products/{product_id}/parts
 #[post("")]
 pub async fn create_part(
-    _pool: web::Data<PgPool>,
-    product_id: web::Path<Uuid>,
-    _body: web::Json<serde_json::Value>,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<CreatePart>,
 ) -> impl Responder {
-    HttpResponse::Created().json(json!({
-        "status": "ok",
-        "message": format!("Custom part created for product {}", product_id)
-    }))
-}
+    let product_id = path.into_inner();
 
-/// Update a part's dimensions or material assignment.
-#[put("/{part_id}")]
-pub async fn update_part(
-    _pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-    _body: web::Json<serde_json::Value>,
-) -> impl Responder {
-    let (product_id, part_id) = path.into_inner();
-    HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "message": format!("Part {} updated in product {}", part_id, product_id)
-    }))
-}
+    let result = sqlx::query_as!(
+        Part,
+        r#"
+        INSERT INTO parts (
+            id, product_id, material_id, name, part_type,
+            width_mm, height_mm, thickness_mm, quantity,
+            edge_banding, machining_data,
+            grain_direction, notes,
+            created_at, updated_at
+        )
+        VALUES (
+            gen_random_uuid(), $1, $2, $3, $4,
+            $5, $6, $7, $8,
+            $9, $10,
+            $11, $12,
+            NOW(), NOW()
+        )
+        RETURNING
+            id, product_id, material_id, name, part_type,
+            width_mm, height_mm, thickness_mm, quantity,
+            edge_banding, machining_data,
+            grain_direction, notes,
+            created_at, updated_at
+        "#,
+        product_id,
+        body.material_id,
+        body.name,
+        body.part_type,
+        body.width_mm,
+        body.height_mm,
+        body.thickness_mm,
+        body.quantity,
+        body.edge_banding as _,
+        body.machining_data as _,
+        body.grain_direction,
+        body.notes,
+    )
+    .fetch_one(pool.get_ref())
+    .await;
 
-/// Delete a part.
-#[delete("/{part_id}")]
-pub async fn delete_part(
-    _pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> impl Responder {
-    let (product_id, part_id) = path.into_inner();
-    HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "message": format!("Part {} deleted from product {}", part_id, product_id)
-    }))
-}
-
-/// Open the custom part editor with detailed machining view for a part.
-#[get("/{part_id}/editor")]
-pub async fn get_part_editor(
-    _pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> impl Responder {
-    let (_product_id, part_id) = path.into_inner();
-    HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "message": format!("Custom part editor data for part {}", part_id),
-        "data": {
-            "part": {},
-            "available_tools": [],
-            "machine_capabilities": {}
+    match result {
+        Ok(part) => HttpResponse::Created().json(part),
+        Err(e) => {
+            log::error!("create_part DB error: {e}");
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to create part"
+            }))
         }
-    }))
+    }
 }
 
-/// Recalculate operations for a part based on current hardware and construction rules.
-#[post("/{part_id}/recalculate")]
-pub async fn recalculate_part(
-    _pool: web::Data<PgPool>,
+/// PUT /products/{product_id}/parts/{id}
+#[put("/{id}")]
+pub async fn update_part(
+    pool: web::Data<PgPool>,
+    path: web::Path<(Uuid, Uuid)>,
+    body: web::Json<UpdatePart>,
+) -> impl Responder {
+    let (product_id, id) = path.into_inner();
+
+    let exists = sqlx::query_scalar!(
+        "SELECT EXISTS(SELECT 1 FROM parts WHERE id = $1 AND product_id = $2)",
+        id,
+        product_id
+    )
+    .fetch_one(pool.get_ref())
+    .await;
+
+    match exists {
+        Ok(Some(false)) | Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": format!("Part {} not found for product {}", id, product_id)
+            }));
+        }
+        Err(e) => {
+            log::error!("update_part existence check error: {e}");
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to update part"
+            }));
+        }
+        Ok(Some(true)) => {}
+    }
+
+    let mut builder =
+        sqlx::QueryBuilder::<sqlx::Postgres>::new("UPDATE parts SET updated_at = NOW()");
+
+    if let Some(material_id) = &body.material_id {
+        builder.push(", material_id = ");
+        builder.push_bind(material_id);
+    }
+    if let Some(name) = &body.name {
+        builder.push(", name = ");
+        builder.push_bind(name);
+    }
+    if let Some(part_type) = &body.part_type {
+        builder.push(", part_type = ");
+        builder.push_bind(part_type);
+    }
+    if let Some(width_mm) = &body.width_mm {
+        builder.push(", width_mm = ");
+        builder.push_bind(width_mm);
+    }
+    if let Some(height_mm) = &body.height_mm {
+        builder.push(", height_mm = ");
+        builder.push_bind(height_mm);
+    }
+    if let Some(thickness_mm) = &body.thickness_mm {
+        builder.push(", thickness_mm = ");
+        builder.push_bind(thickness_mm);
+    }
+    if let Some(quantity) = &body.quantity {
+        builder.push(", quantity = ");
+        builder.push_bind(quantity);
+    }
+    if let Some(edge_banding) = &body.edge_banding {
+        builder.push(", edge_banding = ");
+        builder.push_bind(edge_banding);
+    }
+    if let Some(machining_data) = &body.machining_data {
+        builder.push(", machining_data = ");
+        builder.push_bind(machining_data);
+    }
+    if let Some(grain_direction) = &body.grain_direction {
+        builder.push(", grain_direction = ");
+        builder.push_bind(grain_direction);
+    }
+    if let Some(notes) = &body.notes {
+        builder.push(", notes = ");
+        builder.push_bind(notes);
+    }
+
+    builder.push(" WHERE id = ");
+    builder.push_bind(id);
+    builder.push(" AND product_id = ");
+    builder.push_bind(product_id);
+    builder.push(
+        " RETURNING id, product_id, material_id, name, part_type,
+                   width_mm, height_mm, thickness_mm, quantity,
+                   edge_banding, machining_data,
+                   grain_direction, notes,
+                   created_at, updated_at",
+    );
+
+    let query = builder.build_query_as::<Part>();
+    match query.fetch_one(pool.get_ref()).await {
+        Ok(part) => HttpResponse::Ok().json(part),
+        Err(e) => {
+            log::error!("update_part DB error: {e}");
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to update part"
+            }))
+        }
+    }
+}
+
+/// DELETE /products/{product_id}/parts/{id}
+#[delete("/{id}")]
+pub async fn delete_part(
+    pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
 ) -> impl Responder {
-    let (_product_id, part_id) = path.into_inner();
-    HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "message": format!("Operations recalculated for part {}", part_id)
-    }))
+    let (product_id, id) = path.into_inner();
+
+    let result = sqlx::query!(
+        "DELETE FROM parts WHERE id = $1 AND product_id = $2 RETURNING id",
+        id,
+        product_id
+    )
+    .fetch_optional(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(Some(_)) => HttpResponse::NoContent().finish(),
+        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
+            "error": format!("Part {} not found for product {}", id, product_id)
+        })),
+        Err(e) => {
+            log::error!("delete_part DB error: {e}");
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to delete part"
+            }))
+        }
+    }
 }
 
-/// Configure routes for the parts module.
+// ---------------------------------------------------------------------------
+// Router — nested under /products/{product_id}
+// ---------------------------------------------------------------------------
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/products/{product_id}/parts")
             .service(list_parts)
-            .service(create_part)
             .service(get_part)
+            .service(create_part)
             .service(update_part)
-            .service(delete_part)
-            .service(get_part_editor)
-            .service(recalculate_part),
+            .service(delete_part),
     );
 }
