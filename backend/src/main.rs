@@ -1,75 +1,51 @@
 use actix_cors::Cors;
 use actix_web::{get, middleware, web, App, HttpResponse, HttpServer, Responder};
-use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
 
-use cnc_backend::{api, config};
+mod api;
+mod auth;
+mod middleware as mw;
+mod models;
+mod services;
 
-/// Health check endpoint.
-#[get("/api/health")]
-async fn health_check() -> impl Responder {
-    HttpResponse::Ok().json(serde_json::json!({
-        "status": "ok",
-        "service": "cnc-backend",
-        "version": env!("CARGO_PKG_VERSION")
-    }))
+#[get("/health")]
+async fn health() -> impl Responder {
+    HttpResponse::Ok().json(serde_json::json!({"status": "ok"}))
 }
 
-#[tokio::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Load .env file for local development.
-    dotenv().ok();
+    dotenvy::dotenv().ok();
+    env_logger::init();
 
-    // Initialize logger (controlled by RUST_LOG env var).
-    env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
+    let database_url = std::env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set");
 
-    // Load configuration from environment.
-    let config = config::AppConfig::from_env_or_exit();
-
-    log::info!(
-        "Starting CNC Machinery backend on {}:{}",
-        config.server_host,
-        config.server_port
-    );
-
-    // Connect to PostgreSQL and run pending migrations.
     let pool = PgPoolOptions::new()
         .max_connections(10)
-        .connect(&config.database_url)
+        .connect(&database_url)
         .await
-        .expect("Failed to connect to PostgreSQL");
+        .expect("Failed to connect to database");
 
-    log::info!("Database connection established");
+    let bind_addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_string());
 
-    sqlx::migrate!("../migrations")
-        .run(&pool)
-        .await
-        .expect("Failed to run database migrations");
-
-    log::info!("Migrations applied successfully");
-
-    let pool = web::Data::new(pool);
-    let host = config.server_host.clone();
-    let port = config.server_port;
+    log::info!("Starting server on {bind_addr}");
 
     HttpServer::new(move || {
-        // Allow all origins for development. Restrict in production.
         let cors = Cors::default()
             .allow_any_origin()
             .allow_any_method()
-            .allow_any_header()
-            .max_age(3600);
+            .allow_any_header();
 
         App::new()
+            .app_data(web::Data::new(pool.clone()))
             .wrap(cors)
             .wrap(middleware::Logger::default())
-            .app_data(pool.clone())
-            // Health check (not under /api prefix configured by modules)
-            .service(health_check)
-            // Mount all API modules under /api prefix.
-            .service(web::scope("/api").configure(api::configure_routes))
+            .wrap(mw::audit::AuditMiddlewareFactory)
+            .service(health)
+            .configure(api::configure_routes)
     })
-    .bind((host.as_str(), port))?
+    .bind(&bind_addr)?
     .run()
     .await
 }
