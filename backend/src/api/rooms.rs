@@ -1,116 +1,260 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
-use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-/// List all rooms for a job.
+use crate::models::room::{CreateRoom, Room, UpdateRoom};
+
+// ---------------------------------------------------------------------------
+// Handlers
+// ---------------------------------------------------------------------------
+
+/// GET /jobs/{job_id}/rooms
 #[get("")]
 pub async fn list_rooms(
-    _pool: web::Data<PgPool>,
-    job_id: web::Path<Uuid>,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
 ) -> impl Responder {
-    HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "message": format!("List rooms for job {}", job_id),
-        "data": []
-    }))
+    let job_id = path.into_inner();
+
+    let result = sqlx::query_as!(
+        Room,
+        r#"
+        SELECT id, job_id, name, width, height, depth, notes,
+               material_overrides, construction_overrides,
+               created_at, updated_at
+        FROM rooms
+        WHERE job_id = $1
+        ORDER BY created_at ASC
+        "#,
+        job_id
+    )
+    .fetch_all(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(rooms) => HttpResponse::Ok().json(rooms),
+        Err(e) => {
+            log::error!("list_rooms DB error: {e}");
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to fetch rooms"
+            }))
+        }
+    }
 }
 
-/// Get a single room with its floor plan data.
-#[get("/{room_id}")]
+/// GET /jobs/{job_id}/rooms/{id}
+#[get("/{id}")]
 pub async fn get_room(
-    _pool: web::Data<PgPool>,
+    pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
 ) -> impl Responder {
-    let (job_id, room_id) = path.into_inner();
-    HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "message": format!("Get room {} in job {}", room_id, job_id)
-    }))
+    let (job_id, id) = path.into_inner();
+
+    let result = sqlx::query_as!(
+        Room,
+        r#"
+        SELECT id, job_id, name, width, height, depth, notes,
+               material_overrides, construction_overrides,
+               created_at, updated_at
+        FROM rooms
+        WHERE id = $1 AND job_id = $2
+        "#,
+        id,
+        job_id
+    )
+    .fetch_optional(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(Some(room)) => HttpResponse::Ok().json(room),
+        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
+            "error": format!("Room {} not found for job {}", id, job_id)
+        })),
+        Err(e) => {
+            log::error!("get_room DB error: {e}");
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to fetch room"
+            }))
+        }
+    }
 }
 
-/// Create a new room in a job.
+/// POST /jobs/{job_id}/rooms
 #[post("")]
 pub async fn create_room(
-    _pool: web::Data<PgPool>,
-    job_id: web::Path<Uuid>,
-    _body: web::Json<serde_json::Value>,
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<CreateRoom>,
 ) -> impl Responder {
-    HttpResponse::Created().json(json!({
-        "status": "ok",
-        "message": format!("Room created in job {}", job_id)
-    }))
-}
+    let job_id = path.into_inner();
 
-/// Update a room's dimensions or layout.
-#[put("/{room_id}")]
-pub async fn update_room(
-    _pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-    _body: web::Json<serde_json::Value>,
-) -> impl Responder {
-    let (job_id, room_id) = path.into_inner();
-    HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "message": format!("Room {} updated in job {}", room_id, job_id)
-    }))
-}
+    let result = sqlx::query_as!(
+        Room,
+        r#"
+        INSERT INTO rooms (
+            id, job_id, name, width, height, depth, notes,
+            material_overrides, construction_overrides,
+            created_at, updated_at
+        )
+        VALUES (
+            gen_random_uuid(), $1, $2, $3, $4, $5, $6,
+            $7, $8,
+            NOW(), NOW()
+        )
+        RETURNING id, job_id, name, width, height, depth, notes,
+                  material_overrides, construction_overrides,
+                  created_at, updated_at
+        "#,
+        job_id,
+        body.name,
+        body.width,
+        body.height,
+        body.depth,
+        body.notes,
+        body.material_overrides as _,
+        body.construction_overrides as _,
+    )
+    .fetch_one(pool.get_ref())
+    .await;
 
-/// Delete a room and all its products.
-#[delete("/{room_id}")]
-pub async fn delete_room(
-    _pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> impl Responder {
-    let (job_id, room_id) = path.into_inner();
-    HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "message": format!("Room {} deleted from job {}", room_id, job_id)
-    }))
-}
-
-/// Get the floor plan SVG or JSON representation for a room.
-#[get("/{room_id}/floor-plan")]
-pub async fn get_floor_plan(
-    _pool: web::Data<PgPool>,
-    path: web::Path<(Uuid, Uuid)>,
-) -> impl Responder {
-    let (_job_id, room_id) = path.into_inner();
-    HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "message": format!("Floor plan for room {}", room_id),
-        "data": {
-            "walls": [],
-            "obstacles": [],
-            "dimensions": {}
+    match result {
+        Ok(room) => HttpResponse::Created().json(room),
+        Err(e) => {
+            log::error!("create_room DB error: {e}");
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to create room"
+            }))
         }
-    }))
+    }
 }
 
-/// Save a room's floor plan layout.
-#[post("/{room_id}/floor-plan")]
-pub async fn save_floor_plan(
-    _pool: web::Data<PgPool>,
+/// PUT /jobs/{job_id}/rooms/{id}
+#[put("/{id}")]
+pub async fn update_room(
+    pool: web::Data<PgPool>,
     path: web::Path<(Uuid, Uuid)>,
-    _body: web::Json<serde_json::Value>,
+    body: web::Json<UpdateRoom>,
 ) -> impl Responder {
-    let (_job_id, room_id) = path.into_inner();
-    HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "message": format!("Floor plan saved for room {}", room_id)
-    }))
+    let (job_id, id) = path.into_inner();
+
+    let exists = sqlx::query_scalar!(
+        "SELECT EXISTS(SELECT 1 FROM rooms WHERE id = $1 AND job_id = $2)",
+        id,
+        job_id
+    )
+    .fetch_one(pool.get_ref())
+    .await;
+
+    match exists {
+        Ok(Some(false)) | Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": format!("Room {} not found for job {}", id, job_id)
+            }));
+        }
+        Err(e) => {
+            log::error!("update_room existence check error: {e}");
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to update room"
+            }));
+        }
+        Ok(Some(true)) => {}
+    }
+
+    let mut builder =
+        sqlx::QueryBuilder::<sqlx::Postgres>::new("UPDATE rooms SET updated_at = NOW()");
+
+    if let Some(name) = &body.name {
+        builder.push(", name = ");
+        builder.push_bind(name);
+    }
+    if let Some(width) = &body.width {
+        builder.push(", width = ");
+        builder.push_bind(width);
+    }
+    if let Some(height) = &body.height {
+        builder.push(", height = ");
+        builder.push_bind(height);
+    }
+    if let Some(depth) = &body.depth {
+        builder.push(", depth = ");
+        builder.push_bind(depth);
+    }
+    if let Some(notes) = &body.notes {
+        builder.push(", notes = ");
+        builder.push_bind(notes);
+    }
+    if let Some(material_overrides) = &body.material_overrides {
+        builder.push(", material_overrides = ");
+        builder.push_bind(material_overrides);
+    }
+    if let Some(construction_overrides) = &body.construction_overrides {
+        builder.push(", construction_overrides = ");
+        builder.push_bind(construction_overrides);
+    }
+
+    builder.push(" WHERE id = ");
+    builder.push_bind(id);
+    builder.push(" AND job_id = ");
+    builder.push_bind(job_id);
+    builder.push(
+        " RETURNING id, job_id, name, width, height, depth, notes,
+                   material_overrides, construction_overrides,
+                   created_at, updated_at",
+    );
+
+    let query = builder.build_query_as::<Room>();
+    match query.fetch_one(pool.get_ref()).await {
+        Ok(room) => HttpResponse::Ok().json(room),
+        Err(e) => {
+            log::error!("update_room DB error: {e}");
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to update room"
+            }))
+        }
+    }
 }
 
-/// Configure routes for the rooms module.
+/// DELETE /jobs/{job_id}/rooms/{id}
+#[delete("/{id}")]
+pub async fn delete_room(
+    pool: web::Data<PgPool>,
+    path: web::Path<(Uuid, Uuid)>,
+) -> impl Responder {
+    let (job_id, id) = path.into_inner();
+
+    let result = sqlx::query!(
+        "DELETE FROM rooms WHERE id = $1 AND job_id = $2 RETURNING id",
+        id,
+        job_id
+    )
+    .fetch_optional(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(Some(_)) => HttpResponse::NoContent().finish(),
+        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
+            "error": format!("Room {} not found for job {}", id, job_id)
+        })),
+        Err(e) => {
+            log::error!("delete_room DB error: {e}");
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to delete room"
+            }))
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Router — nested under /jobs/{job_id}
+// ---------------------------------------------------------------------------
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/jobs/{job_id}/rooms")
             .service(list_rooms)
-            .service(create_room)
             .service(get_room)
+            .service(create_room)
             .service(update_room)
-            .service(delete_room)
-            .service(get_floor_plan)
-            .service(save_floor_plan),
+            .service(delete_room),
     );
 }
