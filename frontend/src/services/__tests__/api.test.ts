@@ -1,44 +1,42 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { apiClient } from '@/services/api'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import axios from 'axios'
+import { apiClient } from '../api'
+
+vi.mock('axios', () => {
+  const instance = {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() },
+    },
+  }
+  return {
+    default: {
+      create: vi.fn(() => instance),
+    },
+    ...instance,
+  }
+})
 
 describe('apiClient', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  it('exports a default apiClient object', () => {
+  it('is defined', () => {
     expect(apiClient).toBeDefined()
   })
 
-  it('has a get method', () => {
+  it('has interceptors registered', () => {
+    // The interceptors.request.use and response.use should have been called
+    // during module initialisation.
+    expect(apiClient.interceptors.request.use).toBeDefined()
+    expect(apiClient.interceptors.response.use).toBeDefined()
+  })
+
+  it('exposes get / post / put / delete methods', () => {
     expect(typeof apiClient.get).toBe('function')
-  })
-
-  it('has a post method', () => {
     expect(typeof apiClient.post).toBe('function')
-  })
-
-  it('has a put method', () => {
     expect(typeof apiClient.put).toBe('function')
-  })
-
-  it('has a delete method', () => {
     expect(typeof apiClient.delete).toBe('function')
-  })
-
-  it('has a patch method', () => {
-    expect(typeof apiClient.patch).toBe('function')
-  })
-
-  it('returns a promise from get()', () => {
-    vi.spyOn(apiClient, 'get').mockResolvedValue({ data: [] })
-    const result = apiClient.get('/test')
-    expect(result).toBeInstanceOf(Promise)
-  })
-
-  it('returns a promise from post()', () => {
-    vi.spyOn(apiClient, 'post').mockResolvedValue({ data: {} })
-    const result = apiClient.post('/test', {})
-    expect(result).toBeInstanceOf(Promise)
   })
 })

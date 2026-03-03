@@ -21,11 +21,16 @@ pub mod textures;
 pub mod tools;
 pub mod users;
 pub mod websocket;
+#[cfg(test)]
+mod users_test_r3;
 
 use actix_web::web;
 
 /// Mount all API route modules under the /api prefix.
+use crate::auth::auth_api;
+
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
+    auth_api::auth_routes(cfg);
     jobs::configure(cfg);
     rooms::configure(cfg);
     products::configure(cfg);

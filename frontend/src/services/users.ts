@@ -1,34 +1,22 @@
-import api from './api'
-import type { User, CreateUser, UpdateUser, LoginRequest, AuthResponse } from '@/types'
+import { apiClient } from './api'
+import type { User, CreateUserPayload, UpdateUserPayload, ListUsersParams } from '@/types'
 
-export const usersService = {
-  getUsers: () =>
-    api.get<User[]>('/users').then((r) => r.data),
+export async function getUsers(params?: ListUsersParams) {
+  return apiClient.get<User[]>('/api/users', { params })
+}
 
-  getUser: (id: string) =>
-    api.get<User>(`/users/${id}`).then((r) => r.data),
+export async function getUser(id: string) {
+  return apiClient.get<User>(`/api/users/${id}`)
+}
 
-  createUser: (data: CreateUser) =>
-    api.post<User>('/users', data).then((r) => r.data),
+export async function createUser(payload: CreateUserPayload) {
+  return apiClient.post<{ id: string }>('/api/users', payload)
+}
 
-  updateUser: (id: string, data: Partial<UpdateUser>) =>
-    api.patch<User>(`/users/${id}`, data).then((r) => r.data),
+export async function updateUser(id: string, payload: UpdateUserPayload) {
+  return apiClient.put<{ updated: boolean }>(`/api/users/${id}`, payload)
+}
 
-  deleteUser: (id: string) =>
-    api.delete(`/users/${id}`).then((r) => r.data),
-
-  login: (data: LoginRequest) =>
-    api.post<AuthResponse>('/auth/login', data).then((r) => r.data),
-
-  register: (data: CreateUser) =>
-    api.post<AuthResponse>('/auth/register', data).then((r) => r.data),
-
-  logout: () =>
-    api.post('/auth/logout').then((r) => r.data),
-
-  me: () =>
-    api.get<User>('/auth/me').then((r) => r.data),
-
-  changePassword: (currentPassword: string, newPassword: string) =>
-    api.post('/auth/change-password', { currentPassword, newPassword }).then((r) => r.data),
+export async function deleteUser(id: string) {
+  return apiClient.delete(`/api/users/${id}`)
 }
