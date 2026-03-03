@@ -4,17 +4,17 @@ set -euo pipefail
 # CNC Machinery - Database seed script
 # Inserts representative sample data for development / demo purposes
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}')" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 cd "$ROOT_DIR"
 
 DB_CONTAINER="cnc-machinery-db-1"
-DB_USER="postgres"
+DB_USER="cnc_user"
 DB_NAME="cnc_machinery"
 
 run_sql() {
-  docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" -c "$1"
+  docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" <<< "$1"
 }
 
 echo "Seeding database with sample data..."
@@ -62,24 +62,24 @@ ON CONFLICT DO NOTHING;
 # ---------------------------------------------------------------------------
 # Construction Methods
 # ---------------------------------------------------------------------------
-run_sql "
+run_sql '
 INSERT INTO construction_methods (name, joinery_type, fastener_specs) VALUES
-  ('Confirmat Screw',   ARRAY['dado','confirmat'],   '{"size": "7x50mm", "pilot": 5}'::jsonb),
-  ('Domino Joinery',    ARRAY['domino'],              '{"size": "8x40mm"}'::jsonb),
-  ('Dowel & Glue',      ARRAY['dowel'],               '{"diameter": 8, "length": 35}'::jsonb)
+  ($$Confirmat Screw$$,   ARRAY[$$dado$$,$$confirmat$$],   $${"size": "7x50mm", "pilot": 5}$$::jsonb),
+  ($$Domino Joinery$$,    ARRAY[$$domino$$],               $${"size": "8x40mm"}$$::jsonb),
+  ($$Dowel & Glue$$,      ARRAY[$$dowel$$],                $${"diameter": 8, "length": 35}$$::jsonb)
 ON CONFLICT DO NOTHING;
-"
+'
 
 # ---------------------------------------------------------------------------
 # Hardware
 # ---------------------------------------------------------------------------
-run_sql "
+run_sql '
 INSERT INTO hardware (name, brand, model_name, hardware_type, drilling_pattern) VALUES
-  ('Clip-Top 110 Hinge', 'Blum', 'CLIP top 110°',  'hinge',  '{"cup": 35, "boring": 9.5, "backset": 37}'::jsonb),
-  ('Tandem 500mm Slide', 'Blum', 'Tandem 563H',    'slide',  '{"height": 13, "spacing": 37}'::jsonb),
-  ('Bar Handle 160mm',   'Hafele','7083x',          'handle', '{}'::jsonb)
+  ($$Clip-Top 110 Hinge$$, $$Blum$$, $$CLIP top 110°$$,  $$hinge$$,  $${"cup": 35, "boring": 9.5, "backset": 37}$$::jsonb),
+  ($$Tandem 500mm Slide$$, $$Blum$$, $$Tandem 563H$$,    $$slide$$,  $${"height": 13, "spacing": 37}$$::jsonb),
+  ($$Bar Handle 160mm$$,   $$Hafele$$,$$7083x$$,          $$handle$$, $${}$$::jsonb)
 ON CONFLICT DO NOTHING;
-"
+'
 
 # ---------------------------------------------------------------------------
 # Post Processors
@@ -106,41 +106,38 @@ ON CONFLICT DO NOTHING;
 # ---------------------------------------------------------------------------
 # Users
 # ---------------------------------------------------------------------------
-run_sql "
+run_sql '
 INSERT INTO users (email, name, password_hash, role) VALUES
-  ('admin@cnc.local',    'Admin User',    '\$2a\$10\$placeholder_hash_admin',    'super_admin'),
-  ('designer@cnc.local', 'Jane Designer', '\$2a\$10\$placeholder_hash_designer', 'designer'),
-  ('operator@cnc.local', 'John Operator', '\$2a\$10\$placeholder_hash_operator', 'cnc_operator')
+  ($$admin@cnc.local$$,    $$Admin User$$,    $$\$2a\$10\$placeholder_hash_admin$$,    $$super_admin$$),
+  ($$designer@cnc.local$$, $$Jane Designer$$, $$\$2a\$10\$placeholder_hash_designer$$, $$designer$$),
+  ($$operator@cnc.local$$, $$John Operator$$, $$\$2a\$10\$placeholder_hash_operator$$, $$cnc_operator$$)
 ON CONFLICT (email) DO NOTHING;
-"
+'
 
 # ---------------------------------------------------------------------------
 # Sample Job, Room, Products
 # ---------------------------------------------------------------------------
-run_sql "
-DO \$\$
+docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" <<'EOSQL'
+DO $fn$
 DECLARE
   v_job_id  UUID;
   v_room_id UUID;
 BEGIN
-  -- Job
   INSERT INTO jobs (name, client_name, address, status)
   VALUES ('Kitchen Reno - Smith', 'Smith Family', '12 Maple St, Auckland', 'active')
   RETURNING id INTO v_job_id;
 
-  -- Room
   INSERT INTO rooms (job_id, name, width, height, depth)
   VALUES (v_job_id, 'Kitchen', 4200, 2400, 600)
   RETURNING id INTO v_room_id;
 
-  -- Products
   INSERT INTO products (room_id, name, product_type, cabinet_style, width, height, depth)
   VALUES
     (v_room_id, 'Base Cabinet 600', 'base_cabinet', 'frameless', 600, 720, 580),
     (v_room_id, 'Wall Cabinet 600', 'wall_cabinet',  'frameless', 600, 720, 320),
     (v_room_id, 'Tall Pantry 600',  'tall_cabinet',  'frameless', 600, 2100, 580);
 END;
-\$\$;
-"
+$fn$;
+EOSQL
 
 echo "Seed complete."

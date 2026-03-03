@@ -1,4 +1,4 @@
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{get, web, HttpResponse, Responder};
 use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;

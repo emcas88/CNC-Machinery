@@ -1,7 +1,6 @@
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{post, web, HttpResponse, Responder};
 use serde_json::json;
 use sqlx::PgPool;
-use uuid::Uuid;
 
 /// Generate G-code for a set of nested sheets.
 #[post("/generate")]

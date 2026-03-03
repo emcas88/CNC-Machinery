@@ -1,7 +1,7 @@
 # ============================================================
 # Stage 1: Builder
 # ============================================================
-FROM rust:1.75-slim AS builder
+FROM rust:latest AS builder
 
 # Install system dependencies required for sqlx / TLS
 RUN apt-get update && apt-get install -y \
@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy dependency manifests first for layer caching
-COPY Cargo.toml ./
+COPY backend/Cargo.toml ./
 
 # Create a dummy main to pre-cache dependencies
 RUN mkdir -p src && echo "fn main() {}" > src/main.rs
@@ -21,7 +21,10 @@ RUN cargo build --release || true
 RUN rm -rf src
 
 # Copy the actual source
-COPY src ./src
+COPY backend/src ./src
+
+# Copy migrations so sqlx::migrate!("../migrations") resolves at compile time
+COPY migrations /migrations
 
 # Build the release binary
 # SQLX_OFFLINE=true is required when building without a live DB
@@ -46,7 +49,7 @@ WORKDIR /app
 COPY --from=builder /app/target/release/cnc-backend /app/cnc-backend
 
 # Copy migrations to run on startup
-COPY --from=builder /app/../migrations /app/migrations
+COPY --from=builder /migrations /app/migrations
 
 EXPOSE 8080
 

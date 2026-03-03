@@ -4,7 +4,7 @@ set -euo pipefail
 # CNC Machinery - Development startup script
 # Starts all services using Docker Compose
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}')" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 cd "$ROOT_DIR"
@@ -17,11 +17,11 @@ if ! docker info &>/dev/null; then
   exit 1
 fi
 
-# Check docker-compose / docker compose
-if command -v docker-compose &>/dev/null; then
-  COMPOSE_CMD="docker-compose"
-elif docker compose version &>/dev/null; then
+# Check docker compose (plugin) / docker-compose (standalone)
+if docker compose version &>/dev/null; then
   COMPOSE_CMD="docker compose"
+elif command -v docker-compose &>/dev/null; then
+  COMPOSE_CMD="docker-compose"
 else
   echo "Error: docker-compose or docker compose not found."
   exit 1
