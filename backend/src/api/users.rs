@@ -1,15 +1,13 @@
 // backend/src/api/users.rs
-// Fixed Issues 21, 22: Replaced sqlx::query_as! macros with runtime
-// sqlx::query_as to avoid requiring DATABASE_URL at compile time.
-// Fixed: CreateUser body uses password (not password_hash) field.
+// Admin CRUD for the users table.
 
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::models::user::{CreateUser, UpdateUser, UserRole};
 use crate::auth::password::hash_password;
+use crate::models::user::{CreateUser, UpdateUser, UserRole};
 
 // ---------------------------------------
 // Request / Response DTOs
@@ -59,7 +57,7 @@ pub async fn list_users(
     let offset = query.offset.unwrap_or(0);
 
     let result = sqlx::query_as::<_, (Uuid, String, Option<String>, Option<String>, String, bool)>(
-        "SELECT id, email, first_name, last_name, role, is_active FROM users LIMIT $1 OFFSET $2"
+        "SELECT id, email, first_name, last_name, role::text, is_active FROM users LIMIT $1 OFFSET $2",
     )
     .bind(limit)
     .bind(offset)
@@ -93,7 +91,7 @@ pub async fn get_user(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Re
     let user_id = path.into_inner();
 
     let result = sqlx::query_as::<_, (Uuid, String, Option<String>, Option<String>, String, bool)>(
-        "SELECT id, email, first_name, last_name, role, is_active FROM users WHERE id = $1"
+        "SELECT id, email, first_name, last_name, role::text, is_active FROM users WHERE id = $1",
     )
     .bind(user_id)
     .fetch_optional(pool.get_ref())
@@ -101,7 +99,14 @@ pub async fn get_user(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Re
 
     match result {
         Ok(Some((id, email, first_name, last_name, role, is_active))) => {
-            HttpResponse::Ok().json(UserResponse { id, email, first_name, last_name, role, is_active })
+            HttpResponse::Ok().json(UserResponse {
+                id,
+                email,
+                first_name,
+                last_name,
+                role,
+                is_active,
+            })
         }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({"error": "User not found"})),
         Err(e) => {
@@ -118,14 +123,17 @@ pub async fn create_user(
 ) -> impl Responder {
     let hashed = match hash_password(&body.password) {
         Ok(h) => h,
-        Err(_) => return HttpResponse::InternalServerError()
-            .json(serde_json::json!({"error": "Password hashing failed"})),
+        Err(_) => {
+            return HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Password hashing failed"}))
+        }
     };
 
-    let role = body.role.clone().unwrap_or(UserRole::Viewer);
+    let role = body.role.unwrap_or(UserRole::ShopFloor);
 
     let result = sqlx::query_as::<_, (Uuid,)>(
-        "INSERT INTO users (email, password_hash, first_name, last_name, role) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+        "INSERT INTO users (email, password_hash, first_name, last_name, role, name) \
+         VALUES ($1, $2, $3, $4, $5::text, COALESCE($3, '') || ' ' || COALESCE($4, '')) RETURNING id",
     )
     .bind(&body.email)
     .bind(&hashed)
@@ -140,9 +148,11 @@ pub async fn create_user(
         Err(e) => {
             log::error!("create_user error: {e}");
             if e.to_string().contains("duplicate key") {
-                HttpResponse::Conflict().json(serde_json::json!({"error": "Email already exists"}))
+                HttpResponse::Conflict()
+                    .json(serde_json::json!({"error": "Email already exists"}))
             } else {
-                HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
+                HttpResponse::InternalServerError()
+                    .json(serde_json::json!({"error": "Database error"}))
             }
         }
     }
@@ -156,54 +166,42 @@ pub async fn update_user(
 ) -> impl Responder {
     let user_id = path.into_inner();
 
-    // Optionally hash new password
-    let new_hash: Option<String> = if let Some(ref pw) = body.password {
+    let hashed_password = if let Some(ref pw) = body.password {
         match hash_password(pw) {
             Ok(h) => Some(h),
-            Err(_) => return HttpResponse::InternalServerError()
-                .json(serde_json::json!({"error": "Password hashing failed"})),
+            Err(_) => {
+                return HttpResponse::InternalServerError()
+                    .json(serde_json::json!({"error": "Password hashing failed"}))
+            }
         }
     } else {
         None
     };
 
-    // Build a dynamic SET clause
-    let mut set_parts: Vec<String> = Vec::new();
-    let mut params: Vec<Box<dyn sqlx::Encode<'_, sqlx::Postgres> + Send + Sync>> = Vec::new();
-    let mut idx = 1usize;
-
-    macro_rules! push_param {
-        ($field:expr, $col:expr) => {
-            if let Some(ref val) = $field {
-                set_parts.push(format!("{} = ${}", $col, idx));
-                idx += 1;
-                let _ = val; // suppress unused warning
-            }
-        };
-    }
-
-    // Build query using runtime binding
-    let result = if let Some(ref hash) = new_hash {
-        let q = format!("UPDATE users SET password_hash = $1 WHERE id = $2 RETURNING id");
-        sqlx::query_as::<_, (Uuid,)>(&q)
-            .bind(hash)
-            .bind(user_id)
-            .fetch_optional(pool.get_ref())
-            .await
-    } else {
-        // No fields to update: just return current user
-        let q = "SELECT id FROM users WHERE id = $1";
-        sqlx::query_as::<_, (Uuid,)>(q)
-            .bind(user_id)
-            .fetch_optional(pool.get_ref())
-            .await
-    };
-
-    let _ = (set_parts, params, idx, push_param!("", ""));
+    let result = sqlx::query(
+        "UPDATE users SET \
+            email      = COALESCE($2, email), \
+            first_name = COALESCE($3, first_name), \
+            last_name  = COALESCE($4, last_name), \
+            password_hash = COALESCE($5, password_hash), \
+            role       = COALESCE($6::text, role::text)::user_role, \
+            updated_at = NOW() \
+         WHERE id = $1",
+    )
+    .bind(user_id)
+    .bind(&body.email)
+    .bind(&body.first_name)
+    .bind(&body.last_name)
+    .bind(&hashed_password)
+    .bind(body.role.map(|r| r.to_string()))
+    .execute(pool.get_ref())
+    .await;
 
     match result {
-        Ok(Some(_)) => HttpResponse::Ok().json(serde_json::json!({"updated": true})),
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({"error": "User not found"})),
+        Ok(r) if r.rows_affected() == 0 => {
+            HttpResponse::NotFound().json(serde_json::json!({"error": "User not found"}))
+        }
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({"message": "User updated"})),
         Err(e) => {
             log::error!("update_user error: {e}");
             HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
@@ -221,8 +219,10 @@ pub async fn delete_user(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl
         .await;
 
     match result {
-        Ok(r) if r.rows_affected() > 0 => HttpResponse::NoContent().finish(),
-        Ok(_) => HttpResponse::NotFound().json(serde_json::json!({"error": "User not found"})),
+        Ok(r) if r.rows_affected() == 0 => {
+            HttpResponse::NotFound().json(serde_json::json!({"error": "User not found"}))
+        }
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({"message": "User deleted"})),
         Err(e) => {
             log::error!("delete_user error: {e}");
             HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
