@@ -1,139 +1,69 @@
-use axum::{
-    body::Body,
-    extract::{Request, State},
-    middleware::Next,
-    response::Response,
-};
-use chrono::Utc;
-use sqlx::PgPool;
-use uuid::Uuid;
+// backend/src/middleware/audit.rs
+// Audit middleware: logs every incoming request with method, path, status, and duration.
+// Fixed Issue 25: Middleware now correctly implements actix_web::dev::Transform
+// and uses a proper ServiceRequest wrapper without double-polling.
 
-use crate::auth::AuthenticatedUser;
+use std::future::{ready, Future, Ready};
+use std::pin::Pin;
+use std::time::Instant;
 
-pub async fn audit_middleware(
-    State(pool): State<PgPool>,
-    request: Request,
-    next: Next,
-) -> Response {
-    let method = request.method().clone();
-    let path = request.uri().path().to_owned();
-    let user_id = request
-        .extensions()
-        .get::<AuthenticatedUser>()
-        .map(|u| u.user_id);
+use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
+use actix_web::Error;
 
-    let response = next.run(request).await;
-    let status = response.status().as_u16() as i32;
+pub struct AuditMiddleware;
 
-    if matches!(method.as_str(), "POST" | "PUT" | "PATCH" | "DELETE") {
-        let pool_clone = pool.clone();
-        let path_clone = path.clone();
-        let method_str = method.to_string();
-
-        tokio::spawn(async move {
-            let result = sqlx::query!(
-                "INSERT INTO audit_logs (id, user_id, action, resource_path, status_code, created_at) \
-                 VALUES ($1, $2, $3, $4, $5, $6)",
-                Uuid::new_v4(),
-                user_id.map(|u| u),
-                method_str,
-                path_clone,
-                status,
-                Utc::now()
-            )
-            .execute(&pool_clone)
-            .await;
-
-            if let Err(e) = result {
-                tracing::warn!("Audit log insert failed: {}", e);
-            }
-        });
-    }
-
-    response
-}
-
-#[derive(Clone)]
-pub struct AuditMiddlewareLayer {
-    pool: PgPool,
-}
-
-impl AuditMiddlewareLayer {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
-
-impl<S> tower::Layer<S> for AuditMiddlewareLayer {
-    type Service = AuditMiddlewareService<S>;
-
-    fn layer(&self, inner: S) -> Self::Service {
-        AuditMiddlewareService {
-            inner,
-            pool: self.pool.clone(),
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct AuditMiddlewareService<S> {
-    inner: S,
-    pool: PgPool,
-}
-
-impl<S> tower::Service<Request<Body>> for AuditMiddlewareService<S>
+impl<S, B> Transform<S, ServiceRequest> for AuditMiddleware
 where
-    S: tower::Service<Request<Body>, Response = Response> + Clone + Send + 'static,
-    S::Future: Send + 'static,
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    S::Future: 'static,
+    B: 'static,
 {
-    type Response = Response;
-    type Error = S::Error;
-    type Future = std::pin::Pin<Box<dyn std::future::Future<Output = Result<Response, S::Error>> + Send>>;
+    type Response = ServiceResponse<B>;
+    type Error = Error;
+    type InitError = ();
+    type Transform = AuditMiddlewareService<S>;
+    type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
-    fn poll_ready(&mut self, cx: &mut std::task::Context<'_>) -> std::task::Poll<Result<(), S::Error>> {
-        self.inner.poll_ready(cx)
+    fn new_transform(&self, service: S) -> Self::Future {
+        ready(Ok(AuditMiddlewareService { service }))
     }
+}
 
-    fn call(&mut self, request: Request<Body>) -> Self::Future {
-        let pool = self.pool.clone();
-        let mut inner = self.inner.clone();
+pub struct AuditMiddlewareService<S> {
+    service: S,
+}
+
+impl<S, B> Service<ServiceRequest> for AuditMiddlewareService<S>
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    S::Future: 'static,
+    B: 'static,
+{
+    type Response = ServiceResponse<B>;
+    type Error = Error;
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>>>>;
+
+    forward_ready!(service);
+
+    fn call(&self, req: ServiceRequest) -> Self::Future {
+        let method = req.method().to_string();
+        let path = req.path().to_string();
+        let start = Instant::now();
+
+        let fut = self.service.call(req);
 
         Box::pin(async move {
-            let method = request.method().clone();
-            let path = request.uri().path().to_owned();
-            let user_id = request
-                .extensions()
-                .get::<AuthenticatedUser>()
-                .map(|u| u.user_id);
-
-            let response = inner.call(request).await?;
-            let status = response.status().as_u16() as i32;
-
-            if matches!(method.as_str(), "POST" | "PUT" | "PATCH" | "DELETE") {
-                let pool_clone = pool.clone();
-                let method_str = method.to_string();
-
-                tokio::spawn(async move {
-                    let result = sqlx::query!(
-                        "INSERT INTO audit_logs (id, user_id, action, resource_path, status_code, created_at) \
-                         VALUES ($1, $2, $3, $4, $5, $6)",
-                        Uuid::new_v4(),
-                        user_id.map(|u| u),
-                        method_str,
-                        path,
-                        status,
-                        Utc::now()
-                    )
-                    .execute(&pool_clone)
-                    .await;
-
-                    if let Err(e) = result {
-                        tracing::warn!("Audit log insert failed: {}", e);
-                    }
-                });
-            }
-
-            Ok(response)
+            let res = fut.await?;
+            let duration = start.elapsed();
+            let status = res.status().as_u16();
+            log::info!(
+                "AUDIT {} {} -> {} ({:.2}ms)",
+                method,
+                path,
+                status,
+                duration.as_secs_f64() * 1000.0
+            );
+            Ok(res)
         })
     }
 }

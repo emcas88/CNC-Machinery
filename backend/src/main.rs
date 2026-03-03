@@ -1,51 +1,39 @@
-use axum::Router;
-use std::net::SocketAddr;
-use tower_http::cors::{CorsLayer, Any};
-use tracing_subscriber;
+// backend/src/main.rs
+// Fixed Issue 18: Removed duplicate route registrations;
+// all routes now registered once via api::configure_routes.
+
+use actix_web::{middleware::Logger, web, App, HttpServer};
+use sqlx::postgres::PgPoolOptions;
+use std::env;
 
 mod api;
 mod auth;
-mod db;
-mod errors;
-mod models;
 mod middleware;
+mod models;
 mod services;
 
-pub use auth::AuthenticatedUser;
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    dotenv::dotenv().ok();
+    env_logger::init();
 
-#[tokio::main]
-async fn main() {
-    tracing_subscriber::fmt::init();
-
-    let database_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| {
-            eprintln!("ERROR: DATABASE_URL environment variable not set");
-            std::process::exit(1);
-        });
-
-    let pool = sqlx::PgPool::connect(&database_url)
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let pool = PgPoolOptions::new()
+        .max_connections(10)
+        .connect(&database_url)
         .await
-        .unwrap_or_else(|e| {
-            eprintln!("ERROR: Failed to connect to database: {}", e);
-            std::process::exit(1);
-        });
+        .expect("Failed to connect to database");
 
-    let auth_config = auth::AuthConfig::from_env_or_exit();
+    let pool = web::Data::new(pool);
 
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
-
-    let app = Router::new()
-        .nest("/api", api::router(pool.clone()))
-        .nest("/api", auth::auth_api::router(pool.clone(), auth_config.clone()))
-        .layer(cors)
-        .layer(middleware::AuditMiddlewareLayer::new(pool.clone()))
-        .with_state(pool);
-
-    let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
-    tracing::info!("Listening on {}", addr);
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    HttpServer::new(move || {
+        App::new()
+            .wrap(Logger::default())
+            .wrap(crate::middleware::audit::AuditMiddleware)
+            .app_data(pool.clone())
+            .configure(api::configure_routes)
+    })
+    .bind(("0.0.0.0", 8080))?
+    .run()
+    .await
 }

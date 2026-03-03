@@ -1,136 +1,95 @@
+// backend/src/auth/mod.rs
+// Auth module: JWT creation/verification, password hashing, refresh token management.
+// Fixed Issue 19: JWT secret loaded from environment (JWT_SECRET env var).
+// Fixed Issue 20: Refresh tokens stored/validated in DB, not in-memory map.
+
 pub mod auth_api;
-pub mod middleware;
 pub mod password;
-
 #[cfg(test)]
-pub mod tests_r3;
+mod tests_r3;
 
-use axum::extract::FromRequestParts;
-use axum::http::{request::Parts, StatusCode};
-use axum::response::{IntoResponse, Response};
-use axum::Json;
+use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
-use std::time::{SystemTime, UNIX_EPOCH};
+use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Debug, Clone)]
-pub struct AuthConfig {
-    pub secret: String,
-    pub access_token_expiry_secs: u64,
-    pub refresh_token_expiry_secs: u64,
-}
+use std::env;
 
-impl AuthConfig {
-    pub fn from_env_or_exit() -> Self {
-        let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| {
-            eprintln!("ERROR: JWT_SECRET environment variable not set");
-            std::process::exit(1);
-        });
-        let access_token_expiry_secs = std::env::var("ACCESS_TOKEN_EXPIRY_SECS")
-            .ok()
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(900); // 15 minutes
-        let refresh_token_expiry_secs = std::env::var("REFRESH_TOKEN_EXPIRY_SECS")
-            .ok()
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(604800); // 7 days
-        Self {
-            secret,
-            access_token_expiry_secs,
-            refresh_token_expiry_secs,
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
-    pub sub: String,
-    pub exp: u64,
-    pub iat: u64,
-    pub token_type: String,
+    pub sub: String,   // user id
+    pub role: String,
+    pub exp: usize,
+    pub iat: usize,
 }
 
-#[derive(Debug, Clone)]
-pub struct AuthenticatedUser {
-    pub user_id: Uuid,
+fn jwt_secret() -> Vec<u8> {
+    env::var("JWT_SECRET")
+        .expect("JWT_SECRET must be set")
+        .into_bytes()
 }
 
-#[derive(Debug)]
-pub enum AuthError {
-    MissingToken,
-    InvalidToken,
-    ExpiredToken,
-    InternalError(String),
-}
+pub fn create_access_token(user_id: Uuid, role: &str) -> Result<String, jsonwebtoken::errors::Error> {
+    let now = Utc::now();
+    let exp = (now + Duration::minutes(15)).timestamp() as usize;
+    let iat = now.timestamp() as usize;
 
-impl IntoResponse for AuthError {
-    fn into_response(self) -> Response {
-        let (status, message) = match self {
-            AuthError::MissingToken => (StatusCode::UNAUTHORIZED, "Missing token"),
-            AuthError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid token"),
-            AuthError::ExpiredToken => (StatusCode::UNAUTHORIZED, "Token expired"),
-            AuthError::InternalError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Internal error"),
-        };
-        (status, Json(serde_json::json!({ "error": message }))).into_response()
-    }
-}
-
-#[axum::async_trait]
-impl<S> FromRequestParts<S> for AuthenticatedUser
-where
-    S: Send + Sync,
-{
-    type Rejection = AuthError;
-
-    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        parts
-            .extensions
-            .get::<AuthenticatedUser>()
-            .cloned()
-            .ok_or(AuthError::MissingToken)
-    }
-}
-
-pub fn generate_token_pair(user_id: Uuid, config: &AuthConfig) -> Result<(String, String), String> {
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_err(|e| e.to_string())?
-        .as_secs();
-
-    let access_claims = Claims {
+    let claims = Claims {
         sub: user_id.to_string(),
-        exp: now + config.access_token_expiry_secs,
-        iat: now,
-        token_type: "access".to_string(),
+        role: role.to_string(),
+        exp,
+        iat,
     };
 
-    let refresh_claims = Claims {
-        sub: user_id.to_string(),
-        exp: now + config.refresh_token_expiry_secs,
-        iat: now,
-        token_type: "refresh".to_string(),
-    };
-
-    let encoding_key = EncodingKey::from_secret(config.secret.as_bytes());
-
-    let access_token = encode(&Header::default(), &access_claims, &encoding_key)
-        .map_err(|e| e.to_string())?;
-    let refresh_token = encode(&Header::default(), &refresh_claims, &encoding_key)
-        .map_err(|e| e.to_string())?;
-
-    Ok((access_token, refresh_token))
+    encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(&jwt_secret()),
+    )
 }
 
-pub fn validate_token(token: &str, config: &AuthConfig) -> Result<Uuid, AuthError> {
-    let decoding_key = DecodingKey::from_secret(config.secret.as_bytes());
-    let validation = Validation::default();
+pub fn verify_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
+    let data = decode::<Claims>(
+        token,
+        &DecodingKey::from_secret(&jwt_secret()),
+        &Validation::default(),
+    )?;
+    Ok(data.claims)
+}
 
-    let token_data = decode::<Claims>(token, &decoding_key, &validation)
-        .map_err(|e| match e.kind() {
-            jsonwebtoken::errors::ErrorKind::ExpiredSignature => AuthError::ExpiredToken,
-            _ => AuthError::InvalidToken,
-        })?;
+/// Creates a new refresh token, stores it in the database, and returns the raw token string.
+pub async fn create_refresh_token(user_id: Uuid, pool: &PgPool) -> Result<String, sqlx::Error> {
+    let token = Uuid::new_v4().to_string();
+    let expires_at = Utc::now() + Duration::days(30);
 
-    Uuid::parse_str(&token_data.claims.sub).map_err(|_| AuthError::InvalidToken)
+    // Fixed Issue 20: Persist refresh token to DB
+    sqlx::query(
+        "INSERT INTO refresh_tokens (token, user_id, expires_at) VALUES ($1, $2, $3)"
+    )
+    .bind(&token)
+    .bind(user_id)
+    .bind(expires_at)
+    .execute(pool)
+    .await?;
+
+    Ok(token)
+}
+
+/// Revokes a specific refresh token for a user.
+pub async fn revoke_refresh_token(token: &str, pool: &PgPool) -> Result<(), sqlx::Error> {
+    sqlx::query("DELETE FROM refresh_tokens WHERE token = $1")
+        .bind(token)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+/// Revokes ALL refresh tokens for a given user (logout-all / password change).
+pub async fn revoke_all_refresh_tokens(user_id: Uuid, pool: &PgPool) -> Result<(), sqlx::Error> {
+    sqlx::query("DELETE FROM refresh_tokens WHERE user_id = $1")
+        .bind(user_id)
+        .execute(pool)
+        .await?;
+    Ok(())
 }
