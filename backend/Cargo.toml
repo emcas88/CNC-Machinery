@@ -22,6 +22,25 @@ gcode = { version = "0.7", features = ["std"] }
 # Template variable substitution for post-processor templates
 regex = "1"
 
+# Auth & security
+jsonwebtoken = "9"
+argon2 = "0.5"
+actix-web-httpauth = "0.8"
+
+# Caching (Redis)
+redis = { version = "0.25", features = ["tokio-comp"] }
+
+# Object storage (S3 / MinIO)
+aws-sdk-s3 = "1"
+aws-config = "1"
+
+# Multipart uploads & WebSocket support
+actix-multipart = "0.7"
+actix-web-actors = "4"
+
+# Async utilities (used by middleware)
+futures = "0.3"
+
 [dev-dependencies]
 actix-rt = "2"
 actix-web = { version = "4", features = ["macros"] }

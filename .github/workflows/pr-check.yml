@@ -64,7 +64,7 @@ jobs:
 
       - name: Run migrations
         working-directory: backend
-        run: sqlx migrate run
+        run: sqlx migrate run --source ../migrations
 
       - name: Install cargo-llvm-cov
         run: cargo install cargo-llvm-cov --locked || true
@@ -126,9 +126,9 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Run tests with JSON coverage summary
+      - name: Run tests with coverage
         working-directory: frontend
-        run: npm test -- --coverage --watchAll=false --ci --coverageReporters=json-summary --coverageReporters=lcov
+        run: npx vitest run --coverage
 
       - name: Parse frontend coverage percentage
         id: parse
