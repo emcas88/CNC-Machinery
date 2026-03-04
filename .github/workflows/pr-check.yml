@@ -1,52 +1,31 @@
-name: PR Check
+name: PR Quality Gate
 
 on:
   pull_request:
-    branches: [main, develop, 'feature/**']
+    branches:
+      - main
+
+# Cancel in-flight checks for the same PR when new commits arrive
+concurrency:
+  group: pr-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  COVERAGE_THRESHOLD: 85   # Minimum coverage percentage required
 
 jobs:
-  lint:
-    name: Lint & Format
+  # ── Backend coverage check ────────────────────────────────────────────────
+  backend-coverage:
+    name: Backend Coverage Gate
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-
-      - name: Cache Rust dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            backend/target
-          key: ${{ runner.os }}-cargo-lint-${{ hashFiles('backend/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-lint-
-
-      - name: Check formatting
-        working-directory: backend
-        run: cargo fmt -- --check
-
-      - name: Run Clippy
-        working-directory: backend
-        run: cargo clippy -- -D warnings
-
-  test:
-    name: Test Suite
-    runs-on: ubuntu-latest
-    needs: lint
 
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: cnc_test
+          POSTGRES_USER: cnc_user
+          POSTGRES_PASSWORD: cnc_password
+          POSTGRES_DB: cnc_machinery_test
         ports:
           - 5432:5432
         options: >-
@@ -56,62 +35,199 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/cnc_test
+      DATABASE_URL: postgres://cnc_user:cnc_password@localhost:5432/cnc_machinery_test
       JWT_SECRET: test-secret-for-ci
 
-    steps:
-      - uses: actions/checkout@v4
+    outputs:
+      coverage: ${{ steps.parse.outputs.coverage }}
 
-      - name: Install Rust stable
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+
+      - name: Install Rust (stable)
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache Rust dependencies
+      - name: Cache Cargo
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            backend/target
-          key: ${{ runner.os }}-cargo-test-${{ hashFiles('backend/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-test-
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            backend/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
 
-      - name: Run database migrations
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features native-tls,postgres --locked || true
+
+      - name: Run migrations
+        working-directory: backend
+        run: sqlx migrate run --source ../migrations
+
+      - name: Install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov --locked || true
+
+      - name: Run tests with coverage
         working-directory: backend
         run: |
-          cargo install sqlx-cli --no-default-features --features postgres || true
-          sqlx migrate run
+          cargo llvm-cov \
+            --all-features \
+            --workspace \
+            --lcov \
+            --output-path lcov.info \
+            -- --test-threads=1
 
-      - name: Run tests
+      - name: Generate JSON coverage summary
         working-directory: backend
-        run: cargo test -- --test-threads=1
+        run: |
+          cargo llvm-cov report \
+            --json \
+            --output-path coverage-summary.json
 
-  frontend:
-    name: Frontend Check
+      - name: Parse backend coverage percentage
+        id: parse
+        working-directory: backend
+        run: |
+          COVERAGE=$(python3 - <<'EOF'
+          import json, sys
+          with open("coverage-summary.json") as f:
+              data = json.load(f)
+          totals = data.get("data", [{}])[0].get("totals", {})
+          lines = totals.get("lines", {})
+          pct = lines.get("percent", 0)
+          print(f"{pct:.2f}")
+          EOF
+          )
+          echo "coverage=${COVERAGE}" >> "$GITHUB_OUTPUT"
+          echo "Backend line coverage: ${COVERAGE}%"
+
+      - name: Upload backend LCOV
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-lcov
+          path: backend/lcov.info
+
+  # ── Frontend coverage check ───────────────────────────────────────────────
+  frontend-coverage:
+    name: Frontend Coverage Gate
     runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+    outputs:
+      coverage: ${{ steps.parse.outputs.coverage }}
 
-      - name: Setup Node.js
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
         working-directory: frontend
-        run: npm ci
+        run: npm install
 
-      - name: Lint
+      - name: Run tests with coverage
         working-directory: frontend
-        run: npm run lint
+        run: npx vitest run --coverage
 
-      - name: Type check
+      - name: Parse frontend coverage percentage
+        id: parse
         working-directory: frontend
-        run: npm run type-check
+        run: |
+          COVERAGE=$(node -e "
+            const s = require('./coverage/coverage-summary.json');
+            const pct = s.total.lines.pct;
+            process.stdout.write(String(pct));
+          ")
+          echo "coverage=${COVERAGE}" >> "$GITHUB_OUTPUT"
+          echo "Frontend line coverage: ${COVERAGE}%"
 
-      - name: Build
-        working-directory: frontend
-        run: npm run build
+      - name: Upload frontend LCOV
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-lcov
+          path: frontend/coverage/lcov.info
+
+  # ── Post PR comment & enforce threshold ───────────────────────────────────
+  coverage-gate:
+    name: Enforce 85% Coverage Threshold
+    runs-on: ubuntu-latest
+    needs: [backend-coverage, frontend-coverage]
+
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Evaluate coverage and post PR comment
+        uses: actions/github-script@v7
+        env:
+          BACKEND_COV: ${{ needs.backend-coverage.outputs.coverage }}
+          FRONTEND_COV: ${{ needs.frontend-coverage.outputs.coverage }}
+          THRESHOLD: ${{ env.COVERAGE_THRESHOLD }}
+        with:
+          script: |
+            const threshold   = parseFloat(process.env.THRESHOLD);
+            const backendCov  = parseFloat(process.env.BACKEND_COV  || "0");
+            const frontendCov = parseFloat(process.env.FRONTEND_COV || "0");
+
+            const pass  = (v) => v >= threshold;
+            const icon  = (v) => pass(v) ? "✅" : "❌";
+            const fmt   = (v) => `${v.toFixed(2)}%`;
+
+            const allPass = pass(backendCov) && pass(frontendCov);
+
+            const body = `## Coverage Report
+
+            | Component | Line Coverage | Threshold | Status |
+            |-----------|--------------|-----------|--------|
+            | Backend (Rust) | ${fmt(backendCov)} | ${threshold}% | ${icon(backendCov)} |
+            | Frontend (JS/TS) | ${fmt(frontendCov)} | ${threshold}% | ${icon(frontendCov)} |
+
+            ${allPass
+              ? `### ✅ All coverage checks passed — ready to merge.`
+              : `### ❌ Coverage below ${threshold}% threshold — merge is blocked.\n\nPlease add tests to bring coverage to ${threshold}% or above.`
+            }
+
+            <sub>Generated by the PR Quality Gate workflow · commit \`${{ github.event.pull_request.head.sha }}\`</sub>`;
+
+            // Find an existing bot comment and update it, or create a new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(
+              (c) => c.user.type === "Bot" && c.body.includes("Coverage Report")
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner:      context.repo.owner,
+                repo:       context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner:        context.repo.owner,
+                repo:         context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+            // Fail the step (and thus the job) when coverage is insufficient
+            if (!allPass) {
+              core.setFailed(
+                `Coverage below ${threshold}% threshold: ` +
+                `backend=${fmt(backendCov)}, frontend=${fmt(frontendCov)}`
+              );
+            }

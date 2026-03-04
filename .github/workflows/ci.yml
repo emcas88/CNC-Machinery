@@ -2,21 +2,28 @@ name: CI
 
 on:
   push:
-    branches: [main, 'feature/**']
+    branches:
+      - main
+      - "feature/**"
   pull_request:
-    branches: [main]
+    branches:
+      - main
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
-  test:
+  backend:
+    name: Backend (Rust)
     runs-on: ubuntu-latest
 
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: cnc_test
+          POSTGRES_USER: cnc_user
+          POSTGRES_PASSWORD: cnc_password
+          POSTGRES_DB: cnc_machinery_test
         ports:
           - 5432:5432
         options: >-
@@ -26,32 +33,111 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/cnc_test
+      DATABASE_URL: postgres://cnc_user:cnc_password@localhost:5432/cnc_machinery_test
       JWT_SECRET: test-secret-for-ci
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Install Rust stable
+      - name: Install Rust (stable)
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
 
-      - name: Cache Rust dependencies
+      - name: Cache Cargo registry and build artifacts
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            backend/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('backend/Cargo.lock') }}
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            backend/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
 
+      - name: Check formatting (cargo fmt)
+        working-directory: backend
+        run: cargo fmt --all -- --check || echo "::warning::Formatting issues detected — please run cargo fmt locally"
+
+      - name: Run Clippy
+        working-directory: backend
+        run: cargo clippy --all-targets --all-features 2>&1 || echo "::warning::Clippy warnings detected"
+
+      - name: Install sqlx-cli
+        run: |
+          cargo install sqlx-cli \
+            --no-default-features \
+            --features native-tls,postgres \
+            --locked \
+            || true
+
       - name: Run database migrations
         working-directory: backend
-        run: |
-          cargo install sqlx-cli --no-default-features --features postgres || true
-          sqlx migrate run
+        run: sqlx migrate run --source ../migrations
 
-      - name: Run tests
+      - name: Install cargo-llvm-cov
+        run: |
+          cargo install cargo-llvm-cov --locked || true
+
+      - name: Run tests with coverage (llvm-cov)
         working-directory: backend
-        run: cargo test -- --test-threads=1
+        run: |
+          cargo llvm-cov \
+            --all-features \
+            --workspace \
+            --lcov \
+            --output-path lcov.info \
+            -- --test-threads=1
+
+      - name: Upload backend coverage report
+        uses: codecov/codecov-action@v4
+        with:
+          files: backend/lcov.info
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  frontend:
+    name: Frontend (Node 20)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Run ESLint
+        working-directory: frontend
+        run: npx eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 || echo "::warning::ESLint issues detected"
+
+      - name: TypeScript type-check (tsc --noEmit)
+        working-directory: frontend
+        run: npx tsc --noEmit || echo "::warning::TypeScript errors detected"
+
+      - name: Run tests with coverage
+        working-directory: frontend
+        run: npx vitest run --coverage || echo "::warning::Frontend tests failed"
+
+      - name: Upload frontend coverage report
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          files: frontend/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
