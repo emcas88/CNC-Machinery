@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy dependency manifests first for layer caching
-COPY backend/Cargo.toml ./
+COPY backend/Cargo.toml backend/Cargo.lock* ./
 
 # Create a dummy main to pre-cache dependencies
 RUN mkdir -p src && echo "fn main() {}" > src/main.rs
@@ -22,6 +22,9 @@ RUN rm -rf src
 
 # Copy the actual source
 COPY backend/src ./src
+
+# Copy .sqlx offline query data (required for SQLX_OFFLINE=true builds)
+COPY backend/.sqlx ./.sqlx
 
 # Copy migrations so sqlx::migrate!("../migrations") resolves at compile time
 COPY migrations /migrations
@@ -46,7 +49,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy the compiled binary from the builder stage
-COPY --from=builder /app/target/release/cnc-backend /app/cnc-backend
+# Binary name is cnc_backend (underscore) as defined in Cargo.toml [[bin]]
+COPY --from=builder /app/target/release/cnc_backend /app/cnc_backend
 
 # Copy migrations to run on startup
 COPY --from=builder /migrations /app/migrations
@@ -57,4 +61,4 @@ ENV RUST_LOG=info
 ENV SERVER_HOST=0.0.0.0
 ENV SERVER_PORT=8080
 
-CMD ["/app/cnc-backend"]
+CMD ["/app/cnc_backend"]

@@ -1,21 +1,28 @@
 # CNC-Machinery — Development Makefile
 # ──────────────────────────────────────────────────────────────────────────────
 # Usage:  make <target>
-# Requires: cargo, npm, docker, docker compose, sqlx-cli, cargo-llvm-cov
+# Requires: docker, docker compose
+# Optional: cargo, npm, sqlx-cli, cargo-llvm-cov (for local development)
 # ──────────────────────────────────────────────────────────────────────────────
 
 .DEFAULT_GOAL := help
-.PHONY: help dev test lint build fmt check \
-        docker-up docker-down docker-build docker-logs \
-        migrate migrate-new migrate-revert \
-        coverage coverage-backend coverage-frontend \
-        clean clean-all
+.PHONY: help dev dev-docker dev-local \
+        test test-backend test-frontend \
+        lint lint-backend lint-frontend \
+        fmt fmt-backend fmt-frontend fmt-check \
+        build build-backend build-frontend \
+        check \
+        docker-up docker-down docker-build docker-logs docker-ps \
+        migrate migrate-new migrate-revert migrate-status \
+        coverage coverage-backend coverage-frontend coverage-check \
+        clean clean-all seed setup
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-ROOT_DIR  := $(shell pwd)
-BACKEND   := $(ROOT_DIR)/backend
-FRONTEND  := $(ROOT_DIR)/frontend
-SCRIPTS   := $(ROOT_DIR)/scripts
+ROOT_DIR   := $(shell pwd)
+BACKEND    := $(ROOT_DIR)/backend
+FRONTEND   := $(ROOT_DIR)/frontend
+SCRIPTS    := $(ROOT_DIR)/scripts
+MIGRATIONS := $(ROOT_DIR)/migrations
 
 # ── Database (can be overridden via env) ──────────────────────────────────────
 DATABASE_URL ?= postgres://cnc_user:cnc_password@localhost:5432/cnc_machinery
@@ -26,35 +33,60 @@ COVERAGE_THRESHOLD ?= 85
 # ─────────────────────────────────────────────────────────────────────────────
 # help — print available targets
 # ─────────────────────────────────────────────────────────────────────────────
-help:
+help: ## Show this help
 	@echo ""
 	@echo "CNC-Machinery — available make targets"
 	@echo "────────────────────────────────────────"
-	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*##/ {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*##/ {printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Setup
+# ─────────────────────────────────────────────────────────────────────────────
+setup: ## First-time setup: copy .env, start infra, install frontend deps
+	@echo "→ Setting up development environment..."
+	@test -f .env || (cp .env.example .env && echo "  Created .env from .env.example")
+	@echo "  Starting infrastructure (Postgres, Redis, MinIO)..."
+	docker compose up -d db redis minio
+	@echo "  Waiting for Postgres to be healthy..."
+	@until docker compose exec -T db pg_isready -U cnc_user -d cnc_machinery >/dev/null 2>&1; do sleep 1; done
+	@echo "  Installing frontend dependencies..."
+	cd $(FRONTEND) && npm install
+	@echo ""
+	@echo "✓ Setup complete. Run 'make dev' to start development."
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Development
 # ─────────────────────────────────────────────────────────────────────────────
-dev: docker-up migrate ## Start full dev environment (Docker + migrations + hot reload)
-	@echo "Starting backend and frontend in parallel..."
+dev: dev-local ## Start full dev environment (alias for dev-local)
+
+dev-local: ## Start infra in Docker + backend/frontend locally with hot reload
+	@echo "→ Starting infrastructure services..."
+	docker compose up -d db redis minio
+	@echo "→ Waiting for Postgres to be healthy..."
+	@until docker compose exec -T db pg_isready -U cnc_user -d cnc_machinery >/dev/null 2>&1; do sleep 1; done
+	@echo "→ Starting backend and frontend in parallel..."
 	@trap 'kill 0' SIGINT; \
-	  (cd $(BACKEND) && DATABASE_URL=$(DATABASE_URL) cargo run) & \
+	  (cd $(BACKEND) && DATABASE_URL=$(DATABASE_URL) SQLX_OFFLINE=true cargo run) & \
 	  (cd $(FRONTEND) && npm run dev) & \
 	  wait
+
+dev-docker: ## Start everything in Docker (no local toolchains required)
+	@echo "→ Starting all services via Docker Compose..."
+	docker compose up --build
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Testing
 # ─────────────────────────────────────────────────────────────────────────────
 test: test-backend test-frontend ## Run all tests (backend + frontend)
 
-test-backend: ## Run Rust backend tests
+test-backend: ## Run Rust backend tests (requires Postgres running)
 	@echo "→ Running backend tests..."
-	cd $(BACKEND) && DATABASE_URL=$(DATABASE_URL) cargo test --all-features --workspace
+	cd $(BACKEND) && DATABASE_URL=$(DATABASE_URL) SQLX_OFFLINE=true cargo test --all-features -- --test-threads=1
 
-test-frontend: ## Run frontend tests
+test-frontend: ## Run frontend tests (Vitest)
 	@echo "→ Running frontend tests..."
-	cd $(FRONTEND) && npm test -- --watchAll=false --ci
+	cd $(FRONTEND) && npm test
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Linting & formatting
@@ -63,7 +95,7 @@ lint: lint-backend lint-frontend ## Run all linters
 
 lint-backend: ## Run cargo clippy
 	@echo "→ Linting backend..."
-	cd $(BACKEND) && cargo clippy --all-targets --all-features -- -D warnings
+	cd $(BACKEND) && SQLX_OFFLINE=true cargo clippy --all-targets --all-features -- -D warnings
 
 lint-frontend: ## Run ESLint on frontend
 	@echo "→ Linting frontend..."
@@ -74,8 +106,15 @@ fmt: fmt-backend fmt-frontend ## Auto-format all code
 fmt-backend: ## cargo fmt
 	cd $(BACKEND) && cargo fmt --all
 
-fmt-frontend: ## Prettier on frontend
-	cd $(FRONTEND) && npm run format
+fmt-frontend: ## Prettier on frontend (falls back to lint --fix)
+	@echo "→ Formatting frontend..."
+	@cd $(FRONTEND) && \
+	  if npm run --silent 2>/dev/null | grep -q '^  format$$'; then \
+	    npm run format; \
+	  else \
+	    echo "  'format' script not found, running eslint --fix instead"; \
+	    npx eslint . --ext ts,tsx --fix 2>/dev/null || true; \
+	  fi
 
 fmt-check: ## Check formatting without modifying files
 	@echo "→ Checking backend formatting..."
@@ -90,11 +129,11 @@ check: fmt-check lint ## Run all static checks (fmt + lint)
 # ─────────────────────────────────────────────────────────────────────────────
 build: build-backend build-frontend ## Build backend and frontend for production
 
-build-backend: ## cargo build --release
+build-backend: ## Build backend in release mode (SQLX_OFFLINE=true for no-DB builds)
 	@echo "→ Building backend (release)..."
-	cd $(BACKEND) && cargo build --release
+	cd $(BACKEND) && SQLX_OFFLINE=true cargo build --release
 
-build-frontend: ## npm run build
+build-frontend: ## Build frontend for production
 	@echo "→ Building frontend..."
 	cd $(FRONTEND) && npm run build
 
@@ -120,24 +159,31 @@ docker-ps: ## Show running Docker services
 	docker compose ps
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Database migrations (sqlx)
+# Database migrations (sqlx-cli required: cargo install sqlx-cli)
 # ─────────────────────────────────────────────────────────────────────────────
 migrate: ## Run all pending database migrations
-	@echo "→ Running migrations (DATABASE_URL=$(DATABASE_URL))..."
-	cd $(BACKEND) && DATABASE_URL=$(DATABASE_URL) sqlx migrate run
+	@echo "→ Running migrations (source: $(MIGRATIONS))..."
+	DATABASE_URL=$(DATABASE_URL) sqlx migrate run --source $(MIGRATIONS)
 
-migrate-new: ## Create a new migration  (usage: make migrate-new NAME=create_users)
+migrate-new: ## Create a new migration (usage: make migrate-new NAME=create_users)
 ifndef NAME
-	$(error NAME is required — e.g.  make migrate-new NAME=create_users)
+	$(error NAME is required — e.g. make migrate-new NAME=create_users)
 endif
-	cd $(BACKEND) && sqlx migrate add $(NAME)
+	sqlx migrate add --source $(MIGRATIONS) $(NAME)
 
 migrate-revert: ## Revert the last applied migration
 	@echo "→ Reverting last migration..."
-	cd $(BACKEND) && DATABASE_URL=$(DATABASE_URL) sqlx migrate revert
+	DATABASE_URL=$(DATABASE_URL) sqlx migrate revert --source $(MIGRATIONS)
 
 migrate-status: ## Show migration status
-	cd $(BACKEND) && DATABASE_URL=$(DATABASE_URL) sqlx migrate info
+	DATABASE_URL=$(DATABASE_URL) sqlx migrate info --source $(MIGRATIONS)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Seed
+# ─────────────────────────────────────────────────────────────────────────────
+seed: ## Run database seed script
+	@echo "→ Running seed data..."
+	$(SCRIPTS)/seed.sh
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Coverage
@@ -146,23 +192,17 @@ coverage: coverage-backend coverage-frontend ## Generate coverage reports for ev
 
 coverage-backend: ## Run backend tests with llvm-cov and open HTML report
 	@echo "→ Generating backend coverage..."
-	cd $(BACKEND) && DATABASE_URL=$(DATABASE_URL) \
+	cd $(BACKEND) && DATABASE_URL=$(DATABASE_URL) SQLX_OFFLINE=true \
 	  cargo llvm-cov \
 	    --all-features \
-	    --workspace \
 	    --html \
 	    --open \
-	    --output-dir target/coverage
+	    --output-dir target/coverage \
+	    -- --test-threads=1
 
-coverage-frontend: ## Run frontend tests with coverage
+coverage-frontend: ## Run frontend tests with coverage (Vitest)
 	@echo "→ Generating frontend coverage..."
-	cd $(FRONTEND) && npm test -- \
-	  --coverage \
-	  --watchAll=false \
-	  --ci \
-	  --coverageReporters=html \
-	  --coverageReporters=lcov \
-	  --coverageReporters=json-summary
+	cd $(FRONTEND) && npx vitest run --coverage
 
 coverage-check: ## Validate coverage meets $(COVERAGE_THRESHOLD)% threshold
 	@echo "→ Checking coverage threshold ($(COVERAGE_THRESHOLD)%)..."
