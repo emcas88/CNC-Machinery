@@ -30,3 +30,8 @@ redis_data/
 
 # Build artifacts
 *.log
+
+# Playwright
+.auth/
+playwright-report/
+test-results/
