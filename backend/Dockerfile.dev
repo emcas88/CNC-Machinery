@@ -12,13 +12,18 @@ RUN cargo install cargo-watch
 WORKDIR /app
 
 # Copy manifests first for dependency caching
-COPY Cargo.toml Cargo.lock* ./
+COPY backend/Cargo.toml backend/Cargo.lock* ./
 RUN mkdir src && echo 'fn main() { println!("placeholder"); }' > src/main.rs
 RUN cargo build 2>/dev/null || true
 RUN rm -rf src
 
-# Copy actual source
-COPY . .
+# Copy actual backend source + migrations + .sqlx offline data
+COPY backend/src ./src
+COPY backend/.sqlx ./.sqlx
+COPY migrations /migrations
+
+# Enable offline mode for sqlx compile-time checks
+ENV SQLX_OFFLINE=true
 
 EXPOSE 8080
 
