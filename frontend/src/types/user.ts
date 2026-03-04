@@ -1,32 +1,16 @@
-// frontend/src/types/user.ts
-
-export type UserRole = 'admin' | 'manager' | 'operator' | 'viewer'
+export type UserRole = 'super_admin' | 'designer' | 'cnc_operator' | 'shop_floor';
 
 export interface User {
-  id: string
-  email: string
-  first_name?: string
-  last_name?: string
-  role: UserRole
-  is_active: boolean
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  role: UserRole;
+  is_active: boolean;
 }
 
-export interface CreateUserPayload {
-  email: string
-  password: string
-  first_name?: string
-  last_name?: string
-  role?: UserRole
-}
-
-export interface UpdateUserPayload {
-  first_name?: string
-  last_name?: string
-  password?: string
-  role?: UserRole
-}
-
-export interface ListUsersParams {
-  limit?: number
-  offset?: number
+export interface AuthResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
 }

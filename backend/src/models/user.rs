@@ -4,7 +4,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 /// System user role controlling access permissions.
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type, PartialEq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, sqlx::Type, PartialEq, Eq, Hash)]
 #[sqlx(type_name = "user_role", rename_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum UserRole {
@@ -12,6 +12,27 @@ pub enum UserRole {
     Designer,
     CncOperator,
     ShopFloor,
+}
+
+impl UserRole {
+    pub fn from_str_role(s: &str) -> Option<UserRole> {
+        match s {
+            "super_admin" => Some(UserRole::SuperAdmin),
+            "designer" => Some(UserRole::Designer),
+            "cnc_operator" => Some(UserRole::CncOperator),
+            "shop_floor" => Some(UserRole::ShopFloor),
+            _ => None,
+        }
+    }
+
+    pub fn privilege_level(&self) -> u32 {
+        match self {
+            UserRole::SuperAdmin => 100,
+            UserRole::Designer => 50,
+            UserRole::CncOperator => 30,
+            UserRole::ShopFloor => 10,
+        }
+    }
 }
 
 impl std::fmt::Display for UserRole {
@@ -40,13 +61,14 @@ pub struct User {
     pub updated_at: DateTime<Utc>,
 }
 
-/// DTO for creating a user (registration).
+/// DTO for creating a user via the admin API.
 #[derive(Debug, Deserialize)]
 pub struct CreateUser {
     pub email: String,
-    pub name: String,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
     pub password: String,
-    pub role: UserRole,
+    pub role: Option<UserRole>,
     pub permissions: Option<Value>,
 }
 
@@ -54,7 +76,9 @@ pub struct CreateUser {
 #[derive(Debug, Deserialize)]
 pub struct UpdateUser {
     pub email: Option<String>,
-    pub name: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub password: Option<String>,
     pub role: Option<UserRole>,
     pub permissions: Option<Value>,
 }

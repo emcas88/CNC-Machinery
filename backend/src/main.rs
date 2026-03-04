@@ -1,12 +1,15 @@
 use actix_cors::Cors;
-use actix_web::{get, middleware, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, middleware as actix_mw, web, App, HttpResponse, HttpServer, Responder};
 use sqlx::postgres::PgPoolOptions;
 
 mod api;
 mod auth;
-mod middleware as mw;
+mod config;
+mod middleware;
 mod models;
 mod services;
+
+use middleware as mw;
 
 #[get("/health")]
 async fn health() -> impl Responder {
@@ -40,7 +43,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .wrap(cors)
-            .wrap(middleware::Logger::default())
+            .wrap(actix_mw::Logger::default())
             .wrap(mw::audit::AuditMiddlewareFactory)
             .service(health)
             .configure(api::configure_routes)

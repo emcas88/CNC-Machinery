@@ -88,11 +88,19 @@ pub async fn register(
     };
 
     // Insert new user
+    let name = match (&body.first_name, &body.last_name) {
+        (Some(f), Some(l)) => format!("{f} {l}"),
+        (Some(f), None) => f.clone(),
+        (None, Some(l)) => l.clone(),
+        (None, None) => body.email.clone(),
+    };
+
     let result = sqlx::query_as::<_, (Uuid,)>(
-        "INSERT INTO users (email, password_hash, first_name, last_name) VALUES ($1, $2, $3, $4) RETURNING id"
+        "INSERT INTO users (email, password_hash, name, first_name, last_name) VALUES ($1, $2, $3, $4, $5) RETURNING id"
     )
     .bind(&body.email)
     .bind(&hashed)
+    .bind(&name)
     .bind(&body.first_name)
     .bind(&body.last_name)
     .fetch_one(pool.get_ref())
@@ -139,7 +147,7 @@ pub async fn login(
     body: web::Json<LoginRequest>,
 ) -> impl Responder {
     let result = sqlx::query_as::<_, (Uuid, String, String)>(
-        "SELECT id, password_hash, role FROM users WHERE email = $1 AND is_active = true"
+        "SELECT id, password_hash, role::text FROM users WHERE email = $1 AND is_active = true"
     )
     .bind(&body.email)
     .fetch_optional(pool.get_ref())
@@ -219,7 +227,7 @@ pub async fn refresh_token(
 
     // Fetch current role
     let role_result = sqlx::query_as::<_, (String,)>(
-        "SELECT role FROM users WHERE id = $1 AND is_active = true"
+        "SELECT role::text FROM users WHERE id = $1 AND is_active = true"
     )
     .bind(user_id)
     .fetch_optional(pool.get_ref())
