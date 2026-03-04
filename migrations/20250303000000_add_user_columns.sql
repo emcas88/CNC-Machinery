@@ -1,32 +1,28 @@
--- Migration: add first_name, last_name, is_active columns and convert role to TEXT
--- This migration is idempotent; columns are added only if they do not already exist.
+-- Migration: add missing user columns for auth_api and users API compatibility.
+-- Adds first_name, last_name, is_active to the users table.
+-- Converts the role column from user_role enum to TEXT for string-based queries.
 
--- Add first_name column
+-- Add first_name and last_name (nullable)
 ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT;
-
--- Add last_name column
 ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT;
 
--- Add is_active column with a default of TRUE
+-- Add is_active flag with default true
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
 
--- Backfill is_active for existing rows
-UPDATE users SET is_active = TRUE WHERE is_active IS NULL;
-
--- Convert role column from enum to TEXT if it is still stored as the user_role enum type.
--- Using a safe two-step approach: add a new TEXT column, copy data, drop old, rename.
+-- Convert role from user_role enum to TEXT so Rust can read it as String.
+-- This is idempotent: if already TEXT it's a no-op; if enum it converts.
 DO $$
 BEGIN
     IF EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'users'
-          AND column_name = 'role'
-          AND data_type = 'USER-DEFINED'
+        WHERE table_name = 'users' AND column_name = 'role'
+        AND udt_name = 'user_role'
     ) THEN
-        ALTER TABLE users ADD COLUMN role_text TEXT;
-        UPDATE users SET role_text = role::text;
-        ALTER TABLE users DROP COLUMN role;
-        ALTER TABLE users RENAME COLUMN role_text TO role;
+        -- Drop the default first (it references the enum type)
+        ALTER TABLE users ALTER COLUMN role DROP DEFAULT;
+        -- Convert enum to text
+        ALTER TABLE users ALTER COLUMN role TYPE TEXT USING role::text;
+        -- Re-set default as plain text
+        ALTER TABLE users ALTER COLUMN role SET DEFAULT 'designer';
     END IF;
-END
-$$;
+END $$;
