@@ -9,13 +9,7 @@
 
 #[cfg(test)]
 mod tests {
-    use actix_web::{
-        body::to_bytes,
-        dev::Service,
-        http::StatusCode,
-        test,
-        web, App, HttpResponse,
-    };
+    use actix_web::{body::to_bytes, dev::Service, http::StatusCode, test, web, App, HttpResponse};
 
     use crate::middleware::audit::AuditMiddlewareFactory;
 

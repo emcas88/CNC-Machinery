@@ -107,11 +107,11 @@ export default function PostProcessorEditor() {
         toolChangeTemplate: processor.toolChangeTemplate || '',
         sheetStartTemplate: processor.sheetStartTemplate || '',
         sheetEndTemplate: processor.sheetEndTemplate || '',
-        variables: processor.variables,
+        variables: processor.variables ?? [],
         isDefault: processor.isDefault,
         notes: processor.notes || '',
       });
-      setVariables([...processor.variables]);
+      setVariables([...(processor.variables ?? [])]);
       setTestOutput('');
       setShowDeleteConfirm(false);
     },
@@ -182,8 +182,8 @@ export default function PostProcessorEditor() {
   // ── Filter processors ──
   const filteredProcessors = processors.filter(
     (p) =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.machineType.toLowerCase().includes(searchTerm.toLowerCase()),
+      (p.name ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.machineType ?? '').toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
@@ -264,7 +264,7 @@ export default function PostProcessorEditor() {
                   )}
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
-                  {proc.machineType} · {proc.outputFormat.toUpperCase()}
+                  {proc.machineType ?? 'Unknown'} · {(proc.outputFormat ?? 'gcode').toUpperCase()}
                 </div>
               </button>
             ))

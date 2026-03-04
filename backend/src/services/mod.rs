@@ -1,26 +1,17 @@
-// =============================================================================
-// backend/src/services/mod.rs — Fixed Issue 23: removed phantom `email_service`
-// declaration that referenced a non-existent file, causing a compiler error.
-// =============================================================================
-
-// Public service sub-modules
-// (add real service modules here as they are implemented)
-
-/// Placeholder so the `services` module is not completely empty.
-/// Remove once real sub-modules are added.
-pub mod placeholder {
-    /// Returns a static greeting — used only for smoke-testing the module tree.
-    pub fn hello() -> &'static str {
-        "services module OK"
-    }
-}
+pub mod audit;
+pub mod cache;
+pub mod cloud_renderer;
+pub mod construction_methods_engine;
+pub mod cost_calculator;
+pub mod door_profile_generator;
+pub mod dovetail_generator;
+pub mod file_exporter;
+pub mod flipside_manager;
+pub mod gcode_generator;
+pub mod label_generator;
+pub mod nesting_engine;
+pub mod propagation_engine;
+pub mod storage;
 
 #[cfg(test)]
-mod tests {
-    use super::placeholder;
-
-    #[test]
-    fn test_placeholder() {
-        assert_eq!(placeholder::hello(), "services module OK");
-    }
-}
+mod tests;

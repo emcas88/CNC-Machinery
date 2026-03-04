@@ -42,6 +42,10 @@ export interface UpdateJob extends Partial<CreateJob> {
   id: string
 }
 
+export type CreateJobDto = CreateJob
+export type UpdateJobDto = Partial<CreateJob>
+export type JobQueryParams = Record<string, unknown>
+
 export interface JobDashboard {
   job: Job
   milestones: { label: string; completed: boolean; date?: string }[]

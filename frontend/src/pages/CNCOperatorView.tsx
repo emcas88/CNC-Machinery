@@ -24,7 +24,8 @@ interface RemakeReason {
 
 /* ═══════════════════════════════════════════ */
 export default function CNCOperatorView() {
-  const { sheets, currentSheet, setCurrentSheet } = useOptimizerStore();
+  const { sheets: sheetsMap, currentRunId, currentSheet, setCurrentSheet } = useOptimizerStore();
+  const sheets = sheetsMap[currentRunId ?? ''] ?? [];
 
   const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
   const [remakeDialog, setRemakeDialog] = useState<string | null>(null);

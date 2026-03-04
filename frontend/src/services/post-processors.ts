@@ -3,7 +3,7 @@ import type { PostProcessor, CreatePostProcessor } from '@/types'
 
 export const postProcessorService = {
   getProcessors: () =>
-    api.get<PostProcessor[]>('/post-processors').then((r) => r.data),
+    api.get<PostProcessor[]>('/post-processors').then((r) => r.data).catch(() => [] as PostProcessor[]),
 
   getProcessor: (id: string) =>
     api.get<PostProcessor>(`/post-processors/${id}`).then((r) => r.data),

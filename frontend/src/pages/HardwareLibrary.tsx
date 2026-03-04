@@ -12,7 +12,8 @@ const HARDWARE_TYPES: HardwareType[] = [
   'cam_lock', 'shelf_pin', 'soft_close', 'push_open', 'lazy_susan', 'other',
 ] as unknown as HardwareType[]
 
-function typeLabel(type: string): string {
+function typeLabel(type: string | undefined | null): string {
+  if (!type) return 'Other'
   return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
@@ -240,7 +241,7 @@ function HardwareCard({ item, onEdit, onDelete }: HardwareCardProps) {
       {item.sku && <p className="text-xs text-gray-500">SKU: {item.sku}</p>}
       {item.description && <p className="text-xs text-gray-400 line-clamp-2">{item.description}</p>}
 
-      <div className="text-sm text-cyan-400 font-medium">${item.costPerUnit.toFixed(2)} / unit</div>
+      <div className="text-sm text-cyan-400 font-medium">${(item.costPerUnit ?? 0).toFixed(2)} / unit</div>
 
       {/* Drilling info */}
       {(item.drillingX || item.drillingY || item.drillingDiameter) && (

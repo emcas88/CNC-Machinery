@@ -180,14 +180,14 @@ function MaterialGroupHeader({ material, count, cutCount }: { material: string; 
 // ---------------------------------------------------------------------------
 
 export interface ShopCutlistAppProps {
-  jobId: string;
+  jobId?: string;
   api?: typeof cutlistApi;
 }
 
 export function ShopCutlistApp({ jobId, api = cutlistApi }: ShopCutlistAppProps) {
   const [cutlist, setCutlist] = useState<CutlistResponse | null>(null);
   const [parts, setParts] = useState<CutlistPart[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!(jobId));
   const [error, setError] = useState<string | null>(null);
 
   // Search / filter / sort state
@@ -205,6 +205,7 @@ export function ShopCutlistApp({ jobId, api = cutlistApi }: ShopCutlistAppProps)
   // -----------------------------------------------------------------------
 
   const loadCutlist = useCallback(async () => {
+    if (!jobId) { setLoading(false); return; }
     setLoading(true);
     setError(null);
     try {
@@ -264,9 +265,9 @@ export function ShopCutlistApp({ jobId, api = cutlistApi }: ShopCutlistAppProps)
       const q = search.toLowerCase();
       result = result.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.material.toLowerCase().includes(q) ||
-          p.notes?.toLowerCase().includes(q)
+          (p.name ?? '').toLowerCase().includes(q) ||
+          (p.material ?? '').toLowerCase().includes(q) ||
+          (p.notes ?? '').toLowerCase().includes(q)
       );
     }
 
@@ -344,6 +345,14 @@ export function ShopCutlistApp({ jobId, api = cutlistApi }: ShopCutlistAppProps)
   // -----------------------------------------------------------------------
   // Render
   // -----------------------------------------------------------------------
+
+  if (!jobId) {
+    return (
+      <div className="flex items-center justify-center h-full bg-gray-950 text-gray-400">
+        No job selected. Please select a job to view the shop cutlist.
+      </div>
+    );
+  }
 
   if (loading) {
     return (

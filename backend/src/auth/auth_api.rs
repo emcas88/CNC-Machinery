@@ -14,8 +14,8 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::auth::{
-    create_access_token, create_refresh_token, verify_refresh_token, hash_password,
-    verify_password, AuthError,
+    create_access_token, create_refresh_token, hash_password, verify_password,
+    verify_refresh_token, AuthError,
 };
 
 // ------------------------------------------------------------------
@@ -26,6 +26,7 @@ use crate::auth::{
 pub struct RegisterRequest {
     pub email: String,
     pub password: String,
+    pub name: Option<String>,
     pub first_name: Option<String>,
     pub last_name: Option<String>,
 }
@@ -73,10 +74,7 @@ pub fn auth_routes(cfg: &mut web::ServiceConfig) {
 // ------------------------------------------------------------------
 
 #[post("/register")]
-pub async fn register(
-    pool: web::Data<PgPool>,
-    body: web::Json<RegisterRequest>,
-) -> impl Responder {
+pub async fn register(pool: web::Data<PgPool>, body: web::Json<RegisterRequest>) -> impl Responder {
     // Hash the plaintext password
     let hashed = match hash_password(&body.password) {
         Ok(h) => h,
@@ -88,21 +86,23 @@ pub async fn register(
     };
 
     // Insert new user
-    let name = match (&body.first_name, &body.last_name) {
-        (Some(f), Some(l)) => format!("{f} {l}"),
-        (Some(f), None) => f.clone(),
-        (None, Some(l)) => l.clone(),
-        (None, None) => body.email.clone(),
+    let name = if let Some(ref n) = body.name {
+        n.clone()
+    } else {
+        match (&body.first_name, &body.last_name) {
+            (Some(f), Some(l)) => format!("{f} {l}"),
+            (Some(f), None) => f.clone(),
+            (None, Some(l)) => l.clone(),
+            (None, None) => body.email.clone(),
+        }
     };
 
     let result = sqlx::query_as::<_, (Uuid,)>(
-        "INSERT INTO users (email, password_hash, name, first_name, last_name) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+        "INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id"
     )
     .bind(&body.email)
     .bind(&hashed)
     .bind(&name)
-    .bind(&body.first_name)
-    .bind(&body.last_name)
     .fetch_one(pool.get_ref())
     .await;
 
@@ -133,21 +133,20 @@ pub async fn register(
         Err(e) => {
             log::error!("register: DB insert failed: {e}");
             if e.to_string().contains("duplicate key") {
-                HttpResponse::Conflict().json(serde_json::json!({"error": "Email already registered"}))
+                HttpResponse::Conflict()
+                    .json(serde_json::json!({"error": "Email already registered"}))
             } else {
-                HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
+                HttpResponse::InternalServerError()
+                    .json(serde_json::json!({"error": "Database error"}))
             }
         }
     }
 }
 
 #[post("/login")]
-pub async fn login(
-    pool: web::Data<PgPool>,
-    body: web::Json<LoginRequest>,
-) -> impl Responder {
+pub async fn login(pool: web::Data<PgPool>, body: web::Json<LoginRequest>) -> impl Responder {
     let result = sqlx::query_as::<_, (Uuid, String, String)>(
-        "SELECT id, password_hash, role::text FROM users WHERE email = $1 AND is_active = true"
+        "SELECT id, password_hash, role::text FROM users WHERE email = $1",
     )
     .bind(&body.email)
     .fetch_optional(pool.get_ref())
@@ -221,13 +220,15 @@ pub async fn refresh_token(
 
     let user_id: Uuid = match claims.sub.parse() {
         Ok(id) => id,
-        Err(_) => return HttpResponse::Unauthorized()
-            .json(serde_json::json!({"error": "Invalid token subject"})),
+        Err(_) => {
+            return HttpResponse::Unauthorized()
+                .json(serde_json::json!({"error": "Invalid token subject"}))
+        }
     };
 
     // Fetch current role
     let role_result = sqlx::query_as::<_, (String,)>(
-        "SELECT role::text FROM users WHERE id = $1 AND is_active = true"
+        "SELECT role::text FROM users WHERE id = $1",
     )
     .bind(user_id)
     .fetch_optional(pool.get_ref())
@@ -235,8 +236,10 @@ pub async fn refresh_token(
 
     let role = match role_result {
         Ok(Some((r,))) => r,
-        Ok(None) => return HttpResponse::Unauthorized()
-            .json(serde_json::json!({"error": "User not found or inactive"})),
+        Ok(None) => {
+            return HttpResponse::Unauthorized()
+                .json(serde_json::json!({"error": "User not found or inactive"}))
+        }
         Err(e) => {
             log::error!("refresh: DB role lookup failed: {e}");
             return HttpResponse::InternalServerError()
@@ -269,10 +272,7 @@ pub async fn refresh_token(
 }
 
 #[post("/logout")]
-pub async fn logout(
-    _pool: web::Data<PgPool>,
-    _body: web::Json<LogoutRequest>,
-) -> impl Responder {
+pub async fn logout(_pool: web::Data<PgPool>, _body: web::Json<LogoutRequest>) -> impl Responder {
     // Fixed Issue 17: return JSON 200 instead of bare 204
     HttpResponse::Ok().json(serde_json::json!({"message": "Logged out successfully"}))
 }

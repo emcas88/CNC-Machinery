@@ -65,7 +65,7 @@ export function Dashboard() {
 
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['jobs'],
-    queryFn: jobsService.list,
+    queryFn: jobsService.getJobs,
   })
 
   const activeJobs = jobs.filter((j) => j.status === 'in_progress')

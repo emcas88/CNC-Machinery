@@ -31,7 +31,8 @@ const TOOL_OPTIONS = [
 
 /* ═══════════════════════════════════════════ */
 export default function FlipsideMachining() {
-  const { sheets, currentSheet, setCurrentSheet, settings: optimizerSettings } = useOptimizerStore();
+  const { sheets: sheetsMap, currentRunId, currentSheet, setCurrentSheet, settings: optimizerSettings } = useOptimizerStore();
+  const sheets = sheetsMap[currentRunId ?? ''] ?? [];
 
   const [flipsideSettings, setFlipsideSettings] = useState<FlipsideSettings>({
     zDepth: -3,

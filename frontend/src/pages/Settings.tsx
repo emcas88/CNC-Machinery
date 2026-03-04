@@ -331,6 +331,7 @@ export default function Settings() {
   const meQuery = useQuery({
     queryKey: ['me'],
     queryFn: () => usersService.me(),
+    retry: false,
   })
 
   if (meQuery.isLoading) {

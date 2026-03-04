@@ -1,9 +1,24 @@
-// frontend/src/types/index.ts
-// Central type re-exports for the frontend.
+export * from './user'
+export * from './job'
+export * from './product'
+export * from './part'
+export * from './material'
+export * from './machine'
+export * from './hardware'
+export * from './operation'
+export * from './optimization'
+export * from './texture'
+export * from './tool'
+export * from './quote'
+export * from './room'
+export * from './drawing'
+export * from './label'
+export * from './construction-method'
+export * from './post-processor'
+export * from './remnant'
 
-export type { User, UserRole, CreateUserPayload, UpdateUserPayload, ListUsersParams } from './user'
+export type { RenderJob, RenderSettings } from '../services/rendering'
 
-// Auth payloads
 export interface LoginPayload {
   email: string
   password: string
@@ -22,7 +37,6 @@ export interface AuthTokens {
   token_type: string
 }
 
-// Generic paginated response
 export interface Paginated<T> {
   items: T[]
   total: number
@@ -30,12 +44,10 @@ export interface Paginated<T> {
   offset: number
 }
 
-// API error shape returned by the backend
 export interface ApiError {
   error: string
 }
 
-// Generic ID response
 export interface IdResponse {
   id: string
 }

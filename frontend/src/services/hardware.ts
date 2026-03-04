@@ -3,8 +3,12 @@ import type { Hardware, HardwareCategory, CreateHardwareDto, UpdateHardwareDto }
 
 export const hardwareService = {
   async getHardware(params?: Record<string, unknown>): Promise<Hardware[]> {
-    const res = await api.get('/hardware', { params })
-    return res.data
+    try {
+      const res = await api.get('/hardware', { params })
+      return res.data
+    } catch {
+      return [] as Hardware[]
+    }
   },
 
   async getHardwareItem(id: string): Promise<Hardware> {
@@ -27,7 +31,11 @@ export const hardwareService = {
   },
 
   async getHardwareCategories(): Promise<HardwareCategory[]> {
-    const res = await api.get('/hardware/categories')
-    return res.data
+    try {
+      const res = await api.get('/hardware/categories')
+      return res.data
+    } catch {
+      return [] as HardwareCategory[]
+    }
   },
 }

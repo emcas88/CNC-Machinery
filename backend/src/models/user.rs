@@ -65,8 +65,7 @@ pub struct User {
 #[derive(Debug, Deserialize)]
 pub struct CreateUser {
     pub email: String,
-    pub first_name: Option<String>,
-    pub last_name: Option<String>,
+    pub name: String,
     pub password: String,
     pub role: Option<UserRole>,
     pub permissions: Option<Value>,
@@ -76,8 +75,7 @@ pub struct CreateUser {
 #[derive(Debug, Deserialize)]
 pub struct UpdateUser {
     pub email: Option<String>,
-    pub first_name: Option<String>,
-    pub last_name: Option<String>,
+    pub name: Option<String>,
     pub password: Option<String>,
     pub role: Option<UserRole>,
     pub permissions: Option<Value>,

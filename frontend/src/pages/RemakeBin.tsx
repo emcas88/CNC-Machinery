@@ -203,9 +203,9 @@ const RemakeBin: React.FC = () => {
       const q = search.toLowerCase();
       result = result.filter(
         (item) =>
-          item.partName.toLowerCase().includes(q) ||
-          item.material.toLowerCase().includes(q) ||
-          item.reason.toLowerCase().includes(q),
+          (item.partName ?? '').toLowerCase().includes(q) ||
+          (item.material ?? '').toLowerCase().includes(q) ||
+          (item.reason ?? '').toLowerCase().includes(q),
       );
     }
     return result;

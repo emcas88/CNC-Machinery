@@ -40,6 +40,9 @@ export enum BottomPanelStyle {
   RABBET = 'rabbet',
 }
 
+export type CreateConstructionMethodDto = CreateConstructionMethod
+export type UpdateConstructionMethodDto = Partial<CreateConstructionMethod>
+
 export interface CreateConstructionMethod {
   name: string
   description?: string

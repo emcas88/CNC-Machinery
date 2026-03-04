@@ -58,3 +58,14 @@ export interface CreateProduct {
 export interface UpdateProduct extends Partial<Omit<CreateProduct, 'roomId'>> {
   id: string
 }
+
+export interface CabinetUnit {
+  id: string
+  name: string
+  type: ProductType
+  style: CabinetStyle
+  dimensions: { width: number; height: number; depth: number }
+  position?: { x: number; y: number; z: number }
+  rotation?: number
+  materialId?: string
+}

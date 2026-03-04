@@ -20,9 +20,9 @@ pub mod shop_apps;
 pub mod textures;
 pub mod tools;
 pub mod users;
-pub mod websocket;
 #[cfg(test)]
 mod users_test_r3;
+pub mod websocket;
 
 use actix_web::web;
 

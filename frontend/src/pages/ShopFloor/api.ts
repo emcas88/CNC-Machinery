@@ -16,7 +16,7 @@ import {
 
 // ─── Base Config ──────────────────────────────────────────────────────────────
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ?? '/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/v1` : '/api/v1';
 const DEFAULT_TIMEOUT_MS = 10_000;
 
 class ApiError extends Error {

@@ -8,21 +8,24 @@ import clsx from 'clsx'
 
 export function OptimizerView() {
   const { currentJob } = useAppStore()
-  const { sheets, setSheets, selectedSheetIndex, setSelectedSheetIndex } = useOptimizerStore()
+  const { sheets: sheetsMap, setSheets, selectedSheetIndex, setSelectedSheetIndex } = useOptimizerStore()
   const [grain, setGrain] = useState(true)
   const [kerf, setKerf] = useState(3.2)
   const [edgeBanding, setEdgeBanding] = useState(0.5)
   const [algorithm, setAlgorithm] = useState<'guillotine' | 'maxrects'>('guillotine')
 
+  const runId = currentJob?.id ?? '__none__'
+  const sheets = sheetsMap[runId] ?? []
+
   const optimize = useMutation({
     mutationFn: () =>
       optimizerService.optimize(currentJob!.id, { grain, kerf, edgeBanding, algorithm }),
-    onSuccess: (data) => setSheets(data.sheets),
+    onSuccess: (data) => setSheets(runId, data.sheets),
   })
 
   const activeSheet = sheets[selectedSheetIndex]
   const totalYield = sheets.length > 0
-    ? sheets.reduce((s, sh) => s + sh.yieldPercent, 0) / sheets.length
+    ? sheets.reduce((s, sh) => s + (sh.yieldPercent ?? 0), 0) / sheets.length
     : 0
 
   return (
@@ -120,7 +123,7 @@ export function OptimizerView() {
                 )}
                 onClick={() => setSelectedSheetIndex(i)}
               >
-                Sheet {i + 1} · {sheet.yieldPercent.toFixed(0)}%
+                Sheet {i + 1} · {(sheet.yieldPercent ?? 0).toFixed(0)}%
               </button>
             ))
           )}
@@ -148,8 +151,8 @@ export function OptimizerView() {
             ['Size', `${activeSheet.width}×${activeSheet.height}`],
             ['Thickness', `${activeSheet.thickness}mm`],
             ['Parts', String(activeSheet.parts.length)],
-            ['Yield', `${activeSheet.yieldPercent.toFixed(1)}%`],
-            ['Waste', `${(100 - activeSheet.yieldPercent).toFixed(1)}%`],
+            ['Yield', `${(activeSheet.yieldPercent ?? 0).toFixed(1)}%`],
+            ['Waste', `${(100 - (activeSheet.yieldPercent ?? 0)).toFixed(1)}%`],
           ].map(([label, value]) => (
             <div key={label}>
               <p className="text-xs text-gray-600">{label}</p>

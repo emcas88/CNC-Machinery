@@ -5,6 +5,7 @@ interface OptimizerState {
   runs: OptimizationRun[]
   currentRunId: string | null
   sheets: Record<string, NestedSheet[]>
+  currentSheet: string | null
   isRunning: boolean
   progress: number
   settings: OptimizationSettings
@@ -13,6 +14,7 @@ interface OptimizerState {
   addRun: (run: OptimizationRun) => void
   updateRun: (id: string, data: Partial<OptimizationRun>) => void
   setSheets: (runId: string, sheets: NestedSheet[]) => void
+  setCurrentSheet: (sheetId: string | null) => void
   setRunning: (running: boolean) => void
   setProgress: (progress: number) => void
   updateSettings: (settings: Partial<OptimizationSettings>) => void
@@ -22,6 +24,7 @@ export const useOptimizerStore = create<OptimizerState>()((set) => ({
   runs: [],
   currentRunId: null,
   sheets: {},
+  currentSheet: null,
   isRunning: false,
   progress: 0,
   settings: {
@@ -45,6 +48,8 @@ export const useOptimizerStore = create<OptimizerState>()((set) => ({
 
   setSheets: (runId, sheets) =>
     set((s) => ({ sheets: { ...s.sheets, [runId]: sheets } })),
+
+  setCurrentSheet: (sheetId) => set({ currentSheet: sheetId }),
 
   setRunning: (running) => set({ isRunning: running }),
 

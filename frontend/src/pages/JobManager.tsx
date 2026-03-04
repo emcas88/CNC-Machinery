@@ -23,16 +23,16 @@ export function JobManager() {
 
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['jobs'],
-    queryFn: jobsService.list,
+    queryFn: jobsService.getJobs,
   })
 
   const deleteJob = useMutation({
-    mutationFn: jobsService.delete,
+    mutationFn: jobsService.deleteJob,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['jobs'] }),
   })
 
   const filtered = jobs.filter((j: Job) => {
-    const matchSearch = !search || j.name.toLowerCase().includes(search.toLowerCase()) || j.clientName.toLowerCase().includes(search.toLowerCase())
+    const matchSearch = !search || (j.name ?? '').toLowerCase().includes(search.toLowerCase()) || (j.clientName ?? '').toLowerCase().includes(search.toLowerCase())
     const matchStatus = statusFilter === 'all' || j.status === statusFilter
     return matchSearch && matchStatus
   })

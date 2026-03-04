@@ -456,9 +456,10 @@ interface QCResultSummaryProps {
 
 export const QCResultSummary: React.FC<QCResultSummaryProps> = ({ check }) => {
   const { bg, text, border, label } = QC_COLORS[check.overallResult];
-  const passed = check.dimensionChecks.filter((d) => d.result === 'pass').length;
-  const failed = check.dimensionChecks.filter((d) => d.result === 'fail').length;
-  const pending = check.dimensionChecks.filter((d) => d.result === 'pending').length;
+  const dims = check.dimensionChecks ?? [];
+  const passed = dims.filter((d) => d.result === 'pass').length;
+  const failed = dims.filter((d) => d.result === 'fail').length;
+  const pending = dims.filter((d) => d.result === 'pending').length;
 
   return (
     <div
@@ -536,7 +537,7 @@ export const QualityCheckView: React.FC<QualityCheckViewProps> = ({
 }) => {
   const allDimensionsEvaluated =
     check != null &&
-    check.dimensionChecks.every((d) => d.result !== 'pending') &&
+    (check.dimensionChecks ?? []).every((d) => d.result !== 'pending') &&
     check.visualInspectionPassed != null &&
     check.surfaceFinishPassed != null;
 
@@ -611,7 +612,7 @@ export const QualityCheckView: React.FC<QualityCheckViewProps> = ({
 
         {/* Part photos */}
         <PhotoPlaceholder
-          photoUrls={check.photoUrls}
+          photoUrls={check.photoUrls ?? []}
           onAddPhoto={onAddPhoto}
           disabled={submitted}
         />
@@ -621,11 +622,11 @@ export const QualityCheckView: React.FC<QualityCheckViewProps> = ({
           <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>
             Dimensional Verification
             <span style={{ marginLeft: 8, fontWeight: 400, textTransform: 'none', color: '#9ca3af', fontSize: 11 }}>
-              ({check.dimensionChecks.length} checks)
+              ({(check.dimensionChecks ?? []).length} checks)
             </span>
           </div>
 
-          {check.dimensionChecks.length === 0 ? (
+          {(check.dimensionChecks ?? []).length === 0 ? (
             <div
               data-testid="no-dimension-checks"
               style={{ color: '#9ca3af', fontSize: 13, padding: '12px 0' }}
@@ -633,7 +634,7 @@ export const QualityCheckView: React.FC<QualityCheckViewProps> = ({
               No dimension checks defined
             </div>
           ) : (
-            check.dimensionChecks.map((dc, i) => (
+            (check.dimensionChecks ?? []).map((dc, i) => (
               <DimensionCheckRow
                 key={dc.id}
                 check={dc}
@@ -754,7 +755,7 @@ export const QualityCheckView: React.FC<QualityCheckViewProps> = ({
         )}
 
         {/* Incomplete warning */}
-        {!submitted && !allDimensionsEvaluated && check.dimensionChecks.length > 0 && (
+        {!submitted && !allDimensionsEvaluated && (check.dimensionChecks ?? []).length > 0 && (
           <div
             data-testid="incomplete-warning"
             style={{

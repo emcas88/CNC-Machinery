@@ -17,10 +17,8 @@ use crate::models::user::{CreateUser, UpdateUser, UserRole};
 pub struct UserResponse {
     pub id: Uuid,
     pub email: String,
-    pub first_name: Option<String>,
-    pub last_name: Option<String>,
+    pub name: String,
     pub role: String,
-    pub is_active: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -56,8 +54,8 @@ pub async fn list_users(
     let limit = query.limit.unwrap_or(50);
     let offset = query.offset.unwrap_or(0);
 
-    let result = sqlx::query_as::<_, (Uuid, String, Option<String>, Option<String>, String, bool)>(
-        "SELECT id, email, first_name, last_name, role::text, is_active FROM users LIMIT $1 OFFSET $2",
+    let result = sqlx::query_as::<_, (Uuid, String, String, String)>(
+        "SELECT id, email, name, role::text FROM users ORDER BY created_at LIMIT $1 OFFSET $2",
     )
     .bind(limit)
     .bind(offset)
@@ -68,13 +66,11 @@ pub async fn list_users(
         Ok(rows) => {
             let users: Vec<UserResponse> = rows
                 .into_iter()
-                .map(|(id, email, first_name, last_name, role, is_active)| UserResponse {
+                .map(|(id, email, name, role)| UserResponse {
                     id,
                     email,
-                    first_name,
-                    last_name,
+                    name,
                     role,
-                    is_active,
                 })
                 .collect();
             HttpResponse::Ok().json(users)
@@ -90,22 +86,20 @@ pub async fn list_users(
 pub async fn get_user(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Responder {
     let user_id = path.into_inner();
 
-    let result = sqlx::query_as::<_, (Uuid, String, Option<String>, Option<String>, String, bool)>(
-        "SELECT id, email, first_name, last_name, role::text, is_active FROM users WHERE id = $1",
+    let result = sqlx::query_as::<_, (Uuid, String, String, String)>(
+        "SELECT id, email, name, role::text FROM users WHERE id = $1",
     )
     .bind(user_id)
     .fetch_optional(pool.get_ref())
     .await;
 
     match result {
-        Ok(Some((id, email, first_name, last_name, role, is_active))) => {
+        Ok(Some((id, email, name, role))) => {
             HttpResponse::Ok().json(UserResponse {
                 id,
                 email,
-                first_name,
-                last_name,
+                name,
                 role,
-                is_active,
             })
         }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({"error": "User not found"})),
@@ -117,10 +111,7 @@ pub async fn get_user(pool: web::Data<PgPool>, path: web::Path<Uuid>) -> impl Re
 }
 
 #[post("")]
-pub async fn create_user(
-    pool: web::Data<PgPool>,
-    body: web::Json<CreateUser>,
-) -> impl Responder {
+pub async fn create_user(pool: web::Data<PgPool>, body: web::Json<CreateUser>) -> impl Responder {
     let hashed = match hash_password(&body.password) {
         Ok(h) => h,
         Err(_) => {
@@ -132,13 +123,12 @@ pub async fn create_user(
     let role = body.role.unwrap_or(UserRole::ShopFloor);
 
     let result = sqlx::query_as::<_, (Uuid,)>(
-        "INSERT INTO users (email, password_hash, first_name, last_name, role, name) \
-         VALUES ($1, $2, $3, $4, $5::text, COALESCE($3, '') || ' ' || COALESCE($4, '')) RETURNING id",
+        "INSERT INTO users (email, password_hash, name, role) \
+         VALUES ($1, $2, $3, $4::user_role) RETURNING id",
     )
     .bind(&body.email)
     .bind(&hashed)
-    .bind(&body.first_name)
-    .bind(&body.last_name)
+    .bind(&body.name)
     .bind(role.to_string())
     .fetch_one(pool.get_ref())
     .await;
@@ -148,8 +138,7 @@ pub async fn create_user(
         Err(e) => {
             log::error!("create_user error: {e}");
             if e.to_string().contains("duplicate key") {
-                HttpResponse::Conflict()
-                    .json(serde_json::json!({"error": "Email already exists"}))
+                HttpResponse::Conflict().json(serde_json::json!({"error": "Email already exists"}))
             } else {
                 HttpResponse::InternalServerError()
                     .json(serde_json::json!({"error": "Database error"}))
@@ -180,18 +169,16 @@ pub async fn update_user(
 
     let result = sqlx::query(
         "UPDATE users SET \
-            email      = COALESCE($2, email), \
-            first_name = COALESCE($3, first_name), \
-            last_name  = COALESCE($4, last_name), \
-            password_hash = COALESCE($5, password_hash), \
-            role       = COALESCE($6::text, role::text)::user_role, \
-            updated_at = NOW() \
+            email         = COALESCE($2, email), \
+            name          = COALESCE($3, name), \
+            password_hash = COALESCE($4, password_hash), \
+            role          = COALESCE($5::user_role, role), \
+            updated_at    = NOW() \
          WHERE id = $1",
     )
     .bind(user_id)
     .bind(&body.email)
-    .bind(&body.first_name)
-    .bind(&body.last_name)
+    .bind(&body.name)
     .bind(&hashed_password)
     .bind(body.role.map(|r| r.to_string()))
     .execute(pool.get_ref())

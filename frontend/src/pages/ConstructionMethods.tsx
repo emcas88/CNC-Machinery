@@ -159,8 +159,8 @@ export default function ConstructionMethods() {
   // ── Filter ──
   const filteredMethods = methods.filter(
     (m: ConstructionMethod) =>
-      m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (m.description || '').toLowerCase().includes(searchTerm.toLowerCase()),
+      (m.name ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (m.description ?? '').toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const selectedMethod = methods.find((m: ConstructionMethod) => m.id === selectedId);

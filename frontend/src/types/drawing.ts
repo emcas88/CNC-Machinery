@@ -54,6 +54,9 @@ export interface AnnotationLayer {
   annotations: Annotation[]
 }
 
+export type CreateDrawingTemplateDto = Omit<DrawingTemplate, 'id' | 'createdAt' | 'updatedAt'>
+export type UpdateDrawingTemplateDto = Partial<CreateDrawingTemplateDto>
+
 export interface Annotation {
   id: string
   type: 'text' | 'dimension' | 'arrow' | 'cloud' | 'symbol'

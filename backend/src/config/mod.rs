@@ -13,14 +13,11 @@ impl Config {
     /// Load configuration from environment variables.
     /// Panics if required variables are missing (DATABASE_URL, JWT_SECRET).
     pub fn from_env() -> Self {
-        let database_url = std::env::var("DATABASE_URL")
-            .expect("DATABASE_URL must be set");
+        let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
-        let jwt_secret = std::env::var("JWT_SECRET")
-            .expect("JWT_SECRET must be set");
+        let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
 
-        let bind_addr = std::env::var("BIND_ADDR")
-            .unwrap_or_else(|_| "0.0.0.0:8080".to_string());
+        let bind_addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_string());
 
         let access_token_hours = std::env::var("ACCESS_TOKEN_HOURS")
             .ok()

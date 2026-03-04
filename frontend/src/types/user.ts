@@ -14,3 +14,21 @@ export interface AuthResponse {
   refresh_token: string;
   token_type: string;
 }
+
+export interface CreateUserPayload {
+  email: string;
+  password: string;
+  first_name?: string;
+  last_name?: string;
+  role?: UserRole;
+}
+
+export type UpdateUserPayload = Partial<Omit<CreateUserPayload, 'password'>>;
+
+export interface ListUsersParams {
+  search?: string;
+  role?: UserRole;
+  is_active?: boolean;
+  limit?: number;
+  offset?: number;
+}

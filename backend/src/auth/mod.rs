@@ -1,6 +1,6 @@
 pub mod auth_api;
-pub mod password;
 pub mod middleware;
+pub mod password;
 
 #[cfg(test)]
 mod tests;
@@ -168,7 +168,8 @@ impl ResponseError for AuthError {
     }
 
     fn error_response(&self) -> HttpResponse {
-        HttpResponse::build(self.status_code()).json(serde_json::json!({ "error": self.to_string() }))
+        HttpResponse::build(self.status_code())
+            .json(serde_json::json!({ "error": self.to_string() }))
     }
 }
 
@@ -295,7 +296,11 @@ impl DesignerOrAbove {
 
 impl OperatorOrAbove {
     pub fn allowed_roles() -> Vec<UserRole> {
-        vec![UserRole::SuperAdmin, UserRole::Designer, UserRole::CncOperator]
+        vec![
+            UserRole::SuperAdmin,
+            UserRole::Designer,
+            UserRole::CncOperator,
+        ]
     }
 }
 

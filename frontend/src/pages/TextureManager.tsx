@@ -344,9 +344,9 @@ export default function TextureManager() {
 
                   <div className="p-3">
                     <h3 className="text-sm font-medium truncate">{texture.name}</h3>
-                    {texture.tags.length > 0 && (
+                    {(texture.tags ?? []).length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1.5">
-                        {texture.tags.slice(0, 3).map((tag) => (
+                        {(texture.tags ?? []).slice(0, 3).map((tag) => (
                           <span
                             key={tag}
                             className="px-1.5 py-0.5 bg-gray-700 text-gray-300 text-xs rounded"
@@ -525,7 +525,7 @@ export default function TextureManager() {
                 </div>
                 {formData.tags && formData.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-2">
-                    {formData.tags.map((tag) => (
+                    {(formData.tags ?? []).map((tag) => (
                       <span
                         key={tag}
                         className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-700 text-gray-300 text-xs rounded"

@@ -31,6 +31,14 @@ export interface LabelField {
   visible: boolean
 }
 
+export type CreateLabelTemplateDto = Omit<LabelTemplate, 'id' | 'createdAt' | 'updatedAt'>
+export type UpdateLabelTemplateDto = Partial<CreateLabelTemplateDto>
+export interface PrintLabelsDto {
+  templateId: string
+  partIds: string[]
+  copies?: number
+}
+
 export enum LabelFieldType {
   TEXT = 'text',
   BARCODE = 'barcode',

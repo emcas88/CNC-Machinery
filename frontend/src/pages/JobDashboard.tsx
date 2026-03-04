@@ -22,18 +22,18 @@ export function JobDashboard() {
 
   const { data: job, isLoading: jobLoading } = useQuery({
     queryKey: ['job', jobId],
-    queryFn: () => jobsService.get(jobId!),
+    queryFn: () => jobsService.getJob(jobId!),
     enabled: !!jobId,
   })
 
   const { data: rooms = [], isLoading: roomsLoading } = useQuery({
     queryKey: ['rooms', jobId],
-    queryFn: () => roomsService.list(jobId!),
+    queryFn: () => roomsService.getRooms(jobId!),
     enabled: !!jobId,
   })
 
   const deleteRoom = useMutation({
-    mutationFn: (roomId: string) => roomsService.delete(jobId!, roomId),
+    mutationFn: (roomId: string) => roomsService.deleteRoom(roomId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rooms', jobId] }),
   })
 

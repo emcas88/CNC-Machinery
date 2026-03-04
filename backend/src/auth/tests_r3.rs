@@ -15,10 +15,8 @@ mod tests {
     use uuid::Uuid;
 
     use crate::auth::{
-        create_access_token, create_refresh_token,
-        verify_access_token, verify_refresh_token,
-        hash_password, verify_password,
-        AuthError, TokenClaims,
+        create_access_token, create_refresh_token, hash_password, verify_access_token,
+        verify_password, verify_refresh_token, AuthError, TokenClaims,
     };
 
     /// Mutex to serialise env-var manipulation across tests.
@@ -72,7 +70,8 @@ mod tests {
         with_jwt_restore(|| {
             env::set_var("JWT_SECRET", "test-secret");
             let uid = Uuid::new_v4();
-            let token = create_access_token(uid, "admin").expect("create_access_token should succeed");
+            let token =
+                create_access_token(uid, "admin").expect("create_access_token should succeed");
             let claims = verify_access_token(&token).expect("verify_access_token should succeed");
             assert_eq!(claims.sub, uid.to_string());
             assert_eq!(claims.role, "admin");
@@ -89,7 +88,10 @@ mod tests {
 
             env::set_var("JWT_SECRET", "secret-b");
             let result = verify_access_token(&token);
-            assert!(result.is_err(), "mismatched secret should fail verification");
+            assert!(
+                result.is_err(),
+                "mismatched secret should fail verification"
+            );
         });
     }
 
@@ -168,8 +170,8 @@ mod tests {
 
     #[test]
     fn test_expired_access_token_returns_token_expired() {
-        use jsonwebtoken::{encode, EncodingKey, Header};
         use crate::auth::TokenClaims;
+        use jsonwebtoken::{encode, EncodingKey, Header};
 
         let _guard = lock_env();
         with_jwt_restore(|| {

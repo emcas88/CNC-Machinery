@@ -1,24 +1,9 @@
-// =============================================================================
-// backend/src/middleware/audit.rs
-// Round-3 integration fixes
-// Fixed Issues 18-20 (compiler errors in audit middleware):
-//   18. `AuditMiddleware<S>` now stores the inner service as `Rc<S>` to allow
-//       the future to be `'static`.
-//   19. `call()` clones the `Rc<S>` before moving into the async block so the
-//       borrow-checker is satisfied.
-//   20. Response body is consumed correctly: `body.try_into_bytes()` with
-//       `.await` replaced by the correct `to_bytes()` helper from
-//       `actix_web::body::to_bytes`.
-// =============================================================================
-
-use std::future::{ready, Ready, Future};
+use std::future::{ready, Future, Ready};
 use std::pin::Pin;
 use std::rc::Rc;
-use std::task::{Context, Poll};
 use std::time::Instant;
 
 use actix_web::{
-    body::to_bytes,
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     Error,
 };
@@ -42,7 +27,7 @@ where
 
     fn new_transform(&self, service: S) -> Self::Future {
         ready(Ok(AuditMiddleware {
-            service: Rc::new(service), // Fix 18: wrap in Rc
+            service: Rc::new(service),
         }))
     }
 }
@@ -52,7 +37,7 @@ where
 // ---------------------------------------------------------------------------
 
 pub struct AuditMiddleware<S> {
-    service: Rc<S>, // Fix 18
+    service: Rc<S>,
 }
 
 impl<S, B> Service<ServiceRequest> for AuditMiddleware<S>
@@ -67,7 +52,7 @@ where
     forward_ready!(service);
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        let svc = self.service.clone(); // Fix 19: clone Rc before move
+        let svc = self.service.clone();
         let start = Instant::now();
         let method = req.method().to_string();
         let path = req.path().to_string();
@@ -77,19 +62,9 @@ where
             let elapsed = start.elapsed().as_millis();
             let status = res.status().as_u16();
 
-            // Fix 20: consume body into bytes using actix helper, then re-box
-            let (req_parts, body) = res.into_parts();
-            let bytes = to_bytes(body).await.map_err(|e| {
-                actix_web::error::ErrorInternalServerError(e)
-            })?;
+            log::info!("AUDIT {} {} → {} ({}ms)", method, path, status, elapsed);
 
-            log::info!(
-                "AUDIT {} {} → {} ({}ms) [{} bytes]",
-                method, path, status, elapsed, bytes.len()
-            );
-
-            let boxed = actix_web::body::BoxBody::new(bytes);
-            Ok(ServiceResponse::new(req_parts, boxed))
+            Ok(res.map_into_boxed_body())
         })
     }
 }

@@ -41,8 +41,8 @@ function LineItemRow({ item, onEdit, onDelete }: LineItemRowProps) {
       <td className="px-4 py-2 text-sm text-gray-400">{item.category}</td>
       <td className="px-4 py-2 text-sm text-gray-300 text-right">{item.quantity}</td>
       <td className="px-4 py-2 text-sm text-gray-400">{item.unit}</td>
-      <td className="px-4 py-2 text-sm text-gray-300 text-right">${item.unitCost.toFixed(2)}</td>
-      <td className="px-4 py-2 text-sm text-cyan-400 text-right font-medium">${item.total.toFixed(2)}</td>
+      <td className="px-4 py-2 text-sm text-gray-300 text-right">${(item.unitCost ?? 0).toFixed(2)}</td>
+      <td className="px-4 py-2 text-sm text-cyan-400 text-right font-medium">${(item.total ?? 0).toFixed(2)}</td>
       <td className="px-4 py-2 text-sm text-right space-x-2">
         <button
           onClick={() => onEdit(item)}
@@ -273,21 +273,21 @@ function EstimatePanel({ estimate }: { estimate: CostEstimate }) {
       {sections.map(s => (
         <div key={s.label} className="mb-3">
           <h4 className="text-xs font-medium text-gray-400 uppercase mb-1">{s.label}</h4>
-          {s.items.map((b, i) => (
+          {(s.items ?? []).map((b, i) => (
             <div key={i} className="flex justify-between text-sm text-gray-300">
               <span>{b.label} ({b.quantity} {b.unit})</span>
-              <span>${b.total.toFixed(2)}</span>
+              <span>${(b.total ?? 0).toFixed(2)}</span>
             </div>
           ))}
         </div>
       ))}
       <div className="border-t border-gray-700 pt-2 mt-2 flex justify-between text-sm font-semibold text-white">
         <span>Subtotal</span>
-        <span>${estimate.subtotal.toFixed(2)}</span>
+        <span>${(estimate.subtotal ?? 0).toFixed(2)}</span>
       </div>
       <div className="flex justify-between text-sm font-semibold text-cyan-400">
         <span>Suggested Price</span>
-        <span>${estimate.suggested.toFixed(2)}</span>
+        <span>${(estimate.suggested ?? 0).toFixed(2)}</span>
       </div>
     </div>
   )
@@ -366,7 +366,7 @@ export default function QuoteGenerator() {
   const handleDeleteLine = useCallback(
     (lineId: string) => {
       if (!selectedQuote) return
-      const updated = selectedQuote.lineItems.filter(li => li.id !== lineId)
+      const updated = (selectedQuote.lineItems ?? []).filter(li => li.id !== lineId)
       updateMutation.mutate({ id: selectedQuote.id, data: { lineItems: updated } })
     },
     [selectedQuote, updateMutation],
@@ -506,7 +506,7 @@ export default function QuoteGenerator() {
                 )}
 
                 {/* Table */}
-                {selectedQuote.lineItems.length === 0 ? (
+                {(selectedQuote.lineItems ?? []).length === 0 ? (
                   <div className="text-center text-gray-500 py-12 bg-gray-800 rounded-lg">No line items yet.</div>
                 ) : (
                   <div className="overflow-x-auto rounded-lg border border-gray-700">
@@ -523,7 +523,7 @@ export default function QuoteGenerator() {
                         </tr>
                       </thead>
                       <tbody>
-                        {selectedQuote.lineItems.map(item => (
+                        {(selectedQuote.lineItems ?? []).map(item => (
                           <LineItemRow
                             key={item.id}
                             item={item}
@@ -548,18 +548,18 @@ export default function QuoteGenerator() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between text-gray-300">
                       <span>Subtotal</span>
-                      <span>${selectedQuote.subtotal.toFixed(2)}</span>
+                      <span>${(selectedQuote.subtotal ?? 0).toFixed(2)}</span>
                     </div>
                     <div>
                       <label className="flex justify-between text-gray-300 mb-1">
-                        <span>Markup ({selectedQuote.markupPercent}%)</span>
-                        <span>${(selectedQuote.subtotal * selectedQuote.markupPercent / 100).toFixed(2)}</span>
+                        <span>Markup ({selectedQuote.markupPercent ?? 0}%)</span>
+                        <span>${((selectedQuote.subtotal ?? 0) * (selectedQuote.markupPercent ?? 0) / 100).toFixed(2)}</span>
                       </label>
                       <input
                         type="range"
                         min={0}
                         max={100}
-                        value={selectedQuote.markupPercent}
+                        value={selectedQuote.markupPercent ?? 0}
                         onChange={e => handleMarkupChange(Number(e.target.value))}
                         className="w-full accent-cyan-500"
                         aria-label="Markup percent"
@@ -567,15 +567,15 @@ export default function QuoteGenerator() {
                     </div>
                     <div>
                       <label className="flex justify-between text-gray-300 mb-1">
-                        <span>Tax ({selectedQuote.taxRate}%)</span>
-                        <span>${(selectedQuote.subtotal * (1 + selectedQuote.markupPercent / 100) * selectedQuote.taxRate / 100).toFixed(2)}</span>
+                        <span>Tax ({selectedQuote.taxRate ?? 0}%)</span>
+                        <span>${((selectedQuote.subtotal ?? 0) * (1 + (selectedQuote.markupPercent ?? 0) / 100) * (selectedQuote.taxRate ?? 0) / 100).toFixed(2)}</span>
                       </label>
                       <input
                         type="range"
                         min={0}
                         max={25}
                         step={0.5}
-                        value={selectedQuote.taxRate}
+                        value={selectedQuote.taxRate ?? 0}
                         onChange={e => handleTaxChange(Number(e.target.value))}
                         className="w-full accent-cyan-500"
                         aria-label="Tax rate"
@@ -583,7 +583,7 @@ export default function QuoteGenerator() {
                     </div>
                     <div className="border-t border-gray-700 pt-2 flex justify-between text-white font-bold text-lg">
                       <span>Total</span>
-                      <span>${selectedQuote.total.toFixed(2)}</span>
+                      <span>${(selectedQuote.total ?? 0).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>

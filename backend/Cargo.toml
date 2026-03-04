@@ -7,6 +7,10 @@ edition = "2021"
 name = "cnc_backend"
 path = "src/main.rs"
 
+[[bin]]
+name = "seed_runner"
+path = "src/bin/seed_runner.rs"
+
 [lib]
 name = "cnc_backend"
 path = "src/lib.rs"
@@ -16,7 +20,7 @@ actix-web = "4"
 actix-cors = "0.7"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-sqlx = { version = "0.7", features = ["postgres", "runtime-tokio-native-tls", "uuid", "chrono", "json"] }
+sqlx = { version = "0.7", features = ["postgres", "runtime-tokio-native-tls", "uuid", "chrono", "json", "bigdecimal"] }
 tokio = { version = "1", features = ["full"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
@@ -24,6 +28,7 @@ jsonwebtoken = "9"
 env_logger = "0.11"
 log = "0.4"
 dotenvy = "0.15"
+regex = "1"
 
 # Auth & security
 argon2 = "0.5"
@@ -36,6 +41,12 @@ actix-web-actors = "4"
 
 # Async utilities (used by middleware)
 futures-util = "0.3"
+
+# CLI / seed runner
+anyhow = "1"
+clap = { version = "4", features = ["derive", "env"] }
+colored = "2"
+indicatif = "0.17"
 
 [dev-dependencies]
 actix-web = { version = "4", features = ["macros"] }

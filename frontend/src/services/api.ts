@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-export const apiClient = axios.create({
+const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '',
   headers: { 'Content-Type': 'application/json' },
 })
@@ -25,3 +25,6 @@ apiClient.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+export { apiClient, apiClient as api }
+export default apiClient

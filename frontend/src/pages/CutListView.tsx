@@ -13,30 +13,29 @@ export function CutListView() {
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ['cutlist', currentJob?.id],
-    queryFn: () => cutlistsService.getCutlist(currentJob!.id),
+    queryFn: () => cutlistsService.getCutlists(currentJob!.id),
     enabled: !!currentJob?.id,
   })
 
   const filtered = rows.filter(
     (r) =>
       !search ||
-      r.partName.toLowerCase().includes(search.toLowerCase()) ||
-      r.productName.toLowerCase().includes(search.toLowerCase())
+      (r.partName ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (r.productName ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
   const columns: Column<CutlistRow>[] = [
-    { key: 'labelCode', header: 'Label', width: '70px', render: (r) => <span className="mono text-xs text-cyan-400">{r.labelCode ?? '—'}</span> },
+    { key: 'id', header: 'ID', width: '70px', render: (r) => <span className="mono text-xs text-cyan-400">{r.id.slice(0, 6)}</span> },
     { key: 'partName', header: 'Part Name', sortable: true, render: (r) => <span className="font-medium text-gray-100">{r.partName}</span> },
-    { key: 'productName', header: 'Product', sortable: true, render: (r) => <span className="text-gray-300">{r.productName}</span> },
+    { key: 'productName', header: 'Product', sortable: true, render: (r) => <span className="text-gray-300">{r.productName ?? '—'}</span> },
     { key: 'roomName', header: 'Room', sortable: true },
     { key: 'width', header: 'W', width: '70px', sortable: true, render: (r) => <span className="mono">{r.width}</span> },
-    { key: 'height', header: 'H', width: '70px', sortable: true, render: (r) => <span className="mono">{r.height}</span> },
+    { key: 'length', header: 'L', width: '70px', sortable: true, render: (r) => <span className="mono">{r.length}</span> },
     { key: 'thickness', header: 'T', width: '60px', render: (r) => <span className="mono">{r.thickness}</span> },
     { key: 'quantity', header: 'Qty', width: '60px', sortable: true, render: (r) => <span className="mono font-bold">{r.quantity}</span> },
     { key: 'material', header: 'Material', sortable: true },
-    { key: 'grain', header: 'Grain', width: '70px' },
+    { key: 'grainDirection', header: 'Grain', width: '70px' },
     { key: 'edgeBanding', header: 'Edge', width: '70px' },
-    { key: 'operations', header: 'Ops' },
   ]
 
   return (

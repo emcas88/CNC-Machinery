@@ -1,6 +1,6 @@
 // F27 – apiErrorHandler: Axios interceptor for global HTTP error handling.
 
-import type { GlobalErrorState } from './useGlobalError';
+import type { GlobalErrorState } from '@/hooks/useGlobalError';
 
 // ---------------------------------------------------------------------------
 // Types

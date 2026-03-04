@@ -95,7 +95,7 @@ export default function LabelDesigner() {
     error: cutlistError,
   } = useQuery<CutlistRow[]>({
     queryKey: ['cutlist', currentJob],
-    queryFn: () => cutlistsService.getCutlist(currentJob ?? ''),
+    queryFn: () => cutlistsService.getCutlists(typeof currentJob === 'string' ? currentJob : currentJob?.id ?? ''),
     enabled: !!currentJob,
   });
 

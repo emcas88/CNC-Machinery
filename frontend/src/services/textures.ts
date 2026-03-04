@@ -3,7 +3,7 @@ import type { Texture, TextureGroup, CreateTexture } from '@/types'
 
 export const texturesService = {
   getTextures: (params?: { groupId?: string; search?: string }) =>
-    api.get<Texture[]>('/textures', { params }).then((r) => r.data),
+    api.get<Texture[]>('/textures', { params }).then((r) => r.data).catch(() => [] as Texture[]),
 
   getTexture: (id: string) =>
     api.get<Texture>(`/textures/${id}`).then((r) => r.data),
@@ -18,7 +18,7 @@ export const texturesService = {
     api.delete(`/textures/${id}`).then((r) => r.data),
 
   getGroups: () =>
-    api.get<TextureGroup[]>('/textures/groups').then((r) => r.data),
+    api.get<TextureGroup[]>('/textures/groups').then((r) => r.data).catch(() => [] as TextureGroup[]),
 
   createGroup: (name: string, description?: string) =>
     api.post<TextureGroup>('/textures/groups', { name, description }).then((r) => r.data),

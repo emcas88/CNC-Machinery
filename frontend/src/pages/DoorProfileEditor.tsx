@@ -36,7 +36,7 @@ const DEFAULT_PROFILE: Omit<DoorProfile, 'id'> = {
 
 /* ── inline service ── */
 export const doorProfilesService = {
-  getProfiles: () => api.get<DoorProfile[]>('/door-profiles').then((r) => r.data),
+  getProfiles: () => api.get<DoorProfile[]>('/door-profiles').then((r) => r.data).catch(() => [] as DoorProfile[]),
   getProfile: (id: string) => api.get<DoorProfile>(`/door-profiles/${id}`).then((r) => r.data),
   createProfile: (data: Omit<DoorProfile, 'id'>) => api.post<DoorProfile>('/door-profiles', data).then((r) => r.data),
   updateProfile: (id: string, data: Partial<DoorProfile>) => api.put<DoorProfile>(`/door-profiles/${id}`, data).then((r) => r.data),
@@ -144,6 +144,7 @@ export default function DoorProfileEditor() {
   } = useQuery<DoorProfile[]>({
     queryKey: ['doorProfiles'],
     queryFn: doorProfilesService.getProfiles,
+    retry: false,
   });
 
   /* ── mutations ── */

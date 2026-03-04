@@ -376,5 +376,5 @@ export function formatMM(mm: number): string {
 }
 
 export function formatM2(m2: number): string {
-  return `${m2.toFixed(2)} m²`;
+  return `${(m2 ?? 0).toFixed(2)} m²`;
 }

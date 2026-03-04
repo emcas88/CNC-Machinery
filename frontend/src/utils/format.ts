@@ -37,12 +37,15 @@ export function formatPercent(value: number, decimals = 1): string {
 /**
  * Format an ISO date string to human-readable format
  */
-export function formatDate(isoString: string): string {
+export function formatDate(isoString: string | null | undefined): string {
+  if (!isoString) return '—'
+  const d = new Date(isoString)
+  if (isNaN(d.getTime())) return '—'
   return new Intl.DateTimeFormat(LOCALE, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
-  }).format(new Date(isoString))
+  }).format(d)
 }
 
 /**

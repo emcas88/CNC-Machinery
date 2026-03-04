@@ -41,6 +41,8 @@ export interface HardwareBrand {
   itemCount: number
 }
 
+export type HardwareCategory = HardwareType
+
 export interface CreateHardware {
   brandId?: string
   name: string
@@ -54,3 +56,6 @@ export interface CreateHardware {
   inStock?: boolean
   notes?: string
 }
+
+export type CreateHardwareDto = CreateHardware
+export type UpdateHardwareDto = Partial<CreateHardware>

@@ -1,7 +1,7 @@
 // F27 – ToastContainer: Renders toast notifications with auto-dismiss.
 
 import { useEffect, useCallback, useState, useRef, type ReactNode } from 'react';
-import type { Toast, ToastType, GlobalErrorState } from './useGlobalError';
+import type { Toast, ToastType, GlobalErrorState } from '@/hooks/useGlobalError';
 
 // ---------------------------------------------------------------------------
 // Icons per toast type

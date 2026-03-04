@@ -12,16 +12,16 @@ export function MaterialsManager() {
 
   const { data: materials = [], isLoading } = useQuery({
     queryKey: ['materials'],
-    queryFn: materialsService.list,
+    queryFn: materialsService.getMaterials,
   })
 
   const deleteMaterial = useMutation({
-    mutationFn: materialsService.delete,
+    mutationFn: materialsService.deleteMaterial,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['materials'] }),
   })
 
   const filtered = materials.filter((m: Material) =>
-    !search || m.name.toLowerCase().includes(search.toLowerCase())
+    !search || (m.name ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
   return (
@@ -57,7 +57,7 @@ export function MaterialsManager() {
                   />
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{mat.name}</p>
-                    <p className="text-xs text-gray-500">{mat.thickness}mm · {mat.category}</p>
+                    <p className="text-xs text-gray-500">{mat.thickness != null ? `${mat.thickness}mm` : '—'} · {mat.category ?? '—'}</p>
                   </div>
                 </div>
               </button>
@@ -87,10 +87,10 @@ export function MaterialsManager() {
 
             <div className="panel p-4 grid grid-cols-2 gap-3 text-sm">
               {[
-                ['Category', selected.category],
-                ['Thickness', `${selected.thickness}mm`],
-                ['Width', `${selected.sheetWidth}mm`],
-                ['Height', `${selected.sheetHeight}mm`],
+                ['Category', selected.category ?? '—'],
+                ['Thickness', selected.thickness != null ? `${selected.thickness}mm` : '—'],
+                ['Width', selected.sheetWidth != null ? `${selected.sheetWidth}mm` : '—'],
+                ['Height', selected.sheetHeight != null ? `${selected.sheetHeight}mm` : '—'],
                 ['Cost/Sheet', selected.costPerSheet ? `$${selected.costPerSheet.toFixed(2)}` : '—'],
                 ['Supplier', selected.supplier ?? '—'],
                 ['Grain Direction', selected.grain ?? 'None'],

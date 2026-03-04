@@ -2,7 +2,7 @@
 // batch print, and label template selection.
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { QrCode } from './QrCode';
+import { QrCode } from '@/components/shop/QrCode';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -216,11 +216,12 @@ export function ShopLabelApp({ jobId, api = labelsApi }: ShopLabelAppProps) {
   // -----------------------------------------------------------------------
 
   const loadLabels = useCallback(async () => {
+    if (!jobId) { setLoading(false); return; }
     setLoading(true);
     setError(null);
     try {
       const data = await api.fetchLabels({ jobId });
-      setLabels(data.labels);
+      setLabels(data.labels ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load labels');
     } finally {
@@ -338,6 +339,14 @@ export function ShopLabelApp({ jobId, api = labelsApi }: ShopLabelAppProps) {
   // -----------------------------------------------------------------------
   // Render
   // -----------------------------------------------------------------------
+
+  if (!jobId) {
+    return (
+      <div className="flex items-center justify-center h-full bg-gray-950 text-gray-400">
+        No job selected. Please select a job to view shop labels.
+      </div>
+    );
+  }
 
   if (loading) {
     return (
