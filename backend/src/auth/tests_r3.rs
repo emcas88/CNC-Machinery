@@ -11,6 +11,7 @@
 #[cfg(test)]
 mod tests {
     use std::env;
+    use std::sync::Mutex;
     use uuid::Uuid;
 
     use crate::auth::{
@@ -19,6 +20,23 @@ mod tests {
         hash_password, verify_password,
         AuthError, TokenClaims,
     };
+
+    /// Mutex to serialise env-var manipulation across tests.
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    fn lock_env() -> std::sync::MutexGuard<'static, ()> {
+        ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// Save and restore JWT_SECRET around a test closure.
+    fn with_jwt_restore<F: FnOnce()>(f: F) {
+        let saved = env::var("JWT_SECRET").ok();
+        f();
+        match saved {
+            Some(v) => env::set_var("JWT_SECRET", v),
+            None => env::remove_var("JWT_SECRET"),
+        }
+    }
 
     // ------------------------------------------------------------------
     // password helpers
@@ -50,23 +68,29 @@ mod tests {
 
     #[test]
     fn test_create_and_verify_access_token() {
-        env::set_var("JWT_SECRET", "test-secret");
-        let uid = Uuid::new_v4();
-        let token = create_access_token(uid, "admin").expect("create_access_token should succeed");
-        let claims = verify_access_token(&token).expect("verify_access_token should succeed");
-        assert_eq!(claims.sub, uid.to_string());
-        assert_eq!(claims.role, "admin");
+        let _guard = lock_env();
+        with_jwt_restore(|| {
+            env::set_var("JWT_SECRET", "test-secret");
+            let uid = Uuid::new_v4();
+            let token = create_access_token(uid, "admin").expect("create_access_token should succeed");
+            let claims = verify_access_token(&token).expect("verify_access_token should succeed");
+            assert_eq!(claims.sub, uid.to_string());
+            assert_eq!(claims.role, "admin");
+        });
     }
 
     #[test]
     fn test_access_token_invalid_signature() {
-        env::set_var("JWT_SECRET", "secret-a");
-        let uid = Uuid::new_v4();
-        let token = create_access_token(uid, "viewer").unwrap();
+        let _guard = lock_env();
+        with_jwt_restore(|| {
+            env::set_var("JWT_SECRET", "secret-a");
+            let uid = Uuid::new_v4();
+            let token = create_access_token(uid, "viewer").unwrap();
 
-        env::set_var("JWT_SECRET", "secret-b");
-        let result = verify_access_token(&token);
-        assert!(result.is_err(), "mismatched secret should fail verification");
+            env::set_var("JWT_SECRET", "secret-b");
+            let result = verify_access_token(&token);
+            assert!(result.is_err(), "mismatched secret should fail verification");
+        });
     }
 
     // ------------------------------------------------------------------
@@ -75,24 +99,30 @@ mod tests {
 
     #[test]
     fn test_create_and_verify_refresh_token() {
-        env::set_var("JWT_SECRET", "refresh-secret");
-        let uid = Uuid::new_v4();
-        let token = create_refresh_token(uid).expect("create_refresh_token should succeed");
-        let claims = verify_refresh_token(&token).expect("verify_refresh_token should succeed");
-        assert_eq!(claims.sub, uid.to_string());
-        // refresh tokens don't carry a role
-        assert_eq!(claims.role, "");
+        let _guard = lock_env();
+        with_jwt_restore(|| {
+            env::set_var("JWT_SECRET", "refresh-secret");
+            let uid = Uuid::new_v4();
+            let token = create_refresh_token(uid).expect("create_refresh_token should succeed");
+            let claims = verify_refresh_token(&token).expect("verify_refresh_token should succeed");
+            assert_eq!(claims.sub, uid.to_string());
+            // refresh tokens don't carry a role
+            assert_eq!(claims.role, "");
+        });
     }
 
     #[test]
     fn test_refresh_token_invalid_signature() {
-        env::set_var("JWT_SECRET", "sig-a");
-        let uid = Uuid::new_v4();
-        let token = create_refresh_token(uid).unwrap();
+        let _guard = lock_env();
+        with_jwt_restore(|| {
+            env::set_var("JWT_SECRET", "sig-a");
+            let uid = Uuid::new_v4();
+            let token = create_refresh_token(uid).unwrap();
 
-        env::set_var("JWT_SECRET", "sig-b");
-        let result = verify_refresh_token(&token);
-        assert!(result.is_err());
+            env::set_var("JWT_SECRET", "sig-b");
+            let result = verify_refresh_token(&token);
+            assert!(result.is_err());
+        });
     }
 
     // ------------------------------------------------------------------
@@ -102,7 +132,7 @@ mod tests {
     #[test]
     fn test_auth_error_display_token_expired() {
         let e = AuthError::TokenExpired;
-        assert_eq!(e.to_string(), "token expired");
+        assert_eq!(e.to_string(), "Token has expired");
     }
 
     #[test]
@@ -141,21 +171,24 @@ mod tests {
         use jsonwebtoken::{encode, EncodingKey, Header};
         use crate::auth::TokenClaims;
 
-        env::set_var("JWT_SECRET", "exp-secret");
-        let expired_claims = TokenClaims {
-            sub: Uuid::new_v4().to_string(),
-            role: "viewer".to_string(),
-            iat: 0,
-            exp: 1, // epoch+1 second — always expired
-        };
-        let token = encode(
-            &Header::default(),
-            &expired_claims,
-            &EncodingKey::from_secret(b"exp-secret"),
-        )
-        .unwrap();
+        let _guard = lock_env();
+        with_jwt_restore(|| {
+            env::set_var("JWT_SECRET", "exp-secret");
+            let expired_claims = TokenClaims {
+                sub: Uuid::new_v4().to_string(),
+                role: "viewer".to_string(),
+                iat: 0,
+                exp: 1, // epoch+1 second — always expired
+            };
+            let token = encode(
+                &Header::default(),
+                &expired_claims,
+                &EncodingKey::from_secret(b"exp-secret"),
+            )
+            .unwrap();
 
-        let result = verify_access_token(&token);
-        assert!(matches!(result, Err(AuthError::TokenExpired)));
+            let result = verify_access_token(&token);
+            assert!(matches!(result, Err(AuthError::TokenExpired)));
+        });
     }
 }

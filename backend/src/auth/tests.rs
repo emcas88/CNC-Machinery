@@ -594,45 +594,80 @@ mod require_roles_tests {
 #[cfg(test)]
 mod auth_config_tests {
     use crate::auth::*;
+    use std::sync::Mutex;
+
+    /// Mutex to serialise env-var manipulation.
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    fn lock_env() -> std::sync::MutexGuard<'static, ()> {
+        ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// Save and restore auth-related env vars around a closure.
+    fn with_env_restore<F: FnOnce()>(f: F) {
+        let saved_jwt = std::env::var("JWT_SECRET").ok();
+        let saved_ath = std::env::var("ACCESS_TOKEN_HOURS").ok();
+        let saved_rtd = std::env::var("REFRESH_TOKEN_DAYS").ok();
+
+        f();
+
+        for (key, saved) in [
+            ("JWT_SECRET", saved_jwt),
+            ("ACCESS_TOKEN_HOURS", saved_ath),
+            ("REFRESH_TOKEN_DAYS", saved_rtd),
+        ] {
+            match saved {
+                Some(v) => std::env::set_var(key, v),
+                None => std::env::remove_var(key),
+            }
+        }
+    }
 
     #[test]
     fn test_config_defaults() {
-        // Clear env to test defaults
-        std::env::remove_var("JWT_SECRET");
-        std::env::remove_var("ACCESS_TOKEN_HOURS");
-        std::env::remove_var("REFRESH_TOKEN_DAYS");
+        let _guard = lock_env();
+        with_env_restore(|| {
+            std::env::remove_var("JWT_SECRET");
+            std::env::remove_var("ACCESS_TOKEN_HOURS");
+            std::env::remove_var("REFRESH_TOKEN_DAYS");
 
-        let config = AuthConfig::from_env();
-        assert_eq!(config.jwt_secret, "dev-secret-change-me");
-        assert_eq!(config.access_token_ttl.num_hours(), 24);
-        assert_eq!(config.refresh_token_ttl.num_days(), 7);
+            let config = AuthConfig::from_env();
+            assert_eq!(config.jwt_secret, "dev-secret-change-me");
+            assert_eq!(config.access_token_ttl.num_hours(), 24);
+            assert_eq!(config.refresh_token_ttl.num_days(), 7);
+        });
     }
 
     #[test]
     fn test_config_custom_secret() {
-        std::env::set_var("JWT_SECRET", "my-custom-secret");
-        let config = AuthConfig::from_env();
-        assert_eq!(config.jwt_secret, "my-custom-secret");
-        std::env::remove_var("JWT_SECRET");
+        let _guard = lock_env();
+        with_env_restore(|| {
+            std::env::set_var("JWT_SECRET", "my-custom-secret");
+            let config = AuthConfig::from_env();
+            assert_eq!(config.jwt_secret, "my-custom-secret");
+        });
     }
 
     #[test]
     fn test_config_custom_ttl() {
-        std::env::set_var("ACCESS_TOKEN_HOURS", "1");
-        std::env::set_var("REFRESH_TOKEN_DAYS", "30");
-        let config = AuthConfig::from_env();
-        assert_eq!(config.access_token_ttl.num_hours(), 1);
-        assert_eq!(config.refresh_token_ttl.num_days(), 30);
-        std::env::remove_var("ACCESS_TOKEN_HOURS");
-        std::env::remove_var("REFRESH_TOKEN_DAYS");
+        let _guard = lock_env();
+        with_env_restore(|| {
+            std::env::set_var("ACCESS_TOKEN_HOURS", "1");
+            std::env::set_var("REFRESH_TOKEN_DAYS", "30");
+            let config = AuthConfig::from_env();
+            assert_eq!(config.access_token_ttl.num_hours(), 1);
+            assert_eq!(config.refresh_token_ttl.num_days(), 30);
+        });
     }
 
     #[test]
     fn test_config_invalid_ttl_uses_default() {
-        std::env::set_var("ACCESS_TOKEN_HOURS", "not-a-number");
-        let config = AuthConfig::from_env();
-        assert_eq!(config.access_token_ttl.num_hours(), 24);
-        std::env::remove_var("ACCESS_TOKEN_HOURS");
+        let _guard = lock_env();
+        with_env_restore(|| {
+            std::env::set_var("ACCESS_TOKEN_HOURS", "not-a-number");
+            let config = AuthConfig::from_env();
+            assert_eq!(config.access_token_ttl.num_hours(), 24);
+        });
     }
 }
 
